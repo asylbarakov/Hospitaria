@@ -47,6 +47,10 @@ export const COAT_COLORS = [
   { color: 0xa8d9a3, label: 'Зелёный' },
   { color: 0xf6b8c9, label: 'Розовый' },
   { color: 0xc3b2e6, label: 'Лавандовый' },
+  // Премиальные халаты продаются только в магазине.
+  { color: 0x9fe0d6, label: 'Мятный', premium: true },
+  { color: 0xf2a6a0, label: 'Коралловый', premium: true },
+  { color: 0xf0d18a, label: 'Золотой', premium: true },
 ];
 
 export const ACCESSORIES = [
@@ -54,6 +58,19 @@ export const ACCESSORIES = [
   { id: 'glasses', label: 'Очки' },
   { id: 'mask', label: 'Маска' },
   { id: 'stethoscope', label: 'Стетоскоп' },
+  { id: 'headmirror', label: 'Налобное зеркало', premium: true },
+];
+
+export const HATS = [
+  { id: 'none', label: 'Без шапочки' },
+  { id: 'beret', label: 'Берет', color: 0xc3b2e6 },
+  { id: 'cap', label: 'Шапочка', color: 0xffffff },
+];
+
+export const SHOES = [
+  { id: 'classic', label: 'Классические', color: 0x455a64, sole: 0xcfd8dc },
+  { id: 'white', label: 'Белые', color: 0xf5f5f5, sole: 0xb0bec5 },
+  { id: 'mint', label: 'Мятные', color: 0x80cbc4, sole: 0xe0f2f1 },
 ];
 
 export const DEFAULT_AVATAR = {
@@ -63,6 +80,8 @@ export const DEFAULT_AVATAR = {
   hairColor: 0,
   coat: 0,
   accessory: 0,
+  hat: 0,
+  shoes: 0,
 };
 
 function pickIndex(value, list) {
@@ -85,5 +104,7 @@ export function normalizeAvatar(config = {}) {
     hairColor: pickIndex(config.hairColor, HAIR_COLORS),
     coat: pickIndex(config.coat, coatList),
     accessory: pickIndex(config.accessory, ACCESSORIES),
+    hat: pickIndex(config.hat, HATS),
+    shoes: pickIndex(config.shoes, SHOES),
   };
 }

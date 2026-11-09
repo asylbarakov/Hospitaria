@@ -1,4 +1,5 @@
 import { createButton } from '../ui/Button.js';
+import { createBottomBar } from '../ui/BottomBar.js';
 import { openHelpPanel } from '../ui/HelpPanel.js';
 import { openDialog } from '../ui/Dialog.js';
 import { ROLES } from '../data/avatarOptions.js';
@@ -143,29 +144,10 @@ export default class UIScene extends Phaser.Scene {
   }
 
   buildBottomBar() {
-    const g = this.add.graphics().setDepth(0);
-    g.fillStyle(0x1b4b5a, 0.58);
-    g.fillRoundedRect(24, 672, 596, 36, 18);
-    g.lineStyle(2, 0xffffff, 0.2);
-    g.strokeRoundedRect(24, 672, 596, 36, 18);
-
-    this.add
-      .text(44, 690, 'Клик по полу — идти   •   Клик по пациенту — принять', {
-        fontFamily: HUD_FONT,
-        fontSize: '16px',
-        color: '#ffffff',
-      })
-      .setOrigin(0, 0.5)
-      .setDepth(2);
-
-    createButton(this, 1234, 688, '?', () => this.toggleHelp(), {
-      width: 52,
-      height: 52,
-      radius: 26,
-      fontSize: 26,
-      color: 0x5b7f8c,
-      hoverColor: 0x729aa8,
-      depth: 3,
+    createBottomBar(this, {
+      onHelp: () => this.toggleHelp(),
+      onShop: () => this.openShop(),
+      onTasks: () => this.openTasks(),
     });
   }
 
@@ -273,6 +255,22 @@ export default class UIScene extends Phaser.Scene {
     if (hospital && hospital.leaveToMenu) {
       hospital.leaveToMenu();
     }
+  }
+
+  openShop() {
+    if (this.activeDialog || this.helpRoot || this.scene.isActive('ShopScene')) {
+      return;
+    }
+    this.registry.set('uiModal', true);
+    this.scene.launch('ShopScene', { tab: 'clothes' });
+  }
+
+  openTasks() {
+    if (this.activeDialog || this.helpRoot || this.scene.isActive('TasksScene')) {
+      return;
+    }
+    this.registry.set('uiModal', true);
+    this.scene.launch('TasksScene');
   }
 
   toggleHelp() {

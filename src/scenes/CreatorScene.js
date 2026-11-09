@@ -18,6 +18,8 @@ const H = 720;
 const FONT = 'Arial, "Segoe UI", sans-serif';
 const AVATAR_Y = 614;
 const MAX_NAME = 14;
+const CREATOR_COATS = COAT_COLORS.filter((item) => !item.premium);
+const CREATOR_ACCESSORIES = ACCESSORIES.filter((item) => !item.premium);
 
 export default class CreatorScene extends Phaser.Scene {
   constructor() {
@@ -130,14 +132,14 @@ export default class CreatorScene extends Phaser.Scene {
       },
     });
 
-    this.addStepper(1040, 400, 'Цвет халата', COAT_COLORS, {
+    this.addStepper(1040, 400, 'Цвет халата', CREATOR_COATS, {
       get: () => this.config.coat,
       set: (index) => {
         this.config.coat = index;
       },
     });
 
-    this.addStepper(1040, 500, 'Аксессуар', ACCESSORIES, {
+    this.addStepper(1040, 500, 'Аксессуар', CREATOR_ACCESSORIES, {
       get: () => this.config.accessory,
       set: (index) => {
         this.config.accessory = index;
@@ -262,6 +264,8 @@ export default class CreatorScene extends Phaser.Scene {
       xp: 0,
       level: 1,
       reputation: 50,
+      ownedItems: [],
+      furniture: [],
     };
 
     data.version = 1;

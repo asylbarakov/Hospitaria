@@ -4,6 +4,17 @@ import { DEFAULT_AVATAR, normalizeAvatar } from '../data/avatarOptions.js';
 import { createHospitalWorld } from '../systems/roomPainter.js';
 import { PatientManager } from '../systems/Patients.js';
 import { startMiniGame } from '../systems/treatmentFlow.js';
+import { ensureSaveData, maxPatientsForLevel } from '../systems/Economy.js';
+import { ensureDailyTasks } from '../systems/DailyTasks.js';
+import {
+  addSceneCoins,
+  addSceneXp,
+  persistSceneStats,
+  buyItem,
+  equipPlayerItem,
+  redrawSceneFurniture,
+  claimDailyReward,
+} from '../systems/playerActions.js';
 import {
   ROOMS,
   ROOM_WIDTH,
@@ -25,7 +36,8 @@ export default class HospitalScene extends Phaser.Scene {
   }
 
   create() {
-    this.saveData = Save.load();
+    this.saveData = ensureSaveData(Save.load());
+    ensureDailyTasks(this.saveData);
     const player = this.saveData && this.saveData.player ? this.saveData.player : null;
     this.playerName = player && player.name ? player.name : 'Игрок';
 
@@ -36,6 +48,8 @@ export default class HospitalScene extends Phaser.Scene {
     this.treatmentCount = 0;
 
     this.world = createHospitalWorld(this);
+    this.furnitureLayer = null;
+    this.refreshFurniture();
     this.createPlayer(player);
     this.createCamera();
     this.createControls();
@@ -120,32 +134,36 @@ export default class HospitalScene extends Phaser.Scene {
     startMiniGame(this, patient, forcedGameKey);
   }
 
+  getMaxPatients() {
+    return maxPatientsForLevel(this.registry.get('level'));
+  }
+
   addCoins(amount) {
-    const value = Math.max(0, Math.round(Number(amount) || 0));
-    const next = Math.max(0, (Number(this.registry.get('coins')) || 0) + value);
-    this.registry.set('coins', next);
-    this.persistStats();
-    return next;
+    return addSceneCoins(this, amount);
   }
 
   addXp(amount) {
-    const value = Math.max(0, Math.round(Number(amount) || 0));
-    const next = Math.max(0, (Number(this.registry.get('xp')) || 0) + value);
-    this.registry.set('xp', next);
-    this.persistStats();
-    return next;
+    return addSceneXp(this, amount);
+  }
+
+  purchaseItem(item) {
+    return buyItem(this, item);
+  }
+
+  equipItem(item) {
+    return equipPlayerItem(this, item);
+  }
+
+  refreshFurniture() {
+    redrawSceneFurniture(this);
+  }
+
+  claimTask(taskId) {
+    return claimDailyReward(this, taskId);
   }
 
   persistStats() {
-    if (!this.saveData) {
-      return;
-    }
-
-    this.saveData.coins = Number(this.registry.get('coins')) || 0;
-    this.saveData.xp = Number(this.registry.get('xp')) || 0;
-    this.saveData.level = Number(this.registry.get('level')) || 1;
-    this.saveData.reputation = Number(this.registry.get('reputation')) || 0;
-    Save.save(this.saveData);
+    persistSceneStats(this);
   }
 
   changeReputation(amount) {

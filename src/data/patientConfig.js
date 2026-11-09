@@ -30,7 +30,7 @@ export const PATIENT_CONFIG = {
   exitX: -80,
   followOffset: 120,
   dialogueDistance: 160,
-  waitingSpots: [170, 300, 430, 560],
+  waitingSpots: [150, 240, 330, 420, 510, 600],
   roomTargets: {
     doctor: 1040,
     procedure: 1430,

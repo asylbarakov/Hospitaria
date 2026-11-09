@@ -180,6 +180,8 @@ export default class MenuScene extends Phaser.Scene {
       xp: 0,
       level: 1,
       reputation: 50,
+      ownedItems: [],
+      furniture: [],
     });
     this.scene.start('CreatorScene');
   }

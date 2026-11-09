@@ -195,6 +195,87 @@ function drawPlant(g, x, y) {
   g.fillCircle(x, y - 116, 24);
 }
 
+function drawSofa(g, x, y) {
+  shadow(g, x, y, 190);
+  g.fillStyle(0x8e6bb5, 1);
+  g.fillRoundedRect(x - 90, y - 96, 180, 76, 18);
+  g.fillStyle(0xb39ddb, 1);
+  g.fillRoundedRect(x - 82, y - 62, 164, 34, 12);
+  g.fillRoundedRect(x - 96, y - 74, 22, 60, 10);
+  g.fillRoundedRect(x + 74, y - 74, 22, 60, 10);
+  g.fillStyle(0x5d4037, 1);
+  g.fillRect(x - 76, y - 26, 10, 26);
+  g.fillRect(x + 66, y - 26, 10, 26);
+}
+
+function drawArmchair(g, x, y) {
+  shadow(g, x, y, 100);
+  g.fillStyle(0xf0b26b, 1);
+  g.fillRoundedRect(x - 46, y - 104, 92, 66, 16);
+  g.fillStyle(0xffcc80, 1);
+  g.fillRoundedRect(x - 40, y - 70, 80, 32, 12);
+  g.fillRoundedRect(x - 52, y - 78, 16, 54, 8);
+  g.fillRoundedRect(x + 36, y - 78, 16, 54, 8);
+  g.fillStyle(0x6d4c41, 1);
+  g.fillRect(x - 36, y - 34, 8, 34);
+  g.fillRect(x + 28, y - 34, 8, 34);
+}
+
+function drawScanner(g, x, y) {
+  shadow(g, x, y, 100);
+  g.fillStyle(0x546e7a, 1);
+  g.fillRoundedRect(x - 44, y - 72, 88, 72, 10);
+  g.fillStyle(0x90caf9, 1);
+  g.fillRoundedRect(x - 32, y - 64, 64, 34, 6);
+  g.lineStyle(7, 0x78909c, 1);
+  g.lineBetween(x, y - 80, x, y - 172);
+  g.lineBetween(x, y - 172, x + 46, y - 172);
+  g.lineStyle(3, 0xffffff, 0.8);
+  g.strokeCircle(x + 50, y - 172, 18);
+  g.fillStyle(0xb3e5fc, 0.8);
+  g.fillCircle(x + 50, y - 172, 12);
+}
+
+function drawAquarium(g, x, y) {
+  shadow(g, x, y, 100);
+  g.fillStyle(0x8d6e63, 1);
+  g.fillRoundedRect(x - 50, y - 54, 100, 54, 8);
+  g.fillStyle(0xb3e5fc, 1);
+  g.fillRoundedRect(x - 46, y - 118, 92, 64, 10);
+  g.fillStyle(0x4fc3f7, 0.7);
+  g.fillRoundedRect(x - 41, y - 112, 82, 52, 8);
+  g.fillStyle(0xffb74d, 1);
+  g.fillEllipse(x - 10, y - 88, 16, 10);
+  g.fillTriangle(x - 2, y - 88, x + 10, y - 96, x + 10, y - 80);
+  g.fillStyle(0x66bb6a, 1);
+  g.fillRoundedRect(x - 34, y - 74, 8, 18, 4);
+  g.fillRoundedRect(x + 26, y - 70, 8, 14, 4);
+  g.fillStyle(0xffffff, 0.5);
+  g.fillCircle(x + 18, y - 102, 3);
+}
+
+function drawFloorLamp(g, x, y) {
+  shadow(g, x, y, 46);
+  g.fillStyle(0x78909c, 1);
+  g.fillRect(x - 3, y - 170, 6, 170);
+  g.fillEllipse(x, y - 4, 46, 12);
+  g.fillStyle(0xffe082, 0.3);
+  g.fillCircle(x, y - 180, 30);
+  g.fillStyle(0xffd54f, 1);
+  g.fillTriangle(x - 26, y - 178, x + 26, y - 178, x + 16, y - 214);
+  g.fillStyle(0xf9a825, 1);
+  g.fillRoundedRect(x - 22, y - 180, 44, 6, 3);
+}
+
+function drawRug(g, x, y) {
+  g.fillStyle(0x81c784, 0.85);
+  g.fillEllipse(x, y - 8, 160, 34);
+  g.lineStyle(3, 0x4caf50, 0.8);
+  g.strokeEllipse(x, y - 8, 140, 24);
+  g.fillStyle(0xc8e6c9, 0.7);
+  g.fillEllipse(x, y - 8, 90, 14);
+}
+
 const PAINTERS = {
   desk: drawDesk,
   bench: drawBench,
@@ -208,6 +289,12 @@ const PAINTERS = {
   counter: drawCounter,
   nightstand: drawNightstand,
   plant: drawPlant,
+  sofa: drawSofa,
+  armchair: drawArmchair,
+  scanner: drawScanner,
+  aquarium: drawAquarium,
+  floorLamp: drawFloorLamp,
+  rug: drawRug,
 };
 
 export function drawFurniture(g, type, x, y) {

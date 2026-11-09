@@ -1,4 +1,5 @@
 import { MINIGAME_KEYS } from '../data/treatmentConfig.js';
+import { recordTreatment } from './DailyTasks.js';
 
 export function startMiniGame(scene, patient, forcedGameKey = null) {
   if (!patient) {
@@ -46,6 +47,9 @@ export function finishMiniGame(scene, patient, result) {
       scene.patients.showPenalty(patient.x, Math.abs(reward.reputation));
     }
   }
+
+  recordTreatment(scene.saveData, reward);
+  scene.persistStats();
 
   if (scene.patients) {
     scene.patients.dismissPatient(patient);

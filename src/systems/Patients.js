@@ -217,8 +217,11 @@ export class PatientManager {
     }
 
     this.spawnTimer -= delta;
+    const maxPatients = this.scene.getMaxPatients
+      ? this.scene.getMaxPatients()
+      : PATIENT_CONFIG.maxPatients;
     if (this.spawnTimer <= 0) {
-      if (this.patients.length < PATIENT_CONFIG.maxPatients) {
+      if (this.patients.length < maxPatients) {
         this.spawnPatient();
         this.spawnTimer = randomBetween(
           PATIENT_CONFIG.spawnIntervalMin,
