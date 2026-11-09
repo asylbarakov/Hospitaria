@@ -2,6 +2,7 @@ import Save from '../systems/Save.js';
 import Avatar from '../systems/Avatar.js';
 import { DEFAULT_AVATAR, normalizeAvatar } from '../data/avatarOptions.js';
 import { createHospitalWorld } from '../systems/roomPainter.js';
+import { PatientManager } from '../systems/Patients.js';
 import {
   ROOMS,
   ROOM_WIDTH,
@@ -30,6 +31,7 @@ export default class HospitalScene extends Phaser.Scene {
     this.playerX = START_X;
     this.targetX = START_X;
     this.walkPhase = 0;
+    this.patientClickGuard = false;
 
     this.world = createHospitalWorld(this);
     this.createPlayer(player);
@@ -37,6 +39,7 @@ export default class HospitalScene extends Phaser.Scene {
     this.createControls();
     this.initHud(player);
     this.updateRoomTitle();
+    this.patients = new PatientManager(this);
 
     if (!this.scene.isActive('UIScene')) {
       this.scene.launch('UIScene');
@@ -96,6 +99,34 @@ export default class HospitalScene extends Phaser.Scene {
     }
   }
 
+  walkPlayerTo(x) {
+    this.targetX = Phaser.Math.Clamp(x, MIN_X, MAX_X);
+  }
+
+  showPatientDialog(patient) {
+    this.targetX = this.playerX;
+    this.avatar.stopWalking();
+    this.avatar.setFacing(patient.x < this.playerX ? -1 : 1);
+
+    const ui = this.scene.get('UIScene');
+    if (ui && ui.showPatientDialog) {
+      ui.showPatientDialog(patient);
+    }
+  }
+
+  changeReputation(amount) {
+    const current = Number(this.registry.get('reputation')) || 0;
+    const next = Phaser.Math.Clamp(current + amount, 0, 100);
+    this.registry.set('reputation', next);
+
+    if (this.saveData) {
+      this.saveData.reputation = next;
+      Save.save(this.saveData);
+    }
+
+    return next;
+  }
+
   leaveToMenu() {
     this.scene.start('MenuScene');
   }
@@ -115,7 +146,20 @@ export default class HospitalScene extends Phaser.Scene {
     });
 
     this.input.on('pointerdown', (pointer) => {
+      const patientClicked = this.patientClickGuard;
+      this.patientClickGuard = false;
+
+      if (patientClicked) {
+        return;
+      }
+
       if (this.registry.get('uiModal')) {
+        return;
+      }
+
+      // Клики по кнопкам и окнам интерфейса не должны двигать персонажа.
+      const ui = this.scene.get('UIScene');
+      if (ui && ui.input && ui.input.hitTestPointer(pointer).length > 0) {
         return;
       }
 
@@ -132,8 +176,8 @@ export default class HospitalScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-ESC', () => {
       if (this.registry.get('uiModal')) {
         const ui = this.scene.get('UIScene');
-        if (ui && ui.closeHelp) {
-          ui.closeHelp();
+        if (ui && ui.closeModal) {
+          ui.closeModal();
         }
         return;
       }
@@ -211,5 +255,9 @@ export default class HospitalScene extends Phaser.Scene {
 
     this.nameText.setX(this.playerX);
     this.updateRoomTitle();
+
+    if (this.patients) {
+      this.patients.update(delta);
+    }
   }
 }

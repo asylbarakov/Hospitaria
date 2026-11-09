@@ -1,5 +1,6 @@
 import { createButton } from '../ui/Button.js';
 import { openHelpPanel } from '../ui/HelpPanel.js';
+import { openDialog } from '../ui/Dialog.js';
 import { ROLES } from '../data/avatarOptions.js';
 import { xpToNextLevel } from '../data/progression.js';
 import {
@@ -26,6 +27,7 @@ export default class UIScene extends Phaser.Scene {
 
   create() {
     this.helpRoot = null;
+    this.activeDialog = null;
 
     this.buildHud();
     this.buildBottomBar();
@@ -148,7 +150,7 @@ export default class UIScene extends Phaser.Scene {
     g.strokeRoundedRect(24, 672, 596, 36, 18);
 
     this.add
-      .text(44, 690, 'Клик по полу — идти   •   ← → / A D — ходьба', {
+      .text(44, 690, 'Клик по полу — идти   •   Клик по пациенту — принять', {
         fontFamily: HUD_FONT,
         fontSize: '16px',
         color: '#ffffff',
@@ -174,6 +176,8 @@ export default class UIScene extends Phaser.Scene {
     this.events.once('shutdown', () => {
       this.registry.events.off('changedata', this.onRegistryChange);
       this.registry.set('uiModal', false);
+      this.helpRoot = null;
+      this.activeDialog = null;
     });
   }
 
@@ -199,6 +203,61 @@ export default class UIScene extends Phaser.Scene {
     drawXpBar(this.xpBar, 1052, 52, 192, 12, progress);
   }
 
+  showPatientDialog(patient) {
+    if (!patient || !patient.disease) {
+      return;
+    }
+
+    if (this.activeDialog) {
+      this.closeDialog();
+    }
+    if (this.helpRoot) {
+      this.closeHelp();
+    }
+
+    this.registry.set('uiModal', true);
+
+    const symptoms = patient.disease.symptoms.map((item) => `• ${item}`).join('\n');
+    const text = [
+      '«Здравствуйте! Мне нездоровится. Помогите, пожалуйста.»',
+      '',
+      'Жалобы:',
+      symptoms,
+      '',
+      `Пациент направлен в комнату «${patient.roomTitle}».`,
+    ].join('\n');
+
+    this.activeDialog = openDialog(this, {
+      title: `Пациент ${patient.name}`,
+      subtitle: 'Жалобы пациента',
+      text,
+      accent: patient.disease.color,
+      buttons: [{ label: 'Начать приём' }],
+      onClose: () => {
+        this.activeDialog = null;
+        this.registry.set('uiModal', false);
+      },
+    });
+  }
+
+  closeDialog() {
+    if (this.activeDialog) {
+      this.activeDialog.close();
+    }
+  }
+
+  closeModal() {
+    if (this.activeDialog) {
+      this.closeDialog();
+      return;
+    }
+    if (this.helpRoot) {
+      this.closeHelp();
+      return;
+    }
+    this.registry.set('uiModal', false);
+  }
+
   openMenu() {
     const hospital = this.scene.get('HospitalScene');
     if (hospital && hospital.leaveToMenu) {
@@ -207,6 +266,9 @@ export default class UIScene extends Phaser.Scene {
   }
 
   toggleHelp() {
+    if (this.activeDialog) {
+      return;
+    }
     if (this.helpRoot) {
       this.closeHelp();
     } else {
@@ -215,7 +277,7 @@ export default class UIScene extends Phaser.Scene {
   }
 
   openHelp() {
-    if (this.helpRoot) {
+    if (this.helpRoot || this.activeDialog) {
       return;
     }
 

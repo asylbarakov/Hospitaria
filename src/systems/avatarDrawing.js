@@ -1,4 +1,12 @@
-import { SKIN_COLORS, HAIR_COLORS, COAT_COLORS, HAIRSTYLES, ACCESSORIES } from '../data/avatarOptions.js';
+import {
+  SKIN_COLORS,
+  HAIR_COLORS,
+  COAT_COLORS,
+  HAIRSTYLES,
+  ACCESSORIES,
+  PATIENT_ROLE,
+  PATIENT_CLOTHES,
+} from '../data/avatarOptions.js';
 
 const HEAD_Y = -212;
 
@@ -35,7 +43,10 @@ function drawHairBack(g, config, hair) {
 }
 
 function drawLegs(g, config, phase = 0) {
-  const pants = config.role === 'nurse' ? 0x4f9c94 : 0x4a6b8a;
+  let pants = config.role === 'nurse' ? 0x4f9c94 : 0x4a6b8a;
+  if (config.role === PATIENT_ROLE) {
+    pants = 0x4a5a76;
+  }
   const swing = Math.sin(phase) * 12;
   const liftLeft = Math.max(0, Math.sin(phase)) * 8;
   const liftRight = Math.max(0, -Math.sin(phase)) * 8;
@@ -70,7 +81,10 @@ export function drawLegPose(layers, config, phase) {
 }
 
 function drawBody(g, config, skin) {
-  const scrub = config.role === 'nurse' ? 0x7fc9c1 : 0x7fb6cf;
+  let scrub = config.role === 'nurse' ? 0x7fc9c1 : 0x7fb6cf;
+  if (config.role === PATIENT_ROLE) {
+    scrub = 0xeceff1;
+  }
 
   // Шея.
   g.fillStyle(shade(skin, 0.9), 1);
@@ -85,7 +99,49 @@ function drawBody(g, config, skin) {
   g.strokeRoundedRect(-38, -170, 76, 104, 26);
 }
 
+function drawPatientClothes(g, config, skin) {
+  const clothes = PATIENT_CLOTHES[config.coat].color;
+  const dark = shade(clothes, 0.78);
+
+  g.fillStyle(clothes, 1);
+  g.fillRoundedRect(-48, -168, 96, 104, 26);
+  g.fillRoundedRect(-58, -164, 19, 74, 9);
+  g.fillRoundedRect(39, -164, 19, 74, 9);
+
+  g.lineStyle(3, dark, 0.7);
+  g.strokeRoundedRect(-48, -168, 96, 104, 26);
+  g.strokeRoundedRect(-58, -164, 19, 74, 9);
+  g.strokeRoundedRect(39, -164, 19, 74, 9);
+
+  // Светлая футболка в вырезе куртки.
+  g.fillStyle(0xffffff, 0.92);
+  g.fillTriangle(0, -112, -22, -162, 22, -162);
+  g.lineStyle(3, dark, 0.9);
+  g.lineBetween(0, -112, -22, -162);
+  g.lineBetween(0, -112, 22, -162);
+
+  // Пуговицы и карман.
+  g.fillStyle(dark, 1);
+  g.fillCircle(0, -100, 3.5);
+  g.fillCircle(0, -82, 3.5);
+  g.lineStyle(3, dark, 0.75);
+  g.lineBetween(18, -96, 40, -96);
+
+  // Кисти рук.
+  g.fillStyle(skin, 1);
+  g.fillCircle(-49, -88, 8);
+  g.fillCircle(49, -88, 8);
+  g.lineStyle(2, shade(skin, 0.78), 0.5);
+  g.strokeCircle(-49, -88, 8);
+  g.strokeCircle(49, -88, 8);
+}
+
 function drawCoat(g, config, skin) {
+  if (config.role === PATIENT_ROLE) {
+    drawPatientClothes(g, config, skin);
+    return;
+  }
+
   const coat = COAT_COLORS[config.coat].color;
   const coatDark = shade(coat, 0.8);
   const scrub = config.role === 'nurse' ? 0x7fc9c1 : 0x7fb6cf;

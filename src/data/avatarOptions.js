@@ -3,6 +3,19 @@ export const ROLES = [
   { id: 'nurse', label: 'Медсестра' },
 ];
 
+export const PATIENT_ROLE = 'patient';
+
+export const PATIENT_CLOTHES = [
+  { color: 0xef9a9a, label: 'Красный' },
+  { color: 0x90caf9, label: 'Синий' },
+  { color: 0xa5d6a7, label: 'Зелёный' },
+  { color: 0xffcc80, label: 'Оранжевый' },
+  { color: 0xce93d8, label: 'Сиреневый' },
+  { color: 0x80cbc4, label: 'Бирюзовый' },
+  { color: 0xfff59d, label: 'Жёлтый' },
+  { color: 0xbcaaa4, label: 'Коричневый' },
+];
+
 export const SKIN_COLORS = [
   { color: 0xffe0c2, label: 'Светлая' },
   { color: 0xf1c27d, label: 'Бежевая' },
@@ -60,16 +73,17 @@ function pickIndex(value, list) {
 }
 
 export function normalizeAvatar(config = {}) {
-  const role = ROLES.some((item) => item.id === config.role)
+  const role = ROLES.some((item) => item.id === config.role) || config.role === PATIENT_ROLE
     ? config.role
     : DEFAULT_AVATAR.role;
+  const coatList = role === PATIENT_ROLE ? PATIENT_CLOTHES : COAT_COLORS;
 
   return {
     role,
     skin: pickIndex(config.skin, SKIN_COLORS),
     hairstyle: pickIndex(config.hairstyle, HAIRSTYLES),
     hairColor: pickIndex(config.hairColor, HAIR_COLORS),
-    coat: pickIndex(config.coat, COAT_COLORS),
+    coat: pickIndex(config.coat, coatList),
     accessory: pickIndex(config.accessory, ACCESSORIES),
   };
 }
