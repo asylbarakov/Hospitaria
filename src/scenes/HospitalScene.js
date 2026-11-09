@@ -3,6 +3,7 @@ import Avatar from '../systems/Avatar.js';
 import { DEFAULT_AVATAR, normalizeAvatar } from '../data/avatarOptions.js';
 import { createHospitalWorld } from '../systems/roomPainter.js';
 import { PatientManager } from '../systems/Patients.js';
+import { startMiniGame } from '../systems/treatmentFlow.js';
 import {
   ROOMS,
   ROOM_WIDTH,
@@ -32,6 +33,7 @@ export default class HospitalScene extends Phaser.Scene {
     this.targetX = START_X;
     this.walkPhase = 0;
     this.patientClickGuard = false;
+    this.treatmentCount = 0;
 
     this.world = createHospitalWorld(this);
     this.createPlayer(player);
@@ -114,16 +116,43 @@ export default class HospitalScene extends Phaser.Scene {
     }
   }
 
+  startTreatment(patient, forcedGameKey = null) {
+    startMiniGame(this, patient, forcedGameKey);
+  }
+
+  addCoins(amount) {
+    const value = Math.max(0, Math.round(Number(amount) || 0));
+    const next = Math.max(0, (Number(this.registry.get('coins')) || 0) + value);
+    this.registry.set('coins', next);
+    this.persistStats();
+    return next;
+  }
+
+  addXp(amount) {
+    const value = Math.max(0, Math.round(Number(amount) || 0));
+    const next = Math.max(0, (Number(this.registry.get('xp')) || 0) + value);
+    this.registry.set('xp', next);
+    this.persistStats();
+    return next;
+  }
+
+  persistStats() {
+    if (!this.saveData) {
+      return;
+    }
+
+    this.saveData.coins = Number(this.registry.get('coins')) || 0;
+    this.saveData.xp = Number(this.registry.get('xp')) || 0;
+    this.saveData.level = Number(this.registry.get('level')) || 1;
+    this.saveData.reputation = Number(this.registry.get('reputation')) || 0;
+    Save.save(this.saveData);
+  }
+
   changeReputation(amount) {
     const current = Number(this.registry.get('reputation')) || 0;
     const next = Phaser.Math.Clamp(current + amount, 0, 100);
     this.registry.set('reputation', next);
-
-    if (this.saveData) {
-      this.saveData.reputation = next;
-      Save.save(this.saveData);
-    }
-
+    this.persistStats();
     return next;
   }
 

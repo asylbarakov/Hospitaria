@@ -273,6 +273,14 @@ export class PatientManager {
     this.showPenalty(patient.x, penalty);
   }
 
+  dismissPatient(patient) {
+    if (!patient || patient.state === 'leaving') {
+      return;
+    }
+    this.releaseSpot(patient);
+    patient.leave();
+  }
+
   showPenalty(x, penalty) {
     const text = this.scene.add
       .text(x, FLOOR_Y - 430, `−${penalty} репутации`, {

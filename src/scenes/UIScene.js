@@ -232,7 +232,10 @@ export default class UIScene extends Phaser.Scene {
       subtitle: 'Жалобы пациента',
       text,
       accent: patient.disease.color,
-      buttons: [{ label: 'Начать приём' }],
+      buttons: [{
+        label: 'Начать приём',
+        onClick: () => this.startPatientTreatment(patient),
+      }],
       onClose: () => {
         this.activeDialog = null;
         this.registry.set('uiModal', false);
@@ -243,6 +246,13 @@ export default class UIScene extends Phaser.Scene {
   closeDialog() {
     if (this.activeDialog) {
       this.activeDialog.close();
+    }
+  }
+
+  startPatientTreatment(patient) {
+    const hospital = this.scene.get('HospitalScene');
+    if (hospital && hospital.startTreatment) {
+      hospital.startTreatment(patient);
     }
   }
 
