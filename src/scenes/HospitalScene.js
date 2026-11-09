@@ -1,5 +1,7 @@
 import { createButton } from '../ui/Button.js';
 import Save from '../systems/Save.js';
+import Avatar from '../systems/Avatar.js';
+import { DEFAULT_AVATAR, normalizeAvatar } from '../data/avatarOptions.js';
 
 const W = 1280;
 const H = 720;
@@ -12,24 +14,28 @@ export default class HospitalScene extends Phaser.Scene {
 
   create() {
     this.saveData = Save.load();
+    const player = this.saveData && this.saveData.player ? this.saveData.player : null;
+    this.playerName = player && player.name ? player.name : 'Игрок';
+
     this.drawRoom();
-    this.drawPlaceholder();
+    this.drawPlayer(player);
     this.drawBackButton();
+
     this.add
-      .text(W / 2, 250, 'Здесь будет больница', {
+      .text(W / 2, 95, 'Здесь будет больница', {
         fontFamily: 'Arial, "Segoe UI", sans-serif',
-        fontSize: '58px',
+        fontSize: '36px',
         fontStyle: 'bold',
         color: '#ffffff',
         stroke: '#3d7d8f',
-        strokeThickness: 8,
+        strokeThickness: 6,
       })
       .setOrigin(0.5);
 
     this.add
-      .text(W / 2, 320, 'Этап 1: каркас игры', {
+      .text(W / 2, 138, 'Познакомьтесь — это вы', {
         fontFamily: 'Arial, "Segoe UI", sans-serif',
-        fontSize: '26px',
+        fontSize: '20px',
         color: '#4d7b8a',
       })
       .setOrigin(0.5);
@@ -62,7 +68,7 @@ export default class HospitalScene extends Phaser.Scene {
     this.drawWindow(g, 150, 130);
     this.drawWindow(g, 940, 130);
     this.drawPlant(g, 1120, FLOOR_Y);
-    this.drawBench(g, 760, FLOOR_Y);
+    this.drawBench(g, 880, FLOOR_Y);
   }
 
   drawWindow(g, x, y) {
@@ -94,19 +100,21 @@ export default class HospitalScene extends Phaser.Scene {
     g.fillRect(x + 84, floorY - 94, 12, 94);
   }
 
-  drawPlaceholder() {
-    // Силуэт будущего персонажа — просто намёк на место игрока.
-    const g = this.add.graphics();
-    const x = W / 2;
-    const y = FLOOR_Y;
+  drawPlayer(player) {
+    const config = normalizeAvatar(player || DEFAULT_AVATAR);
+    new Avatar(this, W / 2, FLOOR_Y, config, { scale: 1.15 });
 
-    g.fillStyle(0x000000, 0.12);
-    g.fillEllipse(x, y + 6, 110, 24);
-    g.fillStyle(0x7ec8e3, 0.7);
-    g.fillCircle(x, y - 150, 42);
-    g.fillRoundedRect(x - 34, y - 112, 68, 82, 20);
-    g.fillRect(x - 26, y - 34, 18, 34);
-    g.fillRect(x + 8, y - 34, 18, 34);
+    this.add
+      .text(W / 2, 224, this.playerName, {
+        fontFamily: 'Arial, "Segoe UI", sans-serif',
+        fontSize: '24px',
+        fontStyle: 'bold',
+        color: '#2f5d6b',
+        stroke: '#ffffff',
+        strokeThickness: 5,
+      })
+      .setOrigin(0.5)
+      .setDepth(10);
   }
 
   drawBackButton() {

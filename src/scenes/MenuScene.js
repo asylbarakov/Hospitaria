@@ -181,11 +181,16 @@ export default class MenuScene extends Phaser.Scene {
       level: 1,
       reputation: 50,
     });
-    this.scene.start('HospitalScene');
+    this.scene.start('CreatorScene');
   }
 
   continueGame() {
-    this.scene.start('HospitalScene');
+    const data = Save.load();
+    if (data && data.player) {
+      this.scene.start('HospitalScene');
+    } else {
+      this.scene.start('CreatorScene');
+    }
   }
 }
 

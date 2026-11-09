@@ -27,16 +27,21 @@ index.html
 src/main.js              конфигурация Phaser
 src/scenes/BootScene.js  загрузка и запуск меню
 src/scenes/MenuScene.js  главное меню
+src/scenes/CreatorScene.js   создание персонажа
 src/scenes/HospitalScene.js  игровой экран (пока заглушка)
+src/systems/Avatar.js    аватар: контейнер и слои
+src/systems/avatarDrawing.js  рисование слоёв аватара
 src/systems/Save.js      сохранение в localStorage
+src/data/avatarOptions.js    варианты внешности
 src/ui/Button.js         универсальная кнопка
+src/ui/Stepper.js        переключатель вариантов
 AGENTS.md                постоянные правила проекта
 ```
 
 ## Статус
 
 - [x] Этап 1. Каркас
-- [ ] Этап 2. Аватар и создание персонажа
+- [x] Этап 2. Аватар и создание персонажа
 - [ ] Этап 3. Больница и передвижение
 - [ ] Этап 4. HUD и интерфейс
 - [ ] Этап 5. Пациенты
