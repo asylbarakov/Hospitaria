@@ -2,10 +2,20 @@ import { createButton } from '../ui/Button.js';
 import Save from '../systems/Save.js';
 import Avatar from '../systems/Avatar.js';
 import { DEFAULT_AVATAR, normalizeAvatar } from '../data/avatarOptions.js';
+import { createHospitalWorld } from '../systems/roomPainter.js';
+import {
+  VIEW_WIDTH,
+  VIEW_HEIGHT,
+  WORLD_WIDTH,
+  FLOOR_Y,
+} from '../data/rooms.js';
 
-const W = 1280;
-const H = 720;
-const FLOOR_Y = 560;
+const FONT = 'Arial, "Segoe UI", sans-serif';
+const START_X = 400;
+const MIN_X = 70;
+const MAX_X = WORLD_WIDTH - 70;
+const WALK_SPEED = 380;
+const NAME_OFFSET_Y = -350;
 
 export default class HospitalScene extends Phaser.Scene {
   constructor() {
@@ -17,96 +27,26 @@ export default class HospitalScene extends Phaser.Scene {
     const player = this.saveData && this.saveData.player ? this.saveData.player : null;
     this.playerName = player && player.name ? player.name : 'Игрок';
 
-    this.drawRoom();
-    this.drawPlayer(player);
-    this.drawBackButton();
+    this.playerX = START_X;
+    this.targetX = START_X;
+    this.walkPhase = 0;
 
-    this.add
-      .text(W / 2, 95, 'Здесь будет больница', {
-        fontFamily: 'Arial, "Segoe UI", sans-serif',
-        fontSize: '36px',
-        fontStyle: 'bold',
-        color: '#ffffff',
-        stroke: '#3d7d8f',
-        strokeThickness: 6,
-      })
-      .setOrigin(0.5);
-
-    this.add
-      .text(W / 2, 138, 'Познакомьтесь — это вы', {
-        fontFamily: 'Arial, "Segoe UI", sans-serif',
-        fontSize: '20px',
-        color: '#4d7b8a',
-      })
-      .setOrigin(0.5);
-
-    this.input.keyboard.on('keydown-ESC', () => this.scene.start('MenuScene'));
+    this.world = createHospitalWorld(this);
+    this.createPlayer(player);
+    this.createCamera();
+    this.createControls();
+    this.createFixedUi();
   }
 
-  drawRoom() {
-    const g = this.add.graphics();
-
-    // Стена.
-    g.fillGradientStyle(0xd7f0fa, 0xd7f0fa, 0xf3fbfe, 0xf3fbfe, 1);
-    g.fillRect(0, 0, W, FLOOR_Y);
-
-    // Плинтус.
-    g.fillStyle(0xc4dde7, 1);
-    g.fillRect(0, FLOOR_Y - 18, W, 18);
-
-    // Пол в клетку.
-    g.fillStyle(0xf0e6d2, 1);
-    g.fillRect(0, FLOOR_Y, W, H - FLOOR_Y);
-    g.lineStyle(2, 0xdccfb4, 1);
-    for (let x = 0; x <= W; x += 80) {
-      g.lineBetween(x, FLOOR_Y, x, H);
-    }
-    for (let y = FLOOR_Y + 40; y <= H; y += 40) {
-      g.lineBetween(0, y, W, y);
-    }
-
-    this.drawWindow(g, 150, 130);
-    this.drawWindow(g, 940, 130);
-    this.drawPlant(g, 1120, FLOOR_Y);
-    this.drawBench(g, 880, FLOOR_Y);
-  }
-
-  drawWindow(g, x, y) {
-    g.fillStyle(0x9fd8ef, 1);
-    g.fillRoundedRect(x, y, 190, 150, 14);
-    g.lineStyle(8, 0xffffff, 1);
-    g.strokeRoundedRect(x, y, 190, 150, 14);
-    g.lineBetween(x + 95, y, x + 95, y + 150);
-    g.lineBetween(x, y + 75, x + 190, y + 75);
-  }
-
-  drawPlant(g, x, floorY) {
-    g.fillStyle(0xc47a4a, 1);
-    g.fillRoundedRect(x - 44, floorY - 78, 88, 78, 10);
-    g.fillStyle(0x6aa84f, 1);
-    g.fillCircle(x, floorY - 112, 40);
-    g.fillCircle(x - 36, floorY - 92, 30);
-    g.fillCircle(x + 36, floorY - 92, 30);
-    g.fillStyle(0x4f8f3a, 1);
-    g.fillCircle(x, floorY - 140, 30);
-  }
-
-  drawBench(g, x, floorY) {
-    g.fillStyle(0x8d6e63, 1);
-    g.fillRoundedRect(x - 110, floorY - 120, 220, 26, 8);
-    g.fillRoundedRect(x - 110, floorY - 78, 220, 20, 8);
-    g.fillStyle(0x5d4037, 1);
-    g.fillRect(x - 96, floorY - 94, 12, 94);
-    g.fillRect(x + 84, floorY - 94, 12, 94);
-  }
-
-  drawPlayer(player) {
+  createPlayer(player) {
     const config = normalizeAvatar(player || DEFAULT_AVATAR);
-    new Avatar(this, W / 2, FLOOR_Y, config, { scale: 1.15 });
 
-    this.add
-      .text(W / 2, 224, this.playerName, {
-        fontFamily: 'Arial, "Segoe UI", sans-serif',
+    this.avatar = new Avatar(this, START_X, FLOOR_Y, config, { scale: 1.15 });
+    this.avatar.container.setDepth(10);
+
+    this.nameText = this.add
+      .text(START_X, FLOOR_Y + NAME_OFFSET_Y, this.playerName, {
+        fontFamily: FONT,
         fontSize: '24px',
         fontStyle: 'bold',
         color: '#2f5d6b',
@@ -114,28 +54,154 @@ export default class HospitalScene extends Phaser.Scene {
         strokeThickness: 5,
       })
       .setOrigin(0.5)
-      .setDepth(10);
+      .setDepth(11);
   }
 
-  drawBackButton() {
-    createButton(this, 118, 62, 'В меню', () => this.scene.start('MenuScene'), {
-      width: 180,
-      height: 56,
-      fontSize: 22,
-      color: 0x5b7f8c,
-      hoverColor: 0x729aa8,
-      depth: 20,
+  createCamera() {
+    const camera = this.cameras.main;
+    camera.setBounds(0, 0, WORLD_WIDTH, VIEW_HEIGHT);
+    camera.startFollow(this.avatar.container, true, 0.09, 0.09);
+  }
+
+  createControls() {
+    this.cursors = this.input.keyboard.createCursorKeys();
+    this.extraKeys = this.input.keyboard.addKeys({
+      left: Phaser.Input.Keyboard.KeyCodes.A,
+      right: Phaser.Input.Keyboard.KeyCodes.D,
     });
 
+    this.input.on('pointerdown', (pointer) => {
+      // Работаем только с кликами по полу, а не по верхнему интерфейсу.
+      if (pointer.worldY < FLOOR_Y - 40) {
+        return;
+      }
+
+      const targetX = Phaser.Math.Clamp(pointer.worldX, MIN_X, MAX_X);
+      this.targetX = targetX;
+      this.spawnRipple(targetX);
+    });
+
+    this.input.keyboard.on('keydown-ESC', () => this.scene.start('MenuScene'));
+  }
+
+  spawnRipple(x) {
+    const ripple = this.add
+      .ellipse(x, FLOOR_Y - 6, 38, 16, 0x3f8fb0, 0.4)
+      .setDepth(9);
+
+    this.tweens.add({
+      targets: ripple,
+      scaleX: 1.9,
+      scaleY: 1.9,
+      alpha: 0,
+      duration: 430,
+      ease: 'Quad.easeOut',
+      onComplete: () => ripple.destroy(),
+    });
+  }
+
+  update(time, delta) {
+    if (!this.avatar) {
+      return;
+    }
+
+    const dt = Math.min(delta, 50) / 1000;
+    const step = WALK_SPEED * dt;
+    const leftDown = this.cursors.left.isDown || this.extraKeys.left.isDown;
+    const rightDown = this.cursors.right.isDown || this.extraKeys.right.isDown;
+
+    let direction = 0;
+    let moving = false;
+
+    if (leftDown !== rightDown) {
+      // Стрелки и A/D двигают персонажа напрямую.
+      direction = leftDown ? -1 : 1;
+      this.playerX = Phaser.Math.Clamp(
+        this.playerX + direction * step,
+        MIN_X,
+        MAX_X,
+      );
+      this.targetX = this.playerX;
+      moving = true;
+    } else {
+      const dx = this.targetX - this.playerX;
+      if (Math.abs(dx) > 0.5) {
+        direction = Math.sign(dx);
+        this.playerX = Math.abs(dx) <= step
+          ? this.targetX
+          : this.playerX + direction * step;
+        moving = true;
+      }
+    }
+
+    if (moving) {
+      this.avatar.setFacing(direction);
+      this.walkPhase += delta * 0.016;
+    }
+
+    this.avatar.setPosition(this.playerX, FLOOR_Y);
+    if (moving) {
+      this.avatar.setWalking(this.walkPhase);
+    } else {
+      this.avatar.stopWalking();
+    }
+
+    this.nameText.setX(this.playerX);
+  }
+
+  createFixedUi() {
+    const backButton = createButton(
+      this,
+      118,
+      62,
+      'В меню',
+      () => this.scene.start('MenuScene'),
+      {
+        width: 180,
+        height: 56,
+        fontSize: 22,
+        color: 0x5b7f8c,
+        hoverColor: 0x729aa8,
+        depth: 30,
+      },
+    );
+    this.fixToCamera(backButton);
+
     if (this.saveData) {
-      this.add
-        .text(W - 24, 24, 'Сохранение загружено', {
-          fontFamily: 'Arial, "Segoe UI", sans-serif',
+      const label = this.add
+        .text(VIEW_WIDTH - 24, 24, 'Сохранение загружено', {
+          fontFamily: FONT,
           fontSize: '18px',
           color: '#6b8e99',
         })
         .setOrigin(1, 0)
-        .setDepth(20);
+        .setDepth(30);
+      this.fixToCamera(label);
     }
+
+    const hint = this.add
+      .text(
+        VIEW_WIDTH / 2,
+        VIEW_HEIGHT - 16,
+        'Кликните по полу, чтобы идти   •   Стрелки ← → или A / D',
+        {
+          fontFamily: FONT,
+          fontSize: '20px',
+          color: '#ffffff',
+          stroke: '#4d7b8a',
+          strokeThickness: 4,
+        },
+      )
+      .setOrigin(0.5, 1)
+      .setDepth(30);
+    this.fixToCamera(hint);
+  }
+
+  fixToCamera(target) {
+    target.setScrollFactor(0);
+    if (target.list) {
+      target.list.forEach((child) => child.setScrollFactor(0));
+    }
+    return target;
   }
 }

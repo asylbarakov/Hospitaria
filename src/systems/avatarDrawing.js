@@ -34,23 +34,39 @@ function drawHairBack(g, config, hair) {
   }
 }
 
-function drawLegs(g, config) {
+function drawLegs(g, config, phase = 0) {
   const pants = config.role === 'nurse' ? 0x4f9c94 : 0x4a6b8a;
-  g.fillStyle(pants, 1);
-  g.fillRoundedRect(-30, -80, 25, 68, 10);
-  g.fillRoundedRect(5, -80, 25, 68, 10);
-  g.fillStyle(shade(pants, 0.82), 1);
-  g.fillRect(-30, -24, 25, 8);
-  g.fillRect(5, -24, 25, 8);
+  const swing = Math.sin(phase) * 12;
+  const liftLeft = Math.max(0, Math.sin(phase)) * 8;
+  const liftRight = Math.max(0, -Math.sin(phase)) * 8;
+
+  g.lineStyle(24, pants, 1);
+  g.lineBetween(-17.5, -78, -17.5 + swing, -13 - liftLeft);
+  g.lineBetween(17.5, -78, 17.5 - swing, -13 - liftRight);
 }
 
-function drawShoes(g) {
+function drawShoes(g, phase = 0) {
+  const swing = Math.sin(phase) * 12;
+  const liftLeft = Math.max(0, Math.sin(phase)) * 8;
+  const liftRight = Math.max(0, -Math.sin(phase)) * 8;
+  const leftX = -17.5 + swing;
+  const rightX = 17.5 - swing;
+  const leftY = -15 - liftLeft;
+  const rightY = -15 - liftRight;
+
   g.fillStyle(0x455a64, 1);
-  g.fillRoundedRect(-34, -16, 32, 18, 8);
-  g.fillRoundedRect(2, -16, 32, 18, 8);
+  g.fillRoundedRect(leftX - 16, leftY, 32, 16, 8);
+  g.fillRoundedRect(rightX - 16, rightY, 32, 16, 8);
   g.fillStyle(0xcfd8dc, 1);
-  g.fillRoundedRect(-34, -4, 32, 8, 4);
-  g.fillRoundedRect(2, -4, 32, 8, 4);
+  g.fillRoundedRect(leftX - 16, leftY + 10, 32, 6, 3);
+  g.fillRoundedRect(rightX - 16, rightY + 10, 32, 6, 3);
+}
+
+export function drawLegPose(layers, config, phase) {
+  layers.legs.clear();
+  layers.shoes.clear();
+  drawLegs(layers.legs, config, phase);
+  drawShoes(layers.shoes, phase);
 }
 
 function drawBody(g, config, skin) {
