@@ -1,0 +1,233 @@
+import { createButton } from '../ui/Button.js';
+import { openHelpPanel } from '../ui/HelpPanel.js';
+import { ROLES } from '../data/avatarOptions.js';
+import { xpToNextLevel } from '../data/progression.js';
+import {
+  HUD_FONT,
+  drawTopBar,
+  drawPill,
+  drawCoinIcon,
+  drawHeartIcon,
+  drawCrossIcon,
+  drawXpBar,
+} from '../ui/hudDrawing.js';
+
+const W = 1280;
+
+function formatNumber(value) {
+  return String(Math.max(0, Math.floor(Number(value) || 0)))
+    .replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
+
+export default class UIScene extends Phaser.Scene {
+  constructor() {
+    super('UIScene');
+  }
+
+  create() {
+    this.helpRoot = null;
+
+    this.buildHud();
+    this.buildBottomBar();
+    this.bindRegistry();
+    this.refresh();
+  }
+
+  buildHud() {
+    const g = this.add.graphics().setDepth(0);
+
+    drawTopBar(g, W);
+    drawPill(g, 174, 20, 240, 58, 0xe9f6fb, 0xbfdde9);
+    drawPill(g, 428, 20, 296, 58, 0xf2fafc, 0xbfdde9);
+    drawPill(g, 738, 22, 140, 54, 0xfff4d6, 0xefd48a);
+    drawPill(g, 892, 22, 130, 54, 0xffe8ee, 0xefb9c9);
+    drawPill(g, 1036, 20, 220, 58, 0xeaf3ff, 0xb9cdf0);
+
+    createButton(this, 90, 48, 'Меню', () => this.openMenu(), {
+      width: 140,
+      height: 48,
+      fontSize: 19,
+      color: 0x5b7f8c,
+      hoverColor: 0x729aa8,
+      depth: 2,
+    });
+
+    this.portrait = this.add.graphics().setDepth(1);
+
+    this.playerNameText = this.add
+      .text(246, 37, '', {
+        fontFamily: HUD_FONT,
+        fontSize: '18px',
+        fontStyle: 'bold',
+        color: '#24444f',
+      })
+      .setOrigin(0, 0.5)
+      .setDepth(2);
+
+    this.playerRoleText = this.add
+      .text(246, 59, '', {
+        fontFamily: HUD_FONT,
+        fontSize: '13px',
+        color: '#5b7f8c',
+      })
+      .setOrigin(0, 0.5)
+      .setDepth(2);
+
+    this.add
+      .text(576, 35, 'КОМНАТА', {
+        fontFamily: HUD_FONT,
+        fontSize: '11px',
+        color: '#6b8e99',
+      })
+      .setOrigin(0.5)
+      .setDepth(2);
+
+    this.roomText = this.add
+      .text(576, 57, '', {
+        fontFamily: HUD_FONT,
+        fontSize: '19px',
+        fontStyle: 'bold',
+        color: '#2f5d6b',
+      })
+      .setOrigin(0.5)
+      .setDepth(2);
+
+    this.coinIcon = this.add.graphics().setDepth(1);
+    drawCoinIcon(this.coinIcon, 762, 48, 13);
+
+    this.coinText = this.add
+      .text(784, 48, '0', {
+        fontFamily: HUD_FONT,
+        fontSize: '22px',
+        fontStyle: 'bold',
+        color: '#8a5a00',
+      })
+      .setOrigin(0, 0.5)
+      .setDepth(2);
+
+    this.heartIcon = this.add.graphics().setDepth(1);
+    drawHeartIcon(this.heartIcon, 916, 47, 13, 0xe05c7a);
+
+    this.repText = this.add
+      .text(938, 48, '50', {
+        fontFamily: HUD_FONT,
+        fontSize: '22px',
+        fontStyle: 'bold',
+        color: '#b23b5e',
+      })
+      .setOrigin(0, 0.5)
+      .setDepth(2);
+
+    this.levelText = this.add
+      .text(1052, 36, 'Ур. 1', {
+        fontFamily: HUD_FONT,
+        fontSize: '17px',
+        fontStyle: 'bold',
+        color: '#2f5d6b',
+      })
+      .setOrigin(0, 0.5)
+      .setDepth(2);
+
+    this.xpText = this.add
+      .text(1244, 36, '0 / 100 XP', {
+        fontFamily: HUD_FONT,
+        fontSize: '12px',
+        color: '#5b7f8c',
+      })
+      .setOrigin(1, 0.5)
+      .setDepth(2);
+
+    this.xpBar = this.add.graphics().setDepth(1);
+  }
+
+  buildBottomBar() {
+    const g = this.add.graphics().setDepth(0);
+    g.fillStyle(0x1b4b5a, 0.58);
+    g.fillRoundedRect(24, 672, 596, 36, 18);
+    g.lineStyle(2, 0xffffff, 0.2);
+    g.strokeRoundedRect(24, 672, 596, 36, 18);
+
+    this.add
+      .text(44, 690, 'Клик по полу — идти   •   ← → / A D — ходьба', {
+        fontFamily: HUD_FONT,
+        fontSize: '16px',
+        color: '#ffffff',
+      })
+      .setOrigin(0, 0.5)
+      .setDepth(2);
+
+    createButton(this, 1234, 688, '?', () => this.toggleHelp(), {
+      width: 52,
+      height: 52,
+      radius: 26,
+      fontSize: 26,
+      color: 0x5b7f8c,
+      hoverColor: 0x729aa8,
+      depth: 3,
+    });
+  }
+
+  bindRegistry() {
+    this.onRegistryChange = () => this.refresh();
+    this.registry.events.on('changedata', this.onRegistryChange);
+
+    this.events.once('shutdown', () => {
+      this.registry.events.off('changedata', this.onRegistryChange);
+      this.registry.set('uiModal', false);
+    });
+  }
+
+  refresh() {
+    const level = Math.max(1, Math.floor(Number(this.registry.get('level')) || 1));
+    const xp = Math.max(0, Number(this.registry.get('xp')) || 0);
+    const need = xpToNextLevel(level);
+    const progress = need > 0 ? xp / need : 0;
+    const roleId = this.registry.get('playerRole') || 'doctor';
+    const role = ROLES.find((item) => item.id === roleId);
+
+    this.playerNameText.setText(this.registry.get('playerName') || 'Игрок');
+    this.playerRoleText.setText(role ? role.label : 'Врач');
+    this.coinText.setText(formatNumber(this.registry.get('coins')));
+    this.repText.setText(formatNumber(this.registry.get('reputation')));
+    this.levelText.setText(`Ур. ${level}`);
+    this.xpText.setText(`${formatNumber(Math.min(xp, need))} / ${formatNumber(need)} XP`);
+    this.roomText.setText(this.registry.get('currentRoom') || 'Больница');
+
+    this.portrait.clear();
+    drawCrossIcon(this.portrait, 216, 49, 21, roleId === 'nurse' ? 0x4f9c94 : 0x4a6b8a);
+
+    drawXpBar(this.xpBar, 1052, 52, 192, 12, progress);
+  }
+
+  openMenu() {
+    const hospital = this.scene.get('HospitalScene');
+    if (hospital && hospital.leaveToMenu) {
+      hospital.leaveToMenu();
+    }
+  }
+
+  toggleHelp() {
+    if (this.helpRoot) {
+      this.closeHelp();
+    } else {
+      this.openHelp();
+    }
+  }
+
+  openHelp() {
+    if (this.helpRoot) {
+      return;
+    }
+
+    this.registry.set('uiModal', true);
+    this.helpRoot = openHelpPanel(this, () => this.closeHelp());
+  }
+
+  closeHelp() {
+    if (this.helpRoot) {
+      this.helpRoot.destroy(true);
+      this.helpRoot = null;
+    }
+    this.registry.set('uiModal', false);
+  }
+}

@@ -2,6 +2,7 @@ import BootScene from './scenes/BootScene.js';
 import MenuScene from './scenes/MenuScene.js';
 import CreatorScene from './scenes/CreatorScene.js';
 import HospitalScene from './scenes/HospitalScene.js';
+import UIScene from './scenes/UIScene.js';
 
 const config = {
   type: Phaser.AUTO,
@@ -13,7 +14,7 @@ const config = {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
-  scene: [BootScene, MenuScene, CreatorScene, HospitalScene],
+  scene: [BootScene, MenuScene, CreatorScene, HospitalScene, UIScene],
 };
 
 const game = new Phaser.Game(config);

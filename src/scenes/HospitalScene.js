@@ -1,10 +1,10 @@
-import { createButton } from '../ui/Button.js';
 import Save from '../systems/Save.js';
 import Avatar from '../systems/Avatar.js';
 import { DEFAULT_AVATAR, normalizeAvatar } from '../data/avatarOptions.js';
 import { createHospitalWorld } from '../systems/roomPainter.js';
 import {
-  VIEW_WIDTH,
+  ROOMS,
+  ROOM_WIDTH,
   VIEW_HEIGHT,
   WORLD_WIDTH,
   FLOOR_Y,
@@ -35,7 +35,14 @@ export default class HospitalScene extends Phaser.Scene {
     this.createPlayer(player);
     this.createCamera();
     this.createControls();
-    this.createFixedUi();
+    this.initHud(player);
+    this.updateRoomTitle();
+
+    if (!this.scene.isActive('UIScene')) {
+      this.scene.launch('UIScene');
+    }
+
+    this.events.once('shutdown', () => this.handleShutdown());
   }
 
   createPlayer(player) {
@@ -63,6 +70,43 @@ export default class HospitalScene extends Phaser.Scene {
     camera.startFollow(this.avatar.container, true, 0.09, 0.09);
   }
 
+  initHud(player) {
+    const data = this.saveData || {};
+
+    this.registry.set('playerName', this.playerName);
+    this.registry.set('playerRole', player && player.role ? player.role : 'doctor');
+    this.registry.set('coins', Number(data.coins) || 0);
+    this.registry.set('xp', Number(data.xp) || 0);
+    this.registry.set('level', Number(data.level) || 1);
+    this.registry.set('reputation', Number(data.reputation) || 50);
+    this.registry.set('uiModal', false);
+  }
+
+  updateRoomTitle() {
+    const index = Phaser.Math.Clamp(
+      Math.floor(this.playerX / ROOM_WIDTH),
+      0,
+      ROOMS.length - 1,
+    );
+    const title = ROOMS[index].title;
+
+    if (title !== this.currentRoom) {
+      this.currentRoom = title;
+      this.registry.set('currentRoom', title);
+    }
+  }
+
+  leaveToMenu() {
+    this.scene.start('MenuScene');
+  }
+
+  handleShutdown() {
+    this.registry.set('uiModal', false);
+    if (this.scene.isActive('UIScene')) {
+      this.scene.stop('UIScene');
+    }
+  }
+
   createControls() {
     this.cursors = this.input.keyboard.createCursorKeys();
     this.extraKeys = this.input.keyboard.addKeys({
@@ -71,6 +115,10 @@ export default class HospitalScene extends Phaser.Scene {
     });
 
     this.input.on('pointerdown', (pointer) => {
+      if (this.registry.get('uiModal')) {
+        return;
+      }
+
       // Работаем только с кликами по полу, а не по верхнему интерфейсу.
       if (pointer.worldY < FLOOR_Y - 40) {
         return;
@@ -81,7 +129,16 @@ export default class HospitalScene extends Phaser.Scene {
       this.spawnRipple(targetX);
     });
 
-    this.input.keyboard.on('keydown-ESC', () => this.scene.start('MenuScene'));
+    this.input.keyboard.on('keydown-ESC', () => {
+      if (this.registry.get('uiModal')) {
+        const ui = this.scene.get('UIScene');
+        if (ui && ui.closeHelp) {
+          ui.closeHelp();
+        }
+        return;
+      }
+      this.leaveToMenu();
+    });
   }
 
   spawnRipple(x) {
@@ -102,6 +159,12 @@ export default class HospitalScene extends Phaser.Scene {
 
   update(time, delta) {
     if (!this.avatar) {
+      return;
+    }
+
+    if (this.registry.get('uiModal')) {
+      this.targetX = this.playerX;
+      this.avatar.stopWalking();
       return;
     }
 
@@ -147,61 +210,6 @@ export default class HospitalScene extends Phaser.Scene {
     }
 
     this.nameText.setX(this.playerX);
-  }
-
-  createFixedUi() {
-    const backButton = createButton(
-      this,
-      118,
-      62,
-      'В меню',
-      () => this.scene.start('MenuScene'),
-      {
-        width: 180,
-        height: 56,
-        fontSize: 22,
-        color: 0x5b7f8c,
-        hoverColor: 0x729aa8,
-        depth: 30,
-      },
-    );
-    this.fixToCamera(backButton);
-
-    if (this.saveData) {
-      const label = this.add
-        .text(VIEW_WIDTH - 24, 24, 'Сохранение загружено', {
-          fontFamily: FONT,
-          fontSize: '18px',
-          color: '#6b8e99',
-        })
-        .setOrigin(1, 0)
-        .setDepth(30);
-      this.fixToCamera(label);
-    }
-
-    const hint = this.add
-      .text(
-        VIEW_WIDTH / 2,
-        VIEW_HEIGHT - 16,
-        'Кликните по полу, чтобы идти   •   Стрелки ← → или A / D',
-        {
-          fontFamily: FONT,
-          fontSize: '20px',
-          color: '#ffffff',
-          stroke: '#4d7b8a',
-          strokeThickness: 4,
-        },
-      )
-      .setOrigin(0.5, 1)
-      .setDepth(30);
-    this.fixToCamera(hint);
-  }
-
-  fixToCamera(target) {
-    target.setScrollFactor(0);
-    if (target.list) {
-      target.list.forEach((child) => child.setScrollFactor(0));
-    }
-    return target;
+    this.updateRoomTitle();
   }
 }
