@@ -18,6 +18,9 @@ import {
 } from '../data/avatarOptions.js';
 
 const FONT = 'Arial, "Segoe UI", sans-serif';
+// Полоска терпения шириной 68 px: 34 шага по 2 px.
+const BAR_STEPS = 34;
+const OFFSCREEN_MARGIN = 160;
 
 function randomIndex(list) {
   return Math.floor(Math.random() * list.length);
@@ -90,6 +93,8 @@ export class Patient {
 
     this.bar = scene.add.graphics().setDepth(13);
     drawPatienceBar(this.bar, 1);
+    this.barStep = BAR_STEPS;
+    this.badgesHidden = false;
 
     this.syncVisuals();
   }
@@ -101,8 +106,7 @@ export class Patient {
       ? (PATIENT_CONFIG.roomTargets[this.roomId] || 1040)
       : LIFT_X;
     this.needsDialog = true;
-    this.bar.setVisible(true);
-    this.bubble.setVisible(true);
+    this.badgesHidden = false;
   }
 
   requestDialog() {
@@ -116,8 +120,7 @@ export class Patient {
   leave() {
     this.needsDialog = false;
     this.manager.releaseSpot(this);
-    this.bubble.setVisible(false);
-    this.bar.setVisible(false);
+    this.badgesHidden = true;
 
     if (this.floor === 1) {
       this.state = 'leaving';
@@ -268,13 +271,39 @@ export class Patient {
     this.scene.showPatientDialog(this);
   }
 
+  /** Виден ли пациент игроку: тот же этаж и в пределах экрана (с запасом). */
+  isOnScreen() {
+    const scene = this.scene;
+    if (this.floor !== scene.playerFloor) {
+      return false;
+    }
+    const camera = scene.cameras.main;
+    return this.x > camera.scrollX - OFFSCREEN_MARGIN
+      && this.x < camera.scrollX + camera.width + OFFSCREEN_MARGIN;
+  }
+
   syncVisuals() {
     this.avatar.setPosition(this.x, this.baseY);
     this.nameText.setX(this.x);
     this.nameText.setY(this.baseY - NAME_OFFSET_Y);
     this.bubble.setPosition(this.x, this.baseY - BUBBLE_OFFSET_Y);
     this.bar.setPosition(this.x, this.baseY - BAR_OFFSET_Y);
-    drawPatienceBar(this.bar, this.patience / this.patienceMax);
+
+    // Невидимые объекты Phaser вообще не рисует: пациенты на другом этаже
+    // и за краем экрана ничего не стоят.
+    const onScreen = this.isOnScreen();
+    const badges = onScreen && !this.badgesHidden;
+    this.avatar.container.setVisible(onScreen);
+    this.nameText.setVisible(onScreen);
+    this.bubble.setVisible(badges);
+    this.bar.setVisible(badges);
+
+    // Полоска терпения перерисовывается только когда меняется её ширина.
+    const step = Math.round((this.patience / this.patienceMax) * BAR_STEPS);
+    if (step !== this.barStep) {
+      this.barStep = step;
+      drawPatienceBar(this.bar, step / BAR_STEPS);
+    }
   }
 
   destroy() {

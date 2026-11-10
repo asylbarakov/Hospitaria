@@ -62,6 +62,7 @@ export default class HospitalScene extends Phaser.Scene {
     this.patientClickGuard = false;
     this.objectClickGuard = false;
     this.treatmentCount = 0;
+    this.camX = 0;
 
     this.world = createHospitalWorld(this);
     this.furnitureLayer = null;
@@ -297,15 +298,20 @@ export default class HospitalScene extends Phaser.Scene {
 
     this.nameText.setX(this.playerX);
     this.nameText.setY(this.playerY + NAME_OFFSET_Y);
-    this.updateRoomTitle();
+    if (moving) {
+      this.updateRoomTitle();
+    }
 
+    // Плавная камера: дробное значение хранится отдельно, а в камеру уходит
+    // целое, чтобы запечённый мир не «мылился» при прокрутке.
     const camera = this.cameras.main;
     const targetScrollX = Phaser.Math.Clamp(
       this.playerX - camera.width / 2,
       0,
       WORLD_WIDTH - camera.width,
     );
-    camera.scrollX += (targetScrollX - camera.scrollX) * 0.12;
+    this.camX += (targetScrollX - this.camX) * 0.12;
+    camera.scrollX = Math.round(this.camX);
     camera.scrollY = (this.playerFloor - 1) * FLOOR_HEIGHT;
 
     if (this.patients) {

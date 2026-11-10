@@ -9,16 +9,28 @@ import TasksScene from './scenes/TasksScene.js';
 import PauseScene from './scenes/PauseScene.js';
 import DisclaimerScene from './scenes/DisclaimerScene.js';
 import AchievementsScene from './scenes/AchievementsScene.js';
+import { applyTextQuality } from './ui/textQuality.js';
+
+applyTextQuality();
 
 const config = {
   type: Phaser.AUTO,
   parent: 'game',
   width: 1280,
   height: 720,
-  backgroundColor: '#bfe3f5',
+  backgroundColor: '#10222e',
+  banner: false,
+  disableContextMenu: true,
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
+  },
+  render: {
+    antialias: true,
+    powerPreference: 'high-performance',
+  },
+  fps: {
+    target: 60,
   },
   scene: [
     BootScene,

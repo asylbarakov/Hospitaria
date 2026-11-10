@@ -2,6 +2,7 @@ import { createButton } from '../ui/Button.js';
 import { createBottomBar } from '../ui/BottomBar.js';
 import { openHelpPanel } from '../ui/HelpPanel.js';
 import { openDialog } from '../ui/Dialog.js';
+import { ensureVignette } from '../ui/textures.js';
 import { ROLES } from '../data/avatarOptions.js';
 import { xpToNextLevel } from '../data/progression.js';
 import {
@@ -37,6 +38,10 @@ export default class UIScene extends Phaser.Scene {
   }
 
   buildHud() {
+    // Лёгкая виньетка по краям кадра: одна готовая текстура, без затрат в кадре.
+    ensureVignette(this, 'ui-vignette', W, 720);
+    this.add.image(W / 2, 360, 'ui-vignette').setDepth(-1);
+
     const g = this.add.graphics().setDepth(0);
 
     drawTopBar(g, W);

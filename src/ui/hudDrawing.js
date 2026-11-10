@@ -1,10 +1,15 @@
 export const HUD_FONT = 'Arial, "Segoe UI", sans-serif';
 
 export function drawTopBar(g, width) {
-  g.fillStyle(0x1b4b5a, 0.12);
-  g.fillRoundedRect(24, 20, width - 48, 72, 24);
-  g.fillStyle(0xffffff, 0.92);
+  g.fillStyle(0x1b4b5a, 0.16);
+  g.fillRoundedRect(24, 22, width - 48, 72, 24);
+  g.fillStyle(0xffffff, 0.95);
   g.fillRoundedRect(20, 12, width - 40, 72, 24);
+  // Нижняя половина чуть темнее: панель выглядит объёмной.
+  g.fillStyle(0xe4f1f7, 0.9);
+  g.fillRoundedRect(20, 48, width - 40, 36, { tl: 0, tr: 0, bl: 24, br: 24 });
+  g.fillStyle(0xffffff, 0.7);
+  g.fillRoundedRect(34, 16, width - 68, 6, 3);
   g.lineStyle(2, 0xbad8e4, 0.95);
   g.strokeRoundedRect(20, 12, width - 40, 72, 24);
 }
@@ -12,6 +17,8 @@ export function drawTopBar(g, width) {
 export function drawPill(g, x, y, width, height, color, borderColor) {
   g.fillStyle(color, 1);
   g.fillRoundedRect(x, y, width, height, 16);
+  g.fillStyle(0xffffff, 0.45);
+  g.fillRoundedRect(x + 8, y + 4, width - 16, 5, 2.5);
   g.lineStyle(2, borderColor, 0.75);
   g.strokeRoundedRect(x, y, width, height, 16);
 }
@@ -61,8 +68,11 @@ export function drawXpBar(g, x, y, width, height, progress) {
   const clamped = Math.max(0, Math.min(1, progress));
   if (clamped > 0) {
     const fillWidth = Math.max(height, width * clamped);
-    g.fillStyle(0x4caf50, 1);
+    g.fillStyle(0x43a047, 1);
     g.fillRoundedRect(x, y, fillWidth, height, height / 2);
+    // Светлая полоска сверху даёт блик на заполнении.
+    g.fillStyle(0xa5d6a7, 0.85);
+    g.fillRoundedRect(x + 3, y + 2, Math.max(2, fillWidth - 6), height * 0.35, height * 0.17);
   }
 
   g.lineStyle(1.5, 0xa9c3d1, 0.85);

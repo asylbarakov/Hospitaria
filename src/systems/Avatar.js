@@ -29,6 +29,7 @@ export class Avatar {
     this.blinkTimer = 1800 + Math.random() * 3200;
     this.blinkDuration = 0;
     this.idleTime = 0;
+    this.legPhase = 0;
 
     this.layers = {};
     LAYER_NAMES.forEach((name) => {
@@ -48,6 +49,8 @@ export class Avatar {
   redraw() {
     drawAvatarLayers(this.layers, this.config);
     drawFacePose(this.layers.face, this.config, this.blinking);
+    // drawAvatarLayers рисует ноги в позе покоя.
+    this.legPhase = 0;
   }
 
   setBlink(value) {
@@ -87,12 +90,21 @@ export class Avatar {
   }
 
   setWalking(phase) {
-    drawLegPose(this.layers, this.config, phase);
+    // Поза ног перерисовывается только когда она реально изменилась.
+    const step = Math.round(phase * 8) / 8;
+    if (step !== this.legPhase) {
+      this.legPhase = step;
+      drawLegPose(this.layers, this.config, step);
+    }
     this.container.y = this.baseY - Math.abs(Math.sin(phase)) * 3;
   }
 
   stopWalking() {
-    drawLegPose(this.layers, this.config, 0);
+    // Стоящие аватары не перерисовываются каждый кадр.
+    if (this.legPhase !== 0) {
+      this.legPhase = 0;
+      drawLegPose(this.layers, this.config, 0);
+    }
     this.container.y = this.baseY;
   }
 

@@ -1,6 +1,7 @@
 import { findShopItem } from '../data/shopItems.js';
 import { ROOMS, FLOOR_Y } from '../data/rooms.js';
 import { drawFurniture } from './furniturePainter.js';
+import { bakeFurnitureItem } from './worldBaker.js';
 import { isItemUnlocked } from './Economy.js';
 
 export function ownsItem(scene, itemId) {
@@ -87,7 +88,7 @@ export function refreshFurniture(scene) {
   }
 
   if (scene.furnitureLayer) {
-    scene.furnitureLayer.destroy();
+    scene.furnitureLayer.destroy(true);
     scene.furnitureLayer = null;
   }
 
@@ -98,7 +99,8 @@ export function refreshFurniture(scene) {
     return;
   }
 
-  const g = scene.add.graphics().setDepth(1);
+  // Каждый купленный предмет запекается в маленькую текстуру: без перерисовки в кадре.
+  const layer = scene.add.container(0, 0).setDepth(1);
   ids.forEach((id) => {
     const item = findShopItem(id);
     const effect = item && item.effect;
@@ -109,10 +111,11 @@ export function refreshFurniture(scene) {
     if (!room) {
       return;
     }
-    drawFurniture(g, effect.type, room.x + effect.x, room.y + FLOOR_Y);
+    const paint = (g, x, y) => drawFurniture(g, effect.type, x, y);
+    layer.add(bakeFurnitureItem(scene, paint, room.x + effect.x, room.y + FLOOR_Y));
   });
 
-  scene.furnitureLayer = g;
+  scene.furnitureLayer = layer;
 }
 
 export default purchaseItem;
