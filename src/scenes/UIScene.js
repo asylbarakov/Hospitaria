@@ -148,6 +148,7 @@ export default class UIScene extends Phaser.Scene {
       onHelp: () => this.toggleHelp(),
       onShop: () => this.openShop(),
       onTasks: () => this.openTasks(),
+      onAchievements: () => this.openAchievements(),
     });
   }
 
@@ -273,6 +274,20 @@ export default class UIScene extends Phaser.Scene {
     }
     this.registry.set('uiModal', true);
     this.scene.launch('TasksScene');
+  }
+
+  openAchievements() {
+    if (
+      this.activeDialog
+      || this.helpRoot
+      || this.scene.isActive('AchievementsScene')
+      || this.scene.isActive('ShopScene')
+      || this.scene.isActive('TasksScene')
+    ) {
+      return;
+    }
+    this.registry.set('uiModal', true);
+    this.scene.launch('AchievementsScene');
   }
 
   toggleHelp() {

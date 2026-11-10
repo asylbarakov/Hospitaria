@@ -37,10 +37,11 @@ export function addSceneXp(scene, amount) {
 }
 
 export function showLevelUp(scene, level) {
+  const baseY = Number(scene.playerY) || scene.avatar.baseY;
   const text = scene.add
     .text(
       scene.playerX,
-      scene.avatar.baseY - 430,
+      baseY - 430,
       `Уровень ${level}! Пациентов: ${maxPatientsForLevel(level)}`,
       {
         fontFamily: FONT,
@@ -64,7 +65,7 @@ export function showLevelUp(scene, level) {
   });
 
   playLevelUp();
-  spawnRewardBurst(scene, scene.playerX, scene.avatar.baseY - 240, 22);
+  spawnRewardBurst(scene, scene.playerX, baseY - 240, 22);
 }
 
 export function persistSceneStats(scene) {

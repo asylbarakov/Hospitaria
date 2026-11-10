@@ -5,6 +5,7 @@ import { SHOP_TABS, getShopItems } from '../data/shopItems.js';
 import { ownsItem, isItemEquipped } from '../systems/ShopActions.js';
 import { playCoin, playError } from '../systems/Sound.js';
 import { spawnSparkle } from '../ui/particles.js';
+import { checkAchievements } from '../systems/Achievements.js';
 
 const W = 1280;
 const H = 720;
@@ -231,6 +232,9 @@ export default class ShopScene extends Phaser.Scene {
   }
 
   refreshAll() {
+    if (this.hospital) {
+      checkAchievements(this.hospital, this);
+    }
     this.refreshCoins();
     this.renderCards();
   }

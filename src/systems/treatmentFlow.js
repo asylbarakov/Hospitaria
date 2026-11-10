@@ -1,5 +1,6 @@
 import { MINIGAME_KEYS } from '../data/treatmentConfig.js';
 import { recordTreatment } from './DailyTasks.js';
+import { recordTreatmentStats, checkAchievements } from './Achievements.js';
 import { playCoin, playSuccess, playError } from './Sound.js';
 import { spawnRewardBurst } from '../ui/particles.js';
 
@@ -8,9 +9,15 @@ export function startMiniGame(scene, patient, forcedGameKey = null) {
     return;
   }
 
-  const gameKey = forcedGameKey && MINIGAME_KEYS.includes(forcedGameKey)
-    ? forcedGameKey
-    : MINIGAME_KEYS[scene.treatmentCount % MINIGAME_KEYS.length];
+  const diseaseGame = patient.disease && patient.disease.game;
+  let gameKey = MINIGAME_KEYS[scene.treatmentCount % MINIGAME_KEYS.length];
+
+  if (forcedGameKey && MINIGAME_KEYS.includes(forcedGameKey)) {
+    gameKey = forcedGameKey;
+  } else if (MINIGAME_KEYS.includes(diseaseGame)) {
+    gameKey = diseaseGame;
+  }
+
   scene.treatmentCount += 1;
 
   scene.targetX = scene.playerX;
@@ -46,12 +53,14 @@ export function finishMiniGame(scene, patient, result) {
   if (reward.reputation) {
     scene.changeReputation(reward.reputation);
     if (reward.reputation < 0 && scene.patients) {
-      scene.patients.showPenalty(patient.x, Math.abs(reward.reputation));
+      scene.patients.showPenalty(patient, Math.abs(reward.reputation));
     }
   }
 
   recordTreatment(scene.saveData, reward);
+  recordTreatmentStats(scene.saveData, patient && patient.disease, reward);
   scene.persistStats();
+  checkAchievements(scene);
 
   if (reward.coins > 0) {
     playCoin();
@@ -62,7 +71,7 @@ export function finishMiniGame(scene, patient, result) {
     playError();
   }
   if (reward.stars > 0 && patient) {
-    spawnRewardBurst(scene, patient.x, patient.avatar.baseY - 220, 18);
+    spawnRewardBurst(scene, patient.x, patient.baseY - 220, 18);
   }
 
   if (scene.patients) {

@@ -3,6 +3,9 @@ import { createExam } from '../minigames/exam.js';
 import { createThermometer } from '../minigames/thermometer.js';
 import { createMedicine } from '../minigames/medicine.js';
 import { createInjection } from '../minigames/injection.js';
+import { createBreath } from '../minigames/breath.js';
+import { createDrops } from '../minigames/drops.js';
+import { createCompress } from '../minigames/compress.js';
 import {
   MG_FONT,
   drawMiniGameBackground,
@@ -17,6 +20,9 @@ const GAME_TITLES = {
   thermometer: 'Градусник',
   medicine: 'Подбор лекарства',
   injection: 'Укол / капельница',
+  breath: 'Дыхание',
+  drops: 'Капли',
+  compress: 'Компресс',
 };
 
 const GAME_FACTORIES = {
@@ -24,6 +30,9 @@ const GAME_FACTORIES = {
   thermometer: createThermometer,
   medicine: createMedicine,
   injection: createInjection,
+  breath: createBreath,
+  drops: createDrops,
+  compress: createCompress,
 };
 
 export default class MiniGameScene extends Phaser.Scene {
@@ -178,6 +187,9 @@ export default class MiniGameScene extends Phaser.Scene {
     this.time.removeAllEvents();
     if (this.skipButton) {
       this.skipButton.setVisible(false);
+    }
+    if (this.currentGame && this.currentGame.destroy) {
+      this.currentGame.destroy();
     }
     if (this.gameRoot) {
       this.gameRoot.destroy(true);

@@ -35,5 +35,8 @@ export const PATIENT_CONFIG = {
     doctor: 1040,
     procedure: 1430,
     ward: 2000,
+    lab: 400,
+    pharmacy: 1040,
+    rest: 1680,
   },
 };

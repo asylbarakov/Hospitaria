@@ -109,7 +109,7 @@ export function refreshFurniture(scene) {
     if (!room) {
       return;
     }
-    drawFurniture(g, effect.type, room.x + effect.x, FLOOR_Y);
+    drawFurniture(g, effect.type, room.x + effect.x, room.y + FLOOR_Y);
   });
 
   scene.furnitureLayer = g;

@@ -6,6 +6,7 @@ import { PatientManager } from '../systems/Patients.js';
 import { startMiniGame } from '../systems/treatmentFlow.js';
 import { ensureSaveData, maxPatientsForLevel } from '../systems/Economy.js';
 import { ensureDailyTasks } from '../systems/DailyTasks.js';
+import { ensureAchievements } from '../systems/Achievements.js';
 import {
   addSceneCoins,
   addSceneXp,
@@ -16,12 +17,20 @@ import {
   claimDailyReward,
 } from '../systems/playerActions.js';
 import {
-  ROOMS,
-  ROOM_WIDTH,
-  VIEW_HEIGHT,
   WORLD_WIDTH,
+  WORLD_HEIGHT,
   FLOOR_Y,
+  FLOOR_HEIGHT,
+  LIFT_X,
 } from '../data/rooms.js';
+import { createRoomActionZones } from '../systems/floorActions.js';
+import { createPlayerControls, spawnPlayerRipple } from '../systems/playerControls.js';
+import {
+  syncRoomTitle,
+  movePlayerTo,
+  requestPlayerFloor,
+  performFloorChange,
+} from '../systems/playerFloorTravel.js';
 
 const FONT = 'Arial, "Segoe UI", sans-serif';
 const START_X = 400;
@@ -38,13 +47,20 @@ export default class HospitalScene extends Phaser.Scene {
   create() {
     this.saveData = ensureSaveData(Save.load());
     ensureDailyTasks(this.saveData);
+    ensureAchievements(this.saveData);
     const player = this.saveData && this.saveData.player ? this.saveData.player : null;
     this.playerName = player && player.name ? player.name : 'Игрок';
 
     this.playerX = START_X;
+    this.playerY = FLOOR_Y;
+    this.playerFloor = 1;
     this.targetX = START_X;
+    this.destinationX = START_X;
+    this.targetFloor = 1;
+    this.movingFloor = false;
     this.walkPhase = 0;
     this.patientClickGuard = false;
+    this.objectClickGuard = false;
     this.treatmentCount = 0;
 
     this.world = createHospitalWorld(this);
@@ -56,6 +72,7 @@ export default class HospitalScene extends Phaser.Scene {
     this.initHud(player);
     this.updateRoomTitle();
     this.patients = new PatientManager(this);
+    createRoomActionZones(this);
 
     if (!this.scene.isActive('UIScene')) {
       this.scene.launch('UIScene');
@@ -67,11 +84,11 @@ export default class HospitalScene extends Phaser.Scene {
   createPlayer(player) {
     const config = normalizeAvatar(player || DEFAULT_AVATAR);
 
-    this.avatar = new Avatar(this, START_X, FLOOR_Y, config, { scale: 1.15 });
+    this.avatar = new Avatar(this, START_X, this.playerY, config, { scale: 1.15 });
     this.avatar.container.setDepth(10);
 
     this.nameText = this.add
-      .text(START_X, FLOOR_Y + NAME_OFFSET_Y, this.playerName, {
+      .text(START_X, this.playerY + NAME_OFFSET_Y, this.playerName, {
         fontFamily: FONT,
         fontSize: '24px',
         fontStyle: 'bold',
@@ -85,8 +102,8 @@ export default class HospitalScene extends Phaser.Scene {
 
   createCamera() {
     const camera = this.cameras.main;
-    camera.setBounds(0, 0, WORLD_WIDTH, VIEW_HEIGHT);
-    camera.startFollow(this.avatar.container, true, 0.09, 0.09);
+    camera.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+    camera.setScroll(0, 0);
   }
 
   initHud(player) {
@@ -102,24 +119,23 @@ export default class HospitalScene extends Phaser.Scene {
   }
 
   updateRoomTitle() {
-    const index = Phaser.Math.Clamp(
-      Math.floor(this.playerX / ROOM_WIDTH),
-      0,
-      ROOMS.length - 1,
-    );
-    const title = ROOMS[index].title;
-
-    if (title !== this.currentRoom) {
-      this.currentRoom = title;
-      this.registry.set('currentRoom', title);
-    }
+    syncRoomTitle(this);
   }
 
-  walkPlayerTo(x) {
-    this.targetX = Phaser.Math.Clamp(x, MIN_X, MAX_X);
+  walkPlayerTo(x, floor = this.playerFloor) {
+    movePlayerTo(this, x, floor);
+  }
+
+  requestFloor(floor) {
+    requestPlayerFloor(this, floor);
+  }
+
+  changeFloor(floor) {
+    performFloorChange(this, floor);
   }
 
   showPatientDialog(patient) {
+    this.movingFloor = false;
     this.targetX = this.playerX;
     this.avatar.stopWalking();
     this.avatar.setFacing(patient.x < this.playerX ? -1 : 1);
@@ -184,6 +200,7 @@ export default class HospitalScene extends Phaser.Scene {
     }
 
     this.targetX = this.playerX;
+    this.movingFloor = false;
     this.avatar.stopWalking();
     this.registry.set('uiModal', true);
     this.scene.launch('PauseScene');
@@ -201,66 +218,11 @@ export default class HospitalScene extends Phaser.Scene {
   }
 
   createControls() {
-    this.cursors = this.input.keyboard.createCursorKeys();
-    this.extraKeys = this.input.keyboard.addKeys({
-      left: Phaser.Input.Keyboard.KeyCodes.A,
-      right: Phaser.Input.Keyboard.KeyCodes.D,
-    });
-
-    this.input.on('pointerdown', (pointer) => {
-      const patientClicked = this.patientClickGuard;
-      this.patientClickGuard = false;
-
-      if (patientClicked) {
-        return;
-      }
-
-      if (this.registry.get('uiModal')) {
-        return;
-      }
-
-      // Клики по кнопкам и окнам интерфейса не должны двигать персонажа.
-      const ui = this.scene.get('UIScene');
-      if (ui && ui.input && ui.input.hitTestPointer(pointer).length > 0) {
-        return;
-      }
-
-      // Работаем только с кликами по полу, а не по верхнему интерфейсу.
-      if (pointer.worldY < FLOOR_Y - 40) {
-        return;
-      }
-
-      const targetX = Phaser.Math.Clamp(pointer.worldX, MIN_X, MAX_X);
-      this.targetX = targetX;
-      this.spawnRipple(targetX);
-    });
-
-    this.input.keyboard.on('keydown-ESC', () => {
-      if (this.registry.get('uiModal')) {
-        const ui = this.scene.get('UIScene');
-        if (ui && ui.closeModal) {
-          ui.closeModal();
-        }
-        return;
-      }
-      this.openPauseMenu();
-    });
+    createPlayerControls(this);
   }
 
-  spawnRipple(x) {
-    const ripple = this.add
-      .ellipse(x, FLOOR_Y - 6, 38, 16, 0x3f8fb0, 0.4)
-      .setDepth(9);
-
-    this.tweens.add({
-      targets: ripple,
-      scaleX: 1.9,
-      scaleY: 1.9,
-      alpha: 0,
-      duration: 430,
-      ease: 'Quad.easeOut',
-      onComplete: () => ripple.destroy(),
-    });
+  spawnRipple(x, baseY = FLOOR_Y) {
+    spawnPlayerRipple(this, x, baseY);
   }
 
   update(time, delta) {
@@ -283,7 +245,13 @@ export default class HospitalScene extends Phaser.Scene {
     let moving = false;
 
     if (leftDown !== rightDown) {
-      // Стрелки и A/D двигают персонажа напрямую.
+      // Стрелки и A/D двигают персонажа напрямую и отменяют путь к лифту.
+      if (this.movingFloor) {
+        this.movingFloor = false;
+        this.targetFloor = this.playerFloor;
+        this.destinationX = this.playerX;
+      }
+
       direction = leftDown ? -1 : 1;
       this.playerX = Phaser.Math.Clamp(
         this.playerX + direction * step,
@@ -291,6 +259,7 @@ export default class HospitalScene extends Phaser.Scene {
         MAX_X,
       );
       this.targetX = this.playerX;
+      this.destinationX = this.playerX;
       moving = true;
     } else {
       const dx = this.targetX - this.playerX;
@@ -303,12 +272,22 @@ export default class HospitalScene extends Phaser.Scene {
       }
     }
 
+    if (
+      this.movingFloor
+      && !this.floorTransition
+      && Math.abs(this.playerX - LIFT_X) <= 2
+    ) {
+      this.playerX = LIFT_X;
+      this.targetX = LIFT_X;
+      this.changeFloor(this.targetFloor);
+    }
+
     if (moving) {
       this.avatar.setFacing(direction);
       this.walkPhase += delta * 0.016;
     }
 
-    this.avatar.setPosition(this.playerX, FLOOR_Y);
+    this.avatar.setPosition(this.playerX, this.playerY);
     this.avatar.updateIdle(delta);
     if (moving) {
       this.avatar.setWalking(this.walkPhase);
@@ -317,7 +296,17 @@ export default class HospitalScene extends Phaser.Scene {
     }
 
     this.nameText.setX(this.playerX);
+    this.nameText.setY(this.playerY + NAME_OFFSET_Y);
     this.updateRoomTitle();
+
+    const camera = this.cameras.main;
+    const targetScrollX = Phaser.Math.Clamp(
+      this.playerX - camera.width / 2,
+      0,
+      WORLD_WIDTH - camera.width,
+    );
+    camera.scrollX += (targetScrollX - camera.scrollX) * 0.12;
+    camera.scrollY = (this.playerFloor - 1) * FLOOR_HEIGHT;
 
     if (this.patients) {
       this.patients.update(delta);

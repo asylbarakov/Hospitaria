@@ -8,6 +8,7 @@ import {
 } from '../systems/DailyTasks.js';
 import { playCoin, playError } from '../systems/Sound.js';
 import { spawnRewardBurst } from '../ui/particles.js';
+import { checkAchievements } from '../systems/Achievements.js';
 
 const W = 1280;
 const H = 720;
@@ -246,6 +247,7 @@ export default class TasksScene extends Phaser.Scene {
       spawnRewardBurst(this, 640, 300, 14);
       this.statusText.setText(`Задание выполнено: +${reward} монет`);
       this.statusText.setColor('#2e7d32');
+      checkAchievements(this.hospital, this);
       this.buildTasks();
     } else {
       playError();

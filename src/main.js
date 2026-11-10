@@ -8,6 +8,7 @@ import ShopScene from './scenes/ShopScene.js';
 import TasksScene from './scenes/TasksScene.js';
 import PauseScene from './scenes/PauseScene.js';
 import DisclaimerScene from './scenes/DisclaimerScene.js';
+import AchievementsScene from './scenes/AchievementsScene.js';
 
 const config = {
   type: Phaser.AUTO,
@@ -30,6 +31,7 @@ const config = {
     TasksScene,
     PauseScene,
     DisclaimerScene,
+    AchievementsScene,
   ],
 };
 

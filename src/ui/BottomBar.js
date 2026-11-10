@@ -35,6 +35,15 @@ export function createBottomBar(scene, callbacks = {}) {
     depth: 3,
   });
 
+  createButton(scene, 1080, 688, 'Успехи', callbacks.onAchievements, {
+    width: 170,
+    height: 48,
+    fontSize: 19,
+    color: 0x8d7bb5,
+    hoverColor: 0xa291c6,
+    depth: 3,
+  });
+
   createButton(scene, 1234, 688, '?', callbacks.onHelp, {
     width: 52,
     height: 52,

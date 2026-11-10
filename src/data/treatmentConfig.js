@@ -1,4 +1,12 @@
-export const MINIGAME_KEYS = ['exam', 'thermometer', 'medicine', 'injection'];
+export const MINIGAME_KEYS = [
+  'exam',
+  'thermometer',
+  'medicine',
+  'injection',
+  'breath',
+  'drops',
+  'compress',
+];
 
 export const MINIGAME_TIME_LIMIT = 25000;
 
