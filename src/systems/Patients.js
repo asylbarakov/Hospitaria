@@ -9,6 +9,7 @@ import {
   BAR_OFFSET_Y,
 } from './patientDrawing.js';
 import { FLOOR_Y, ROOMS } from '../data/rooms.js';
+import { playError } from './Sound.js';
 import {
   PATIENT_ROLE,
   PATIENT_CLOTHES,
@@ -56,6 +57,7 @@ export class Patient {
     this.patienceMax = randomBetween(PATIENT_CONFIG.patienceMin, PATIENT_CONFIG.patienceMax);
     this.patience = this.patienceMax;
     this.walkPhase = 0;
+    this.idleTime = Math.random() * 2000;
     this.needsDialog = false;
 
     this.avatar = new Avatar(scene, this.x, FLOOR_Y, createPatientLook(), { scale: 1 });
@@ -116,9 +118,12 @@ export class Patient {
   }
 
   update(delta) {
+    this.avatar.updateIdle(delta);
+
     if (this.state === 'leaving') {
       this.moveTowardsTarget(delta);
       this.syncVisuals();
+      this.applyIdleSway(delta, false);
       return;
     }
 
@@ -134,12 +139,24 @@ export class Patient {
 
     this.moveTowardsTarget(delta);
     this.syncVisuals();
+    this.applyIdleSway(delta, this.state === 'waiting' || this.state === 'atRoom');
 
     if (this.state === 'atRoom') {
       this.avatar.stopWalking();
       this.avatar.setFacing(this.scene.playerX < this.x ? -1 : 1);
       this.tryOpenDialog();
     }
+  }
+
+  applyIdleSway(delta, idle) {
+    if (!idle) {
+      this.avatar.container.setAngle(0);
+      return;
+    }
+
+    this.idleTime += delta;
+    const angle = Math.sin(this.idleTime * 0.0022) * 1.5;
+    this.avatar.container.setAngle(angle);
   }
 
   moveTowardsTarget(delta) {
@@ -271,6 +288,7 @@ export class PatientManager {
     this.releaseSpot(patient);
     patient.leave();
 
+    playError();
     const penalty = PATIENT_CONFIG.leaveReputationPenalty;
     this.scene.changeReputation(-penalty);
     this.showPenalty(patient.x, penalty);

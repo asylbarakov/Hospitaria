@@ -3,6 +3,8 @@ import { createShopCard } from '../ui/ShopCard.js';
 import { HUD_FONT, drawCoinIcon } from '../ui/hudDrawing.js';
 import { SHOP_TABS, getShopItems } from '../data/shopItems.js';
 import { ownsItem, isItemEquipped } from '../systems/ShopActions.js';
+import { playCoin, playError } from '../systems/Sound.js';
+import { spawnSparkle } from '../ui/particles.js';
 
 const W = 1280;
 const H = 720;
@@ -195,6 +197,7 @@ export default class ShopScene extends Phaser.Scene {
 
     const level = Number(this.registry.get('level')) || 1;
     if (level < item.level) {
+      playError();
       this.showStatus(`Откроется на уровне ${item.level}`, '#c62828');
       return;
     }
@@ -213,6 +216,7 @@ export default class ShopScene extends Phaser.Scene {
       : { ok: false, reason: 'error' };
 
     if (!result.ok) {
+      playError();
       const message = result.reason === 'coins'
         ? 'Недостаточно монет'
         : 'Покупка недоступна';
@@ -220,6 +224,8 @@ export default class ShopScene extends Phaser.Scene {
       return;
     }
 
+    playCoin();
+    spawnSparkle(this, this.input.activePointer.x, this.input.activePointer.y);
     this.showStatus(`Куплено: ${item.name}`, '#2e7d32');
     this.refreshAll();
   }

@@ -198,22 +198,33 @@ function drawHead(g, skin) {
   g.fillCircle(47, -208, 5);
 }
 
-function drawFace(g, config, skin) {
+function drawFace(g, config, skin, blink = false) {
   const hair = HAIR_COLORS[config.hairColor].color;
 
   g.lineStyle(4, shade(hair, 0.9), 0.9);
   g.lineBetween(-29, -235, -8, -238);
   g.lineBetween(8, -238, 29, -235);
 
-  g.fillStyle(0xffffff, 1);
-  g.fillEllipse(-17, -219, 14, 16);
-  g.fillEllipse(17, -219, 14, 16);
-  g.fillStyle(0x2f2a28, 1);
-  g.fillCircle(-16, -219, 5);
-  g.fillCircle(18, -219, 5);
-  g.fillStyle(0xffffff, 0.9);
-  g.fillCircle(-18, -221, 1.8);
-  g.fillCircle(16, -221, 1.8);
+  if (blink) {
+    // Закрытые глаза: короткие дуги вместо зрачков.
+    g.lineStyle(4, 0x2f2a28, 1);
+    g.beginPath();
+    g.arc(-17, -221, 9, 0.15 * Math.PI, 0.85 * Math.PI, false);
+    g.strokePath();
+    g.beginPath();
+    g.arc(17, -221, 9, 0.15 * Math.PI, 0.85 * Math.PI, false);
+    g.strokePath();
+  } else {
+    g.fillStyle(0xffffff, 1);
+    g.fillEllipse(-17, -219, 14, 16);
+    g.fillEllipse(17, -219, 14, 16);
+    g.fillStyle(0x2f2a28, 1);
+    g.fillCircle(-16, -219, 5);
+    g.fillCircle(18, -219, 5);
+    g.fillStyle(0xffffff, 0.9);
+    g.fillCircle(-18, -221, 1.8);
+    g.fillCircle(16, -221, 1.8);
+  }
 
   g.lineStyle(3, shade(skin, 0.72), 0.65);
   g.lineBetween(1, -214, 1, -205);
@@ -227,6 +238,12 @@ function drawFace(g, config, skin) {
   g.fillStyle(0xf48fb1, 0.35);
   g.fillCircle(-31, -201, 7);
   g.fillCircle(31, -201, 7);
+}
+
+export function drawFacePose(layer, config, blink = false) {
+  const skin = SKIN_COLORS[config.skin].color;
+  layer.clear();
+  drawFace(layer, config, skin, blink);
 }
 
 function drawHairFront(g, config, hair) {

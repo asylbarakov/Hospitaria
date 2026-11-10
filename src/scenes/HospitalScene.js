@@ -178,6 +178,21 @@ export default class HospitalScene extends Phaser.Scene {
     this.scene.start('MenuScene');
   }
 
+  openPauseMenu() {
+    if (this.scene.isActive('PauseScene')) {
+      return;
+    }
+
+    this.targetX = this.playerX;
+    this.avatar.stopWalking();
+    this.registry.set('uiModal', true);
+    this.scene.launch('PauseScene');
+    if (this.scene.isActive('UIScene')) {
+      this.scene.pause('UIScene');
+    }
+    this.scene.pause('HospitalScene');
+  }
+
   handleShutdown() {
     this.registry.set('uiModal', false);
     if (this.scene.isActive('UIScene')) {
@@ -228,7 +243,7 @@ export default class HospitalScene extends Phaser.Scene {
         }
         return;
       }
-      this.leaveToMenu();
+      this.openPauseMenu();
     });
   }
 
@@ -294,6 +309,7 @@ export default class HospitalScene extends Phaser.Scene {
     }
 
     this.avatar.setPosition(this.playerX, FLOOR_Y);
+    this.avatar.updateIdle(delta);
     if (moving) {
       this.avatar.setWalking(this.walkPhase);
     } else {

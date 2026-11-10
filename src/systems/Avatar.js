@@ -1,5 +1,5 @@
 import { normalizeAvatar } from '../data/avatarOptions.js';
-import { drawAvatarLayers, drawLegPose } from './avatarDrawing.js';
+import { drawAvatarLayers, drawLegPose, drawFacePose } from './avatarDrawing.js';
 
 const LAYER_NAMES = [
   'shadow',
@@ -25,6 +25,10 @@ export class Avatar {
     this.scaleValue = scale;
     this.baseY = y;
     this.facing = 1;
+    this.blinking = false;
+    this.blinkTimer = 1800 + Math.random() * 3200;
+    this.blinkDuration = 0;
+    this.idleTime = 0;
 
     this.layers = {};
     LAYER_NAMES.forEach((name) => {
@@ -43,6 +47,35 @@ export class Avatar {
 
   redraw() {
     drawAvatarLayers(this.layers, this.config);
+    drawFacePose(this.layers.face, this.config, this.blinking);
+  }
+
+  setBlink(value) {
+    const next = !!value;
+    if (this.blinking === next) {
+      return;
+    }
+    this.blinking = next;
+    drawFacePose(this.layers.face, this.config, next);
+  }
+
+  updateIdle(delta) {
+    this.idleTime += delta;
+
+    if (this.blinking) {
+      this.blinkDuration -= delta;
+      if (this.blinkDuration <= 0) {
+        this.setBlink(false);
+      }
+      return;
+    }
+
+    this.blinkTimer -= delta;
+    if (this.blinkTimer <= 0) {
+      this.setBlink(true);
+      this.blinkDuration = 120;
+      this.blinkTimer = 1800 + Math.random() * 3400;
+    }
   }
 
   setFacing(direction) {

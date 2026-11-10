@@ -252,7 +252,9 @@ export default class UIScene extends Phaser.Scene {
 
   openMenu() {
     const hospital = this.scene.get('HospitalScene');
-    if (hospital && hospital.leaveToMenu) {
+    if (hospital && hospital.openPauseMenu) {
+      hospital.openPauseMenu();
+    } else if (hospital && hospital.leaveToMenu) {
       hospital.leaveToMenu();
     }
   }

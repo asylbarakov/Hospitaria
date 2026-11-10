@@ -66,12 +66,3 @@ export function drawStarShape(g, cx, cy, radius, color, alpha = 1) {
   g.lineStyle(3, 0xffffff, 0.7);
   g.strokePath();
 }
-
-export function drawInfoCard(g, x, y, width, height, color = 0xffffff) {
-  g.fillStyle(0x0b1e28, 0.12);
-  g.fillRoundedRect(x + 5, y + 7, width, height, 18);
-  g.fillStyle(color, 1);
-  g.fillRoundedRect(x, y, width, height, 18);
-  g.lineStyle(3, 0x9fc3d1, 0.8);
-  g.strokeRoundedRect(x, y, width, height, 18);
-}

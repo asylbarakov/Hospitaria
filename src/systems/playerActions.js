@@ -1,6 +1,8 @@
 import Save from './Save.js';
 import { addExperience, maxPatientsForLevel } from './Economy.js';
 import { claimTask } from './DailyTasks.js';
+import { playLevelUp } from './Sound.js';
+import { spawnRewardBurst } from '../ui/particles.js';
 import {
   purchaseItem,
   equipItem,
@@ -60,6 +62,9 @@ export function showLevelUp(scene, level) {
     ease: 'Quad.easeOut',
     onComplete: () => text.destroy(),
   });
+
+  playLevelUp();
+  spawnRewardBurst(scene, scene.playerX, scene.avatar.baseY - 240, 22);
 }
 
 export function persistSceneStats(scene) {

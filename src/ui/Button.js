@@ -1,3 +1,5 @@
+import { playClick } from '../systems/Sound.js';
+
 /**
  * Универсальная кнопка: скруглённый прямоугольник + подпись.
  * Возвращает Phaser.Container, который можно ставить на сцену и анимировать.
@@ -64,6 +66,7 @@ export function createButton(scene, x, y, label, onClick, options = {}) {
   zone.on('pointerdown', () => container.setScale(0.96));
   zone.on('pointerup', () => {
     container.setScale(1);
+    playClick();
     onClick();
   });
 

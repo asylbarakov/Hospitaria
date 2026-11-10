@@ -1,5 +1,7 @@
 import { MINIGAME_KEYS } from '../data/treatmentConfig.js';
 import { recordTreatment } from './DailyTasks.js';
+import { playCoin, playSuccess, playError } from './Sound.js';
+import { spawnRewardBurst } from '../ui/particles.js';
 
 export function startMiniGame(scene, patient, forcedGameKey = null) {
   if (!patient) {
@@ -50,6 +52,18 @@ export function finishMiniGame(scene, patient, result) {
 
   recordTreatment(scene.saveData, reward);
   scene.persistStats();
+
+  if (reward.coins > 0) {
+    playCoin();
+  }
+  if (reward.stars >= 2) {
+    playSuccess();
+  } else if (reward.stars <= 0) {
+    playError();
+  }
+  if (reward.stars > 0 && patient) {
+    spawnRewardBurst(scene, patient.x, patient.avatar.baseY - 220, 18);
+  }
 
   if (scene.patients) {
     scene.patients.dismissPatient(patient);

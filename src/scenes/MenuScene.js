@@ -14,6 +14,7 @@ export default class MenuScene extends Phaser.Scene {
     this.drawHospital();
     this.drawTitle();
     this.drawButtons();
+    this.drawFooter();
   }
 
   drawSky() {
@@ -184,6 +185,33 @@ export default class MenuScene extends Phaser.Scene {
       furniture: [],
     });
     this.scene.start('CreatorScene');
+  }
+
+  drawFooter() {
+    this.add
+      .text(520, 690, 'Игра для развлечения, не медицинский совет', {
+        fontFamily: 'Arial, "Segoe UI", sans-serif',
+        fontSize: '18px',
+        color: '#3d6b45',
+        stroke: '#ffffff',
+        strokeThickness: 3,
+      })
+      .setOrigin(0.5)
+      .setDepth(10);
+
+    createButton(this, 1120, 688, 'Об игре', () => this.openDisclaimer(), {
+      width: 200,
+      height: 48,
+      fontSize: 19,
+      color: 0x5b7f8c,
+      hoverColor: 0x729aa8,
+      depth: 10,
+    });
+  }
+
+  openDisclaimer() {
+    this.scene.launch('DisclaimerScene', { from: 'MenuScene' });
+    this.scene.pause();
   }
 
   continueGame() {

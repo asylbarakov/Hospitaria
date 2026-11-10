@@ -46,15 +46,6 @@ export function addExperience(state, amount) {
   return { xp, level, levelsGained };
 }
 
-export function addCoins(state, amount) {
-  return Math.max(0, Math.round(Number(state.coins) || 0))
-    + Math.max(0, Math.round(Number(amount) || 0));
-}
-
-export function canAfford(state, price) {
-  return (Number(state.coins) || 0) >= Math.max(0, Math.round(Number(price) || 0));
-}
-
 export function isItemUnlocked(item, level) {
   return !!item && (Number(item.level) || 1) <= (Number(level) || 1);
 }

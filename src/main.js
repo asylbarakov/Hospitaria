@@ -6,6 +6,8 @@ import UIScene from './scenes/UIScene.js';
 import MiniGameScene from './scenes/MiniGameScene.js';
 import ShopScene from './scenes/ShopScene.js';
 import TasksScene from './scenes/TasksScene.js';
+import PauseScene from './scenes/PauseScene.js';
+import DisclaimerScene from './scenes/DisclaimerScene.js';
 
 const config = {
   type: Phaser.AUTO,
@@ -26,6 +28,8 @@ const config = {
     MiniGameScene,
     ShopScene,
     TasksScene,
+    PauseScene,
+    DisclaimerScene,
   ],
 };
 
