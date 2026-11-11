@@ -13,8 +13,8 @@
 | Высота персонажа | около 100-110 px в игре (чуть меньше стены) |
 | Точка опоры (anchor) | низ-центр ромба-основания предмета: `(0.5, y_нижней_вершины / высота)`, записывается в `assets/manifest.md` |
 | Свет | сверху-слева, тени падают вправо-вниз, мягкие, прозрачность 20-25% |
-| Обводка | тонкая (1-2 px) тёмная версия цвета предмета, без чёрного контура |
-| Фон | цельный **ярко-зелёный #00FF00** (вырезается), а не «прозрачный»: ИИ часто рисует шахматку вместо прозрачности |
+| Стиль | **глянцевый мягкий 3D («clay», как иконки в мобильных играх)**, эталон: кровать из этапа 9, скруглённые формы, перламутрово-белый + мятно-бирюзовый, без контурной обводки |
+| Фон | параметр `background: transparent` у `gpt_image_2_6`; если фон не прозрачный, запасной путь: цельный **ярко-зелёный #00FF00** + `tools/prepare_assets.py` (на белом фоне автовырезание не работает: белые простыни сливаются с фоном) |
 
 ## 2. Палитра
 
@@ -46,14 +46,16 @@
 ## 4. Общий префикс промпта (вставлять в начало каждого запроса)
 
 ```
-Isometric 2:1 dimetric game asset, cute cartoon style, soft rounded shapes,
-thin darker outline (not black), flat soft shading, light from top-left,
-clean pastel palette (white, soft teal #3F8FB0, mint, warm yellow, light wood),
-single object centered, full object visible with margin, solid bright green
-#00FF00 background, no text, no watermark, no cast shadow on the background.
+Isometric 2:1 dimetric game asset in glossy soft 3D clay style, like a premium
+mobile game icon: smooth rounded shapes, pearly white and soft mint-teal
+materials, gentle top-left lighting, tiny soft contact shadow under the object
+only, single object centered with a small margin, fully visible, no text,
+no watermark. Object: ...
 ```
 
-Негатив / «не надо»: realistic photo, 3D render, harsh black outlines, perspective view, side view, top-down view, cropped object, checkerboard background.
+Параметры генерации: `model: gpt_image_2_6`, `aspect_ratio: 1:1`, `resolution: 1k` (для крупных предметов 2k), `quality: medium`, `background: transparent`.
+
+Не надо: realistic photo, harsh black outlines, perspective view, side view, top-down view, cropped object, checkerboard background.
 
 ## 5. Как держать единый стиль
 
@@ -71,7 +73,7 @@ single object centered, full object visible with margin, solid bright green
 
 | Задача | Модель | Почему |
 |---|---|---|
-| Мебель, комнаты, декор, иконки, UI | `gpt_image_2` (помечена unlim) | хорошо держит инструкции и текст; **проверьте в интерфейсе**, не списывает ли она кредиты на вашем тарифе |
+| Мебель, комнаты, декор, иконки, UI | `gpt_image_2_6` | поддерживает `background: transparent`. Цена 0,25 кредита за картинку (1k, low/medium). **Безлимитная квота** (free-trial unlim) покрывает 1k/2k и low/medium **до 14.11.2026 ~06:56 UTC**, принимает **по одной генерации за раз** (параллельные запросы отклоняются с 429) |
 | Эскизы персонажей | `soul_2` (unlim) или `gpt_image_2` | персонаж в нейтральной позе T/A для анимации |
 | Спрайт-листы персонажей | `autosprite` (AutoSprite Animation) | делает изометрические листы по одной картинке: пресеты `iso_idle_*`, `iso_walk_*` |
 | 3D-модели (не нужны) | `image_to_3d` и др. | в плане не используются |
