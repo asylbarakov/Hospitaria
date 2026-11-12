@@ -1,0 +1,212 @@
+{
+ "cafe_table": {
+  "anchorY": 0.979,
+  "h": 194,
+  "w": 230
+ },
+ "cash_desk": {
+  "anchorY": 0.973,
+  "h": 261,
+  "w": 384
+ },
+ "doctor_chair": {
+  "anchorY": 0.99,
+  "h": 288,
+  "w": 170
+ },
+ "doctor_chair_2": {
+  "anchorY": 0.977,
+  "h": 264,
+  "w": 170
+ },
+ "doctor_desk": {
+  "anchorY": 0.984,
+  "h": 368,
+  "w": 384
+ },
+ "doctor_table": {
+  "anchorY": 0.968,
+  "h": 345,
+  "w": 512
+ },
+ "exam_couch": {
+  "anchorY": 0.976,
+  "h": 369,
+  "w": 384
+ },
+ "floor_clinic": {
+  "anchorY": 1.0,
+  "h": 128,
+  "w": 256
+ },
+ "floor_hall": {
+  "anchorY": 1.0,
+  "h": 128,
+  "w": 256
+ },
+ "floor_lab": {
+  "anchorY": 1.0,
+  "h": 128,
+  "w": 256
+ },
+ "hall_sofa": {
+  "anchorY": 0.97,
+  "h": 305,
+  "w": 384
+ },
+ "iv_chair": {
+  "anchorY": 0.981,
+  "h": 260,
+  "w": 230
+ },
+ "iv_stand": {
+  "anchorY": 0.984,
+  "h": 307,
+  "w": 130
+ },
+ "microscope_table": {
+  "anchorY": 0.969,
+  "h": 318,
+  "w": 384
+ },
+ "patient_01": {
+  "anchorY": 0.996,
+  "h": 224,
+  "w": 90
+ },
+ "patient_02": {
+  "anchorY": 0.996,
+  "h": 224,
+  "w": 107
+ },
+ "patient_03": {
+  "anchorY": 0.996,
+  "h": 224,
+  "w": 114
+ },
+ "patient_04": {
+  "anchorY": 0.996,
+  "h": 224,
+  "w": 107
+ },
+ "patient_05": {
+  "anchorY": 0.996,
+  "h": 224,
+  "w": 92
+ },
+ "patient_06": {
+  "anchorY": 0.996,
+  "h": 224,
+  "w": 110
+ },
+ "patient_07": {
+  "anchorY": 0.996,
+  "h": 224,
+  "w": 152
+ },
+ "patient_08": {
+  "anchorY": 0.996,
+  "h": 224,
+  "w": 118
+ },
+ "pharmacy_counter": {
+  "anchorY": 0.971,
+  "h": 347,
+  "w": 512
+ },
+ "pharmacy_shelf": {
+  "anchorY": 0.978,
+  "h": 358,
+  "w": 384
+ },
+ "plant_big": {
+  "anchorY": 0.972,
+  "h": 246,
+  "w": 190
+ },
+ "reception_desk": {
+  "anchorY": 0.963,
+  "h": 349,
+  "w": 512
+ },
+ "sample_table": {
+  "anchorY": 0.983,
+  "h": 295,
+  "w": 384
+ },
+ "staff_doctor": {
+  "anchorY": 0.996,
+  "h": 224,
+  "w": 95
+ },
+ "ultrasound_machine": {
+  "anchorY": 0.983,
+  "h": 296,
+  "w": 190
+ },
+ "vending_machine": {
+  "anchorY": 0.98,
+  "h": 253,
+  "w": 190
+ },
+ "waiting_chair": {
+  "anchorY": 0.991,
+  "h": 224,
+  "w": 170
+ },
+ "waiting_sofa": {
+  "anchorY": 0.975,
+  "h": 279,
+  "w": 384
+ },
+ "wall_corner": {
+  "anchorY": 0.979,
+  "h": 384,
+  "w": 366
+ },
+ "wall_door_left": {
+  "anchorY": 0.982,
+  "h": 384,
+  "w": 381
+ },
+ "wall_door_right": {
+  "anchorY": 0.982,
+  "h": 384,
+  "w": 381
+ },
+ "wall_left": {
+  "anchorY": 0.995,
+  "h": 384,
+  "w": 308
+ },
+ "wall_right": {
+  "anchorY": 0.995,
+  "h": 384,
+  "w": 308
+ },
+ "wall_window_left": {
+  "anchorY": 1.0,
+  "h": 384,
+  "w": 332
+ },
+ "wall_window_right": {
+  "anchorY": 1.0,
+  "h": 384,
+  "w": 332
+ },
+ "ward_bed": {
+  "anchorY": 0.994,
+  "h": 362,
+  "w": 384
+ },
+ "water_cooler": {
+  "anchorY": 0.979,
+  "h": 286,
+  "w": 150
+ },
+ "xray_machine": {
+  "anchorY": 0.975,
+  "h": 482,
+  "w": 512
+ }
+}

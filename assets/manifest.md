@@ -8,51 +8,61 @@
 - **P1** нужно для этапов 10-11, **P2** остальные комнаты и персонажи, **P3** иконки, UI, декор.
 - Статус: `[ ]` не сделано, `[g]` сгенерировано (в `raw/`), `[x]` готово (в `final/`, anchorY записан).
 
+## Статус партии 1-2 (12.11.2026)
+
+- Размеры в таблицах теперь **в масштабе 2x** (в игре `scale 0.5`). Размер, `anchorY` каждого файла лежит в `assets/final/anchors.json`, код грузит их оттуда.
+- `wall_*_left` не генерируются: `prepare_assets.py` зеркалит `*_right`.
+- Одна картинка стены покрывает **около 4 тайлов** длины. В этапе 11 её режем на сегменты по 1 тайлу (вертикальные срезы по 128 px), крайние срезы со скруглёнными торцами не берём.
+- Альтернативные варианты (в игре пока не используются): `doctor_chair_2`, `waiting_sofa`, `doctor_table`.
+- Персонажи (`staff_doctor`, `patient_01..08`) пока статичные, анфас, с контуром. Для ходьбы нужен AutoSprite (4 направления); либо идти без анимации ходьбы (покачивание кодом).
+- Ещё не сгенерировано: медсестра, регистратор, лаборант, уборщик, администратор; иконки, UI, вывески, постеры.
+- Файл `raw/_unused/floor_wood_slab_ai.png` заменён `floor_hall`.
+
 ## Пол и стены
 
 | id | файл | тайлы | ориент. размер | anchorY | P | статус |
 |---|---|---|---|---|---|---|
-| floor_hall | final/floor_hall.png | 1×1 | 128×64 | 1,0 (ромб целиком) | P1 | [ ] |
-| floor_clinic | final/floor_clinic.png | 1×1 | 128×64 | 1,0 | P1 | [ ] |
-| floor_lab | final/floor_lab.png | 1×1 | 128×64 | 1,0 | P1 | [ ] |
-| wall_left | final/wall_left.png | 1×0 (левая стена) | 128×(64+192) | | P1 | [ ] |
-| wall_right | final/wall_right.png | 0×1 (правая стена) | 128×(64+192) | | P1 | [ ] |
-| wall_corner | final/wall_corner.png | угол | 128×(64+192) | | P1 | [ ] |
-| wall_door_left | final/wall_door_left.png | проём в левой стене | 128×(64+192) | | P1 | [ ] |
-| wall_door_right | final/wall_door_right.png | проём в правой стене | 128×(64+192) | | P1 | [ ] |
-| wall_window_left | final/wall_window_left.png | окно в левой стене | 128×(64+192) | | P2 | [ ] |
-| wall_window_right | final/wall_window_right.png | окно в правой стене | 128×(64+192) | | P2 | [ ] |
+| floor_hall | final/floor_hall.png | 1×1 | 256×128 (2x) | 1,0 (ромб 256x128) | P1 | [x] |
+| floor_clinic | final/floor_clinic.png | 1×1 | 256×128 (2x) | 1,0 (ромб 256x128) | P1 | [x] |
+| floor_lab | final/floor_lab.png | 1×1 | 256×128 (2x) | 1,0 (ромб 256x128) | P1 | [x] |
+| wall_left | final/wall_left.png | 1×0 (левая стена) | 308×384 (2x) | 0,995 | P1 | [x] |
+| wall_right | final/wall_right.png | 0×1 (правая стена) | 308×384 (2x) | 0,995 | P1 | [x] |
+| wall_corner | final/wall_corner.png | угол | 366×384 (2x) | 0,979 | P1 | [x] |
+| wall_door_left | final/wall_door_left.png | проём в левой стене | 381×384 (2x) | 0,982 | P1 | [x] |
+| wall_door_right | final/wall_door_right.png | проём в правой стене | 381×384 (2x) | 0,982 | P1 | [x] |
+| wall_window_left | final/wall_window_left.png | окно в левой стене | 332×384 (2x) | 1,0 | P2 | [x] |
+| wall_window_right | final/wall_window_right.png | окно в правой стене | 332×384 (2x) | 1,0 | P2 | [x] |
 
 ## Холл и регистратура
 
 | id | файл | тайлы | ориент. размер | anchorY | P | статус |
 |---|---|---|---|---|---|---|
-| reception_desk | final/reception_desk.png | 3×1 | 256×200 | | P1 | [ ] |
-| reception_computer | final/reception_computer.png | 1×1 (ставится на стойку) | 100×100 | | P1 | [ ] |
-| hall_sofa | final/hall_sofa.png | 2×1 | 192×150 | | P1 | [ ] |
-| waiting_chair | final/waiting_chair.png | 1×1 | 100×110 | | P1 | [ ] |
-| water_cooler | final/water_cooler.png | 1×1 | 90×150 | | P2 | [ ] |
-| plant_big | final/plant_big.png | 1×1 | 100×160 | | P2 | [ ] |
-| cash_desk | final/cash_desk.png | 2×1 | 192×150 | | P2 | [ ] |
+| reception_desk | final/reception_desk.png | 3×1 | 512×349 (2x) | 0,963 | P1 | [x] |
+| reception_computer | final/reception_computer.png | 1×1 (ставится на стойку) | 100×100 |  | P1 | не нужен (монитор уже на стойке) |
+| hall_sofa | final/hall_sofa.png | 2×1 | 384×305 (2x) | 0,97 | P1 | [x] |
+| waiting_chair | final/waiting_chair.png | 1×1 | 170×224 (2x) | 0,991 | P1 | [x] |
+| water_cooler | final/water_cooler.png | 1×1 | 150×286 (2x) | 0,979 | P2 | [x] |
+| plant_big | final/plant_big.png | 1×1 | 190×246 (2x) | 0,972 | P2 | [x] |
+| cash_desk | final/cash_desk.png | 2×1 | 384×261 (2x) | 0,973 | P2 | [x] |
 
 ## Кабинеты
 
 | id | файл | тайлы | ориент. размер | anchorY | P | статус |
 |---|---|---|---|---|---|---|
-| doctor_desk | final/doctor_desk.png | 2×1 | 192×150 | | P1 | [ ] |
-| exam_couch | final/exam_couch.png | 1×2 | 192×130 | | P1 | [ ] |
-| doctor_chair | final/doctor_chair.png | 1×1 | 90×110 | | P1 | [ ] |
-| microscope_table | final/microscope_table.png | 2×1 | 192×150 | | P2 | [ ] |
-| sample_table | final/sample_table.png | 2×1 | 192×150 | | P2 | [ ] |
-| xray_machine | final/xray_machine.png | 2×2 | 256×230 | | P2 | [ ] |
-| ultrasound_machine | final/ultrasound_machine.png | 1×1 | 110×150 | | P2 | [ ] |
-| iv_chair | final/iv_chair.png | 1×1 | 110×130 | | P2 | [ ] |
-| iv_stand | final/iv_stand.png | 1×1 | 70×170 | | P2 | [ ] |
-| ward_bed | final/ward_bed.png | 1×2 | 192×130 | | P2 | [ ] |
-| pharmacy_counter | final/pharmacy_counter.png | 3×1 | 256×170 | | P2 | [ ] |
-| pharmacy_shelf | final/pharmacy_shelf.png | 2×1 | 192×190 | | P2 | [ ] |
-| cafe_table | final/cafe_table.png | 1×1 | 100×100 | | P2 | [ ] |
-| vending_machine | final/vending_machine.png | 1×1 | 100×170 | | P2 | [ ] |
+| doctor_desk | final/doctor_desk.png | 2×1 | 384×368 (2x) | 0,984 | P1 | [x] |
+| exam_couch | final/exam_couch.png | 2×1 | 384×369 (2x) | 0,976 | P1 | [x] |
+| doctor_chair | final/doctor_chair.png | 1×1 | 170×288 (2x) | 0,99 | P1 | [x] |
+| microscope_table | final/microscope_table.png | 2×1 | 384×318 (2x) | 0,969 | P2 | [x] |
+| sample_table | final/sample_table.png | 2×1 | 384×295 (2x) | 0,983 | P2 | [x] |
+| xray_machine | final/xray_machine.png | 2×2 | 512×482 (2x) | 0,975 | P2 | [x] |
+| ultrasound_machine | final/ultrasound_machine.png | 1×1 | 190×296 (2x) | 0,983 | P2 | [x] |
+| iv_chair | final/iv_chair.png | 1×1 | 230×260 (2x) | 0,981 | P2 | [x] |
+| iv_stand | final/iv_stand.png | 1×1 | 130×307 (2x) | 0,984 | P2 | [x] |
+| ward_bed | final/ward_bed.png | 2×1 | 384×362 (2x) | 0,994 | P2 | [x] |
+| pharmacy_counter | final/pharmacy_counter.png | 3×1 | 512×347 (2x) | 0,971 | P2 | [x] |
+| pharmacy_shelf | final/pharmacy_shelf.png | 2×1 | 384×358 (2x) | 0,978 | P2 | [x] |
+| cafe_table | final/cafe_table.png | 1×1 | 230×194 (2x) | 0,979 | P2 | [x] |
+| vending_machine | final/vending_machine.png | 1×1 | 190×253 (2x) | 0,98 | P2 | [x] |
 
 ## Персонажи (кадр 128×128, 8 направлений получаются зеркалированием)
 
