@@ -134,10 +134,40 @@
   "h": 295,
   "w": 384
  },
+ "sign_blank": {
+  "anchorY": 0.972,
+  "h": 141,
+  "w": 192
+ },
+ "staff_admin": {
+  "anchorY": 0.996,
+  "h": 224,
+  "w": 108
+ },
  "staff_doctor": {
   "anchorY": 0.996,
   "h": 224,
   "w": 95
+ },
+ "staff_janitor": {
+  "anchorY": 0.996,
+  "h": 224,
+  "w": 124
+ },
+ "staff_labtech": {
+  "anchorY": 0.996,
+  "h": 224,
+  "w": 104
+ },
+ "staff_nurse": {
+  "anchorY": 0.996,
+  "h": 224,
+  "w": 108
+ },
+ "staff_receptionist": {
+  "anchorY": 0.996,
+  "h": 224,
+  "w": 110
  },
  "ultrasound_machine": {
   "anchorY": 0.983,
@@ -195,8 +225,8 @@
   "w": 332
  },
  "ward_bed": {
-  "anchorY": 0.994,
-  "h": 362,
+  "anchorY": 0.992,
+  "h": 360,
   "w": 384
  },
  "water_cooler": {

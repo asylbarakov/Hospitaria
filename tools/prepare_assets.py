@@ -34,6 +34,7 @@ SPEC = ROOT / "assets" / "spec.json"
 MARGIN = 4
 LIMIT_MB = 8.0
 TILE_W, TILE_H = 256, 128  # тайл 128x64 в масштабе 2x
+SKIP = {"icons_symptoms", "icons_status_roles", "ui_frames"}  # листы режет tools/slice_sheets.py
 MIRRORS = {
     "wall_left": "wall_right",
     "wall_door_left": "wall_door_right",
@@ -159,6 +160,8 @@ def main() -> int:
 
     for path in files:
         name = path.stem
+        if name in SKIP:
+            continue
         img = Image.open(path)
         if name.startswith("floor_"):
             save(name, floor_to_diamond(img))

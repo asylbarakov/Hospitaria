@@ -1,39 +1,142 @@
 {
   "_comment": "Спецификация для tools/prepare_assets.py. Размеры в px при масштабе 2x (в игре scale 0.5). w,d: footprint в тайлах, итоговая ширина (w+d)*128. width_px / height_px: явный размер (для высоких и узких предметов, стен, персонажей). Значения width_px ориентировочные, их можно править и перезапускать скрипт.",
-  "reception_desk": { "w": 3, "d": 1 },
-  "hall_sofa": { "w": 2, "d": 1 },
-  "doctor_desk": { "w": 2, "d": 1 },
-  "exam_couch": { "w": 2, "d": 1 },
-  "cash_desk": { "w": 2, "d": 1 },
-  "doctor_table": { "w": 3, "d": 1 },
-  "pharmacy_counter": { "w": 3, "d": 1 },
-  "pharmacy_shelf": { "w": 2, "d": 1 },
-  "microscope_table": { "w": 2, "d": 1 },
-  "sample_table": { "w": 2, "d": 1 },
-  "xray_machine": { "w": 2, "d": 2 },
-  "ward_bed": { "w": 2, "d": 1 },
-  "waiting_sofa": { "w": 2, "d": 1 },
-  "waiting_chair": { "width_px": 170 },
-  "doctor_chair": { "width_px": 170 },
-  "doctor_chair_2": { "width_px": 170 },
-  "iv_chair": { "width_px": 230 },
-  "iv_stand": { "width_px": 130 },
-  "ultrasound_machine": { "width_px": 190 },
-  "plant_big": { "width_px": 190 },
-  "water_cooler": { "width_px": 150 },
-  "vending_machine": { "width_px": 190 },
-  "cafe_table": { "width_px": 230 },
-  "wall_right": { "height_px": 384 },
-  "wall_door_right": { "height_px": 384 },
-  "wall_window_right": { "height_px": 384 },
-  "wall_corner": { "height_px": 384 },
-  "staff_doctor": { "height_px": 224 },
-  "patient_01": { "height_px": 224 },
-  "patient_02": { "height_px": 224 },
-  "patient_03": { "height_px": 224 },
-  "patient_04": { "height_px": 224 },
-  "patient_05": { "height_px": 224 },
-  "patient_06": { "height_px": 224 },
-  "patient_07": { "height_px": 224 },
-  "patient_08": { "height_px": 224 }
+  "reception_desk": {
+    "w": 3,
+    "d": 1
+  },
+  "hall_sofa": {
+    "w": 2,
+    "d": 1
+  },
+  "doctor_desk": {
+    "w": 2,
+    "d": 1
+  },
+  "exam_couch": {
+    "w": 2,
+    "d": 1
+  },
+  "cash_desk": {
+    "w": 2,
+    "d": 1
+  },
+  "doctor_table": {
+    "w": 3,
+    "d": 1
+  },
+  "pharmacy_counter": {
+    "w": 3,
+    "d": 1
+  },
+  "pharmacy_shelf": {
+    "w": 2,
+    "d": 1
+  },
+  "microscope_table": {
+    "w": 2,
+    "d": 1
+  },
+  "sample_table": {
+    "w": 2,
+    "d": 1
+  },
+  "xray_machine": {
+    "w": 2,
+    "d": 2
+  },
+  "ward_bed": {
+    "w": 2,
+    "d": 1
+  },
+  "waiting_sofa": {
+    "w": 2,
+    "d": 1
+  },
+  "waiting_chair": {
+    "width_px": 170
+  },
+  "doctor_chair": {
+    "width_px": 170
+  },
+  "doctor_chair_2": {
+    "width_px": 170
+  },
+  "iv_chair": {
+    "width_px": 230
+  },
+  "iv_stand": {
+    "width_px": 130
+  },
+  "ultrasound_machine": {
+    "width_px": 190
+  },
+  "plant_big": {
+    "width_px": 190
+  },
+  "water_cooler": {
+    "width_px": 150
+  },
+  "vending_machine": {
+    "width_px": 190
+  },
+  "cafe_table": {
+    "width_px": 230
+  },
+  "wall_right": {
+    "height_px": 384
+  },
+  "wall_door_right": {
+    "height_px": 384
+  },
+  "wall_window_right": {
+    "height_px": 384
+  },
+  "wall_corner": {
+    "height_px": 384
+  },
+  "staff_doctor": {
+    "height_px": 224
+  },
+  "patient_01": {
+    "height_px": 224
+  },
+  "patient_02": {
+    "height_px": 224
+  },
+  "patient_03": {
+    "height_px": 224
+  },
+  "patient_04": {
+    "height_px": 224
+  },
+  "patient_05": {
+    "height_px": 224
+  },
+  "patient_06": {
+    "height_px": 224
+  },
+  "patient_07": {
+    "height_px": 224
+  },
+  "patient_08": {
+    "height_px": 224
+  },
+  "staff_nurse": {
+    "height_px": 224
+  },
+  "staff_receptionist": {
+    "height_px": 224
+  },
+  "staff_labtech": {
+    "height_px": 224
+  },
+  "staff_janitor": {
+    "height_px": 224
+  },
+  "staff_admin": {
+    "height_px": 224
+  },
+  "sign_blank": {
+    "width_px": 192
+  }
 }

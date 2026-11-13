@@ -15,7 +15,7 @@
 - Одна картинка стены покрывает **около 4 тайлов** длины. В этапе 11 её режем на сегменты по 1 тайлу (вертикальные срезы по 128 px), крайние срезы со скруглёнными торцами не берём.
 - Альтернативные варианты (в игре пока не используются): `doctor_chair_2`, `waiting_sofa`, `doctor_table`.
 - Персонажи (`staff_doctor`, `patient_01..08`) пока статичные, анфас, с контуром. Для ходьбы нужен AutoSprite (4 направления); либо идти без анимации ходьбы (покачивание кодом).
-- Ещё не сгенерировано: медсестра, регистратор, лаборант, уборщик, администратор; иконки, UI, вывески, постеры.
+- Партия 3 (13.11): 5 ролей персонала, кровать с прозрачным фоном, 24 иконки (нарезка `tools/slice_sheets.py`), UI-рамки, заготовка вывески. Не делали (P3, не нужны до этапа 18): постеры, картины, ковры.
 - Файл `raw/_unused/floor_wood_slab_ai.png` заменён `floor_hall`.
 
 ## Пол и стены
@@ -70,13 +70,13 @@
 
 | id | файл | P | статус |
 |---|---|---|---|
-| patient_01 ... patient_08 | final/patient_NN_{idle,walk}_{ne,se}.png | P2 (хотя бы 3 для этапа 12) | [ ] |
-| staff_doctor | final/staff_doctor_{idle,walk}_{ne,se}.png | P2 | [ ] |
-| staff_nurse | final/staff_nurse_{idle,walk}_{ne,se}.png | P2 | [ ] |
-| staff_receptionist | final/staff_receptionist_{idle,walk}_{ne,se}.png | P2 | [ ] |
-| staff_labtech | final/staff_labtech_{idle,walk}_{ne,se}.png | P3 | [ ] |
-| staff_janitor | final/staff_janitor_{idle,walk}_{ne,se}.png | P3 | [ ] |
-| staff_admin | final/staff_admin_{idle,walk}_{ne,se}.png | P3 | [ ] |
+| patient_01 ... patient_08 | final/patient_NN.png (статичные, анфас, 224 px высотой) | P2 | [x] |
+| staff_doctor | final/staff_doctor.png (статичный, анфас, 224 px) | P2 | [x] |
+| staff_nurse | final/staff_nurse.png (статичный, анфас, 224 px) | P2 | [x] |
+| staff_receptionist | final/staff_receptionist.png (статичный, анфас, 224 px) | P2 | [x] |
+| staff_labtech | final/staff_labtech.png (статичный, анфас, 224 px) | P3 | [x] |
+| staff_janitor | final/staff_janitor.png (статичный, анфас, 224 px) | P3 | [x] |
+| staff_admin | final/staff_admin.png (статичный, анфас, 224 px) | P3 | [x] |
 
 Аватар игрока остаётся слоёным и рисуется кодом (см. todo v2, «Принятые решения»).
 
@@ -84,26 +84,26 @@
 
 | группа | файлы | P | статус |
 |---|---|---|---|
-| Симптомы (10) | icon_fever, icon_cough, icon_sore_throat, icon_runny_nose, icon_headache, icon_stomach, icon_rash, icon_sprain, icon_fracture, icon_fatigue | P3 | [ ] |
-| Валюты | icon_coin, icon_crystal | P3 | [ ] |
-| Статусы | icon_patience, icon_waiting, icon_error | P3 | [ ] |
-| Роли | icon_role_{doctor,nurse,receptionist,labtech,janitor,admin,specialist} | P3 | [ ] |
-| Квесты | icon_quest_daily, icon_quest_weekly, icon_quest_story, icon_quest_event | P3 | [ ] |
+| Симптомы (10) | icon_fever, icon_cough, icon_sore_throat, icon_runny_nose, icon_headache, icon_stomach, icon_rash, icon_sprain, icon_fracture, icon_fatigue | P3 (final/icons/, 192x192) | [x] |
+| Валюты | icon_coin, icon_crystal | P3 (final/icons/, 192x192) | [x] |
+| Статусы | icon_patience, icon_waiting, icon_error | P3 (final/icons/, 192x192) | [x] |
+| Роли | icon_role_{doctor,nurse,receptionist,labtech,janitor,admin,specialist} | P3 (final/icons/, 192x192) | [x] |
+| Квесты | icon_quest_daily, icon_quest_weekly, icon_quest_story, icon_quest_event | P3 (final/icons/, 192x192) | [x] |
 
 ## UI-рамки
 
 | id | файл | заметка | P | статус |
 |---|---|---|---|---|
-| ui_button | final/ui_button.png | 9-slice, 3 состояния (обычная, hover, нажата) | P3 | [ ] |
-| ui_window | final/ui_window.png | 9-slice, с заголовком | P3 | [ ] |
-| ui_panel | final/ui_panel.png | 9-slice, нижняя панель | P3 | [ ] |
-| ui_bar | final/ui_bar.png | рамка + заполнение для полосок | P3 | [ ] |
+| ui_button, ui_button_hover, ui_button_down | final/ui/ (3 состояния) | 9-slice по горизонтали | P3 | [x] |
+| ui_window | final/ui/ui_window.png (с шапкой, стетоскоп и блокнот в углах) | 9-slice | P3 | [x] |
+| ui_panel | final/ui/ui_panel.png | 9-slice, нижняя панель | P3 | [x] |
+| ui_bar, ui_bar_fill | final/ui/ (рамка 559x68 и заливка 458x55) | полоска прогресса | P3 | [x] |
 
 ## Декор и вывески
 
 | id | файл | P | статус |
 |---|---|---|---|
-| sign_hall, sign_reception, sign_therapist, sign_lab, sign_xray, sign_ultrasound, sign_procedure, sign_ward, sign_pharmacy, sign_cafeteria | final/sign_*.png (табличка без текста, **текст рисует код**, чтобы можно было переводить) | P2 | [ ] |
+| sign_hall, sign_reception, sign_therapist, sign_lab, sign_xray, sign_ultrasound, sign_procedure, sign_ward, sign_pharmacy, sign_cafeteria | final/sign_*.png (табличка без текста, **текст рисует код**, чтобы можно было переводить) | P2 | [g] одна заготовка `final/sign_blank.png` (текст рисует код) |
 | poster_01 ... poster_03 | final/poster_NN.png | P3 | [ ] |
 | painting_01, painting_02 | final/painting_NN.png | P3 | [ ] |
 | rug_01, rug_02 | final/rug_NN.png (плоские, лежат на полу) | P3 | [ ] |
