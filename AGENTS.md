@@ -23,8 +23,10 @@
 
 - Phaser 3 подключается через CDN в index.html. Сборщиков (Vite, webpack) НЕ использовать.
 - Чистый JavaScript с ES-модулями. Без TypeScript и без других библиотек.
-- Никаких внешних картинок и звуков. Вся графика рисуется кодом:
-  Phaser Graphics, generateTexture, фигуры и текст. Звуки делаются через Web Audio API (простые бипы).
+- Звуки делаются через Web Audio API (простые бипы).
+- Графика: UI и меню v0.1 рисуются кодом (Phaser Graphics, generateTexture). С версии v2 (изометрия) мир, мебель,
+  персонажи, иконки и рамки грузятся из PNG в `assets/final/` (список и размеры: `assets/manifest.md`, `anchors.json`).
+  Исходники и подготовка ассетов: `ART.md`, `tools/`. Общий вес `assets/final` меньше 8 МБ.
 - Сохранение прогресса в localStorage.
 - Интерфейс и тексты на русском языке. Имена переменных и файлов на английском.
 - Запуск: `python3 -m http.server 8080` и открыть http://localhost:8080

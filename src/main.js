@@ -9,6 +9,8 @@ import TasksScene from './scenes/TasksScene.js';
 import PauseScene from './scenes/PauseScene.js';
 import DisclaimerScene from './scenes/DisclaimerScene.js';
 import AchievementsScene from './scenes/AchievementsScene.js';
+import IsoTestScene from './scenes/IsoTestScene.js';
+import IsoHudScene from './scenes/IsoHudScene.js';
 import { applyTextQuality } from './ui/textQuality.js';
 
 applyTextQuality();
@@ -44,6 +46,8 @@ const config = {
     PauseScene,
     DisclaimerScene,
     AchievementsScene,
+    IsoTestScene,
+    IsoHudScene,
   ],
 };
 
