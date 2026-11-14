@@ -1,6 +1,7 @@
 import { createButton } from '../ui/Button.js';
 import { CATALOG, CATALOG_BY_TYPE, SELL_REFUND } from '../data/buildCatalog.js';
 import { isoKey } from '../iso/isoAssets.js';
+import StaffPanel from '../iso/StaffPanel.js';
 
 const FONT = 'Arial, "Segoe UI", sans-serif';
 const PANEL_Y = 540;
@@ -44,6 +45,23 @@ export default class IsoHospitalHud extends Phaser.Scene {
     this.addButton(1180, 160, 180, 'Зум 100%', () => this.world().iso.setZoom(1), 0x3f9b4a, 0x55b963);
     this.addButton(1180, 220, 180, 'Гардероб', () => this.world().openWardrobe(), 0x7b5bb8, 0x9273cf);
     this.resetButton = this.addButton(1180, 280, 180, 'Сброс', () => this.onReset(), 0x8a4a4a, 0xa96060);
+    this.staffPanel = new StaffPanel(this, {
+      onHire: (roleId) => {
+        const staff = this.world().staff;
+        const result = staff ? staff.hire(roleId) : { ok: false, hint: 'Персонал недоступен' };
+        if (result && !result.ok) {
+          this.world().notify(result.hint);
+        }
+      },
+      onFire: (id) => {
+        const staff = this.world().staff;
+        if (staff) {
+          staff.fire(id);
+        }
+      },
+      onClose: () => this.staffPanel.hide(),
+    });
+    this.addButton(1180, 340, 180, 'Персонал', () => this.toggleStaff(), 0x2f80c9, 0x4a9be0);
 
     const inBuild = () => this.state && this.state.build.active;
     this.rotateButton = this.addButton(1020, PANEL_Y + 55, 150, 'Повернуть', () => this.world().build.rotate(), 0x2f80c9, 0x4a9be0, inBuild, true);
@@ -58,6 +76,17 @@ export default class IsoHospitalHud extends Phaser.Scene {
 
   world() {
     return this.scene.get('IsoHospitalScene');
+  }
+
+  toggleStaff() {
+    if (this.staffPanel.visible) {
+      this.staffPanel.hide();
+      return;
+    }
+    if (this.state && this.state.build.active) {
+      this.world().build.setActive(false);
+    }
+    this.staffPanel.show();
   }
 
   buildPanelBackground() {
@@ -149,6 +178,9 @@ export default class IsoHospitalHud extends Phaser.Scene {
 
   /** Лежит ли указатель на элементе HUD (тогда он не двигает камеру и персонажа). */
   isOverUi(pointer) {
+    if (this.staffPanel && this.staffPanel.visible) {
+      return true;
+    }
     if (this.state && this.state.build.active && pointer.y >= PANEL_Y) {
       return true;
     }
@@ -192,6 +224,7 @@ export default class IsoHospitalHud extends Phaser.Scene {
     this.buildToggle.label.setText(b.active ? 'Готово (B)' : 'Строить (B)');
     this.sellButton.label.setText(b.tool === 'sell' ? 'Продажа' : 'Продать');
     this.resetButton.label.setText(this.resetArmedUntil > time ? 'Точно?' : 'Сброс');
+    this.staffPanel.update(state.staff, state.coins);
     this.buttons.forEach((entry) => {
       entry.container.setVisible(!entry.shown || entry.shown());
     });

@@ -11,6 +11,11 @@ export function roomById(rooms, roomId) {
   return (rooms || []).find((room) => room.id === roomId) || null;
 }
 
+/** Комната, в которой полностью стоит предмет (коридор и зоны не считаются). */
+export function roomForItem(rooms, item) {
+  return (rooms || []).find((room) => room.kind === 'room' && itemInRoom(item, room)) || null;
+}
+
 /** Предмет полностью стоит внутри комнаты (стены и коридор не считаются). */
 export function itemInRoom(item, room) {
   if (!item || !room) {
@@ -81,6 +86,15 @@ export function treatmentSlots(grid, items, rooms, roomId) {
     return [];
   }
   return collect(grid, items, TREATMENT_ITEMS[roomId] || [], room);
+}
+
+/** Посты персонала: предметы нужных типов с подходом и id комнаты. */
+export function staffPosts(grid, items, rooms, types) {
+  return collect(grid, items, types).map((slot) => {
+    const item = (items || []).find((entry) => entry.gridId === slot.itemId);
+    const room = item ? roomForItem(rooms, item) : null;
+    return { ...slot, roomId: room ? room.id : null };
+  });
 }
 
 /** Есть ли в комнате хотя бы один предмет для лечения. */

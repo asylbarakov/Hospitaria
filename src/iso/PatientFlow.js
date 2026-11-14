@@ -136,7 +136,7 @@ export default class PatientFlow {
   }
 
   /** Ответ на диагноз. Неверный можно повторить: пациент остаётся в кабинете. */
-  diagnose(agent, correct) {
+  diagnose(agent, correct, autoStars = null) {
     if (!agent || agent.state !== FLOW_STATES.IN_TREATMENT) {
       return { ok: false, hint: 'Пациент ещё не в кабинете' };
     }
@@ -151,6 +151,9 @@ export default class PatientFlow {
         penalty: this.timing.wrongDiagnosisPenalty,
       });
       return { ok: false, hint: 'Неверный диагноз, попробуйте ещё раз' };
+    }
+    if (Number.isFinite(autoStars)) {
+      agent.autoStars = autoStars;
     }
     agent.startTreatment();
     return { ok: true };
@@ -179,7 +182,8 @@ export default class PatientFlow {
         break;
       case 'treated': {
         this.slots.releaseTreatment(agent);
-        const reward = getTreatmentReward(agent.disease, this.timing.treatmentStars);
+        const stars = Number.isFinite(agent.autoStars) ? agent.autoStars : this.timing.treatmentStars;
+        const reward = getTreatmentReward(agent.disease, stars);
         this.emit({ type: 'treated', agent, reward });
         if (!this.slots.sendPay(agent)) {
           this.sendExit(agent);

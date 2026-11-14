@@ -23,6 +23,7 @@ export function loadIsoSave() {
       reputation: Number.isFinite(data.reputation)
         ? Math.max(0, Math.min(100, data.reputation))
         : null,
+      staff: Array.isArray(data.staff) ? data.staff : null,
     };
   } catch (err) {
     return null;
@@ -51,6 +52,16 @@ export function saveIso(coins, items, player = null, stats = null) {
       : (previous && Number.isFinite(previous.reputation) ? previous.reputation : null);
     if (Number.isFinite(reputation)) {
       data.reputation = Math.max(0, Math.min(100, reputation));
+    }
+    const staff = stats && Array.isArray(stats.staff)
+      ? stats.staff
+      : (previous && Array.isArray(previous.staff) ? previous.staff : null);
+    if (Array.isArray(staff)) {
+      data.staff = staff.map((entry) => ({
+        roleId: entry && entry.roleId,
+        name: entry && entry.name,
+        postItemId: entry && Number.isFinite(entry.postItemId) ? entry.postItemId : null,
+      }));
     }
     window.localStorage.setItem(KEY, JSON.stringify(data));
   } catch (err) {

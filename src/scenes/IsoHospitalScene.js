@@ -10,6 +10,8 @@ import Pathfinder from '../iso/Pathfinder.js';
 import PatientRunner from '../iso/PatientRunner.js';
 import PlayerControl from '../iso/PlayerControl.js';
 import TapMarker from '../iso/TapMarker.js';
+import buildHudState from '../iso/hudState.js';
+import createStaff from '../iso/StaffSetup.js';
 import { queueIsoAssets, queueWallAssets } from '../iso/isoAssets.js';
 import {
   screenToTileIndex, tileCenter, worldBounds,
@@ -41,7 +43,6 @@ export default class IsoHospitalScene extends Phaser.Scene {
   create() {
     this.children.list.filter((o) => o.type === 'Text').forEach((o) => o.destroy());
     this.cameras.main.setBackgroundColor('#10222e');
-
     const saved = loadIsoSave();
     this.stats = new HospitalStats({
       coins: saved && saved.coins !== null ? saved.coins : START_COINS,
@@ -53,13 +54,11 @@ export default class IsoHospitalScene extends Phaser.Scene {
     this.wardrobeOpen = false;
     this.modalOpen = false;
     this.patientClickGuard = false;
-
     this.world = new IsoWorld(this, layout, saved ? saved.items : null);
     this.grid = this.world.grid;
     this.messages = [];
     this.pathfinder = new Pathfinder(this.grid);
     this.actors = new ActorLayer(this, this.world, this.pathfinder);
-
     this.playerCtl = new PlayerControl({
       world: this.world,
       actors: this.actors,
@@ -73,13 +72,19 @@ export default class IsoHospitalScene extends Phaser.Scene {
       reward: (reward) => this.stats.applyReward(reward),
       penalty: (amount) => this.stats.changeReputation(-amount),
     });
+    const staff = createStaff(this, this.world, this.patients, saved && Array.isArray(saved.staff) ? saved.staff : []);
+    this.staff = staff.flow;
+    this.staffRunner = staff.runner;
     this.marker = new TapMarker(this);
-
     this.build = new BuildMode(this, this.world, {
       getCoins: () => this.stats.coins,
       spend: (n) => this.stats.addCoins(-n),
       earn: (n) => this.stats.addCoins(n),
-      onChange: () => { this.persist(); this.patients.changed(); },
+      onChange: () => {
+        this.persist();
+        this.patients.changed();
+        this.staff.refreshPosts(true);
+      },
       notify: (text) => this.notify(text),
     });
 
@@ -187,6 +192,10 @@ export default class IsoHospitalScene extends Phaser.Scene {
   }
 
   onEscape() {
+    if (this.hud && this.hud.staffPanel && this.hud.staffPanel.visible) {
+      this.hud.staffPanel.hide();
+      return;
+    }
     if (this.modalOpen && this.patients) {
       this.patients.closeDialog();
       return;
@@ -209,13 +218,14 @@ export default class IsoHospitalScene extends Phaser.Scene {
   persist() {
     saveIso(this.stats.coins, this.world.serialize(), this.playerCtl.player, {
       reputation: this.stats.reputation,
+      staff: this.staff ? this.staff.exportStaff() : undefined,
     });
   }
 
   resetHospital() {
     clearIsoSave();
     this.stats.reset();
-    saveIso(null, null, this.playerCtl.player, { reputation: this.stats.reputation });
+    saveIso(null, null, this.playerCtl.player, { reputation: this.stats.reputation, staff: [] });
     this.scene.stop('IsoHospitalHud');
     this.scene.restart();
   }
@@ -231,6 +241,12 @@ export default class IsoHospitalScene extends Phaser.Scene {
     }
     if (this.patients) {
       this.patients.destroy();
+    }
+    if (this.staffRunner) {
+      this.staffRunner.destroy();
+    }
+    if (this.staff) {
+      this.staff.destroy();
     }
     if (this.actors) {
       this.actors.clear();
@@ -251,7 +267,13 @@ export default class IsoHospitalScene extends Phaser.Scene {
     if (this.patients) {
       this.patients.update(dt * 1000, time);
     }
+    if (this.staff) {
+      this.staff.update(dt * 1000);
+    }
     this.actors.update(dt, time);
+    if (this.staffRunner) {
+      this.staffRunner.update();
+    }
 
     const pointer = this.input.activePointer;
     const inside = pointer.x >= 0 && pointer.y >= 0 && pointer.x <= this.scale.width && pointer.y <= this.scale.height;
@@ -272,16 +294,6 @@ export default class IsoHospitalScene extends Phaser.Scene {
 
   /** Данные для HUD. */
   hudState() {
-    const pointer = this.input.activePointer;
-    return {
-      coins: this.coins,
-      reputation: this.reputation,
-      patients: this.patients ? this.patients.count() : 0,
-      build: this.build.state(),
-      message: this.messages.length ? this.messages[this.messages.length - 1].text : '',
-      zoom: this.cameras.main.zoom,
-      fps: Math.round(this.game.loop.actualFps),
-      tile: this.pointerTile(pointer),
-    };
+    return buildHudState(this);
   }
 }
