@@ -28,8 +28,11 @@ export default class IsoHospitalHud extends Phaser.Scene {
     this.message = this.add
       .text(640, 90, '', { fontFamily: FONT, fontSize: '26px', fontStyle: 'bold', color: '#ffffff', stroke: '#b3261e', strokeThickness: 6 })
       .setOrigin(0.5).setDepth(12);
+    this.reputationText = this.add
+      .text(16, 78, '', { fontFamily: FONT, fontSize: '18px', fontStyle: 'bold', color: '#b9f6ca', stroke: '#10222e', strokeThickness: 4 })
+      .setDepth(10);
     this.info = this.add
-      .text(16, 78, '', { fontFamily: FONT, fontSize: '16px', color: '#dff3ff', stroke: '#10222e', strokeThickness: 3 })
+      .text(16, 106, '', { fontFamily: FONT, fontSize: '16px', color: '#dff3ff', stroke: '#10222e', strokeThickness: 3 })
       .setDepth(10);
     this.hint = this.add
       .text(640, PANEL_Y - 22, '', { fontFamily: FONT, fontSize: '22px', fontStyle: 'bold', color: '#ffffff', stroke: '#10222e', strokeThickness: 5 })
@@ -178,6 +181,7 @@ export default class IsoHospitalHud extends Phaser.Scene {
     const b = state.build;
 
     this.coinText.setText(`${state.coins}`);
+    this.reputationText.setText(`Репутация ${state.reputation}  •  Пациентов ${state.patients}`);
     this.message.setText(state.message);
     this.info.setText(`Зум ${state.zoom.toFixed(2)}  FPS ${state.fps}  Тайл ${state.tile.x}, ${state.tile.y}`);
     this.panel.setVisible(b.active);

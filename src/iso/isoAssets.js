@@ -13,6 +13,11 @@ export function iconKey(name) {
   return isoKey(`icons_${name}`);
 }
 
+/** Ключ UI-картинки из assets/final/ui: ui_bar -> iso_ui_ui_bar. */
+export function uiKey(name) {
+  return isoKey(`ui_${name}`);
+}
+
 /** Вызывать в preload() сцены: ставит в очередь anchors.json, затем все спрайты из него. */
 export function queueIsoAssets(scene, extraFiles = []) {
   const { load } = scene;

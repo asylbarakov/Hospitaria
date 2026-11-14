@@ -5,6 +5,10 @@ import {
   standCandidates, tileKey, unwrapItem,
 } from './connectivity.js';
 import { PATH_CONFIG } from '../data/pathConfig.js';
+import { FALLBACK_WAIT_TILES, roomHint } from '../data/patientFlow.js';
+import {
+  fallbackSlots, paySlots, receptionSlots, roomReady, treatmentSlots, waitingSlots,
+} from './worldSlots.js';
 import { anchorOf, isoKey, wallKey, wallMeta } from './isoAssets.js';
 import {
   HALF_H, HALF_W, SPRITE_SCALE, footprintScreen, tileToScreen,
@@ -175,6 +179,68 @@ export default class IsoWorld {
 
   nearestWalkable(x, y, maxRadius = PATH_CONFIG.maxStandRadius) {
     return nearestWalkableOf(this.grid, x, y, maxRadius);
+  }
+
+  /** Первый проходимый тайл рядом с точкой: сюда встаёт игрок во время приёма. */
+  standNear(x, y) {
+    const cx = Math.floor(x);
+    const cy = Math.floor(y);
+    const around = [
+      [1, 0], [-1, 0], [0, 1], [0, -1],
+      [1, 1], [-1, 1], [1, -1], [-1, -1],
+      [2, 0], [-2, 0], [0, 2], [0, -2],
+    ];
+    for (const [dx, dy] of around) {
+      if (this.grid.isWalkable(cx + dx, cy + dy)) {
+        return { x: cx + dx, y: cy + dy };
+      }
+    }
+    return this.nearestWalkable(x, y, 3);
+  }
+
+  // ---- точки интереса пациентов (этап 14) --------------------------------------------
+
+  items() {
+    return [...this.furniture.values()].map(({ item }) => item);
+  }
+
+  revision() {
+    return this.grid.revision;
+  }
+
+  slotsFor(kind) {
+    const items = this.items();
+    if (kind === 'reception') {
+      return receptionSlots(this.grid, items);
+    }
+    if (kind === 'pay') {
+      return paySlots(this.grid, items);
+    }
+    if (kind === 'waiting') {
+      return waitingSlots(this.grid, items);
+    }
+    return [];
+  }
+
+  treatmentSlots(roomId) {
+    return treatmentSlots(this.grid, this.items(), this.layout.ROOMS, roomId);
+  }
+
+  fallbackSlots() {
+    return fallbackSlots(this.grid, FALLBACK_WAIT_TILES);
+  }
+
+  /** {ok, hint}: есть ли в комнате мебель для лечения. */
+  roomReady(roomId) {
+    return {
+      ok: roomReady(this.items(), this.layout.ROOMS, roomId),
+      hint: roomHint(roomId),
+    };
+  }
+
+  roomName(roomId) {
+    const room = this.layout.ROOMS.find((item) => item.id === roomId);
+    return room ? room.name : 'Кабинет';
   }
 
   isDoorTile(x, y) {

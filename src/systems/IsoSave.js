@@ -20,14 +20,24 @@ export function loadIsoSave() {
       coins: Number.isFinite(data.coins) ? data.coins : null,
       items: Array.isArray(data.items) ? data.items : null,
       player: data.player ? normalizePlayer(data.player) : null,
+      reputation: Number.isFinite(data.reputation)
+        ? Math.max(0, Math.min(100, data.reputation))
+        : null,
     };
   } catch (err) {
     return null;
   }
 }
 
-export function saveIso(coins, items, player = null) {
+/**
+ * @param {number|null} coins
+ * @param {Array|null} items
+ * @param {object|null} player
+ * @param {{reputation?:number}|null} stats репутация и другие поля этапов v2
+ */
+export function saveIso(coins, items, player = null, stats = null) {
   try {
+    const previous = loadIsoSave();
     const data = {
       v: 1,
       coins: Number.isFinite(coins) ? coins : null,
@@ -35,6 +45,12 @@ export function saveIso(coins, items, player = null) {
     };
     if (player) {
       data.player = normalizePlayer(player);
+    }
+    const reputation = stats && Number.isFinite(stats.reputation)
+      ? stats.reputation
+      : (previous && Number.isFinite(previous.reputation) ? previous.reputation : null);
+    if (Number.isFinite(reputation)) {
+      data.reputation = Math.max(0, Math.min(100, reputation));
     }
     window.localStorage.setItem(KEY, JSON.stringify(data));
   } catch (err) {

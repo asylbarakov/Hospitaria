@@ -1,16 +1,13 @@
 import * as layout from '../data/layout.js';
 import { START_COINS } from '../data/buildCatalog.js';
-import { DISEASES } from '../data/diseases.js';
-import { PATIENT_NAMES } from '../data/patientConfig.js';
-import {
-  ACTOR_ICONS, DUMMY_PATIENTS, PATIENT_SKINS, diseaseIcon,
-} from '../data/actorConfig.js';
+import { ACTOR_ICONS } from '../data/actorConfig.js';
 import { DEFAULT_PLAYER, accentById, normalizePlayer, roleById } from '../data/playerSkins.js';
 import IsoWorld from '../iso/IsoWorld.js';
 import IsoCamera from '../iso/IsoCamera.js';
 import BuildMode from '../iso/BuildMode.js';
 import ActorLayer from '../iso/ActorLayer.js';
 import Pathfinder from '../iso/Pathfinder.js';
+import PatientRunner from '../iso/PatientRunner.js';
 import { queueIsoAssets, queueWallAssets } from '../iso/isoAssets.js';
 import {
   screenToTileIndex, tileCenter, tileToScreen, worldBounds,
@@ -21,10 +18,7 @@ import { clearIsoSave, loadIsoSave, saveIso } from '../systems/IsoSave.js';
 // игрок и пациенты через IsoActor/ActorLayer, поиск пути Pathfinder (EasyStar/BFS).
 
 const ICON_FILES = ACTOR_ICONS.map((name) => `icons/${name}.png`);
-
-function randomItem(list) {
-  return list[Math.floor(Math.random() * list.length)];
-}
+const UI_FILES = ['ui/ui_bar.png', 'ui/ui_bar_fill.png'];
 
 export default class IsoHospitalScene extends Phaser.Scene {
   constructor() {
@@ -37,7 +31,7 @@ export default class IsoHospitalScene extends Phaser.Scene {
       .setOrigin(0.5);
     this.onLoadProgress = (v) => label.setText(`Загрузка больницы… ${Math.round(v * 100)}%`);
     this.load.on('progress', this.onLoadProgress);
-    queueIsoAssets(this, ICON_FILES);
+    queueIsoAssets(this, ICON_FILES.concat(UI_FILES));
     queueWallAssets(this);
   }
 
@@ -49,7 +43,10 @@ export default class IsoHospitalScene extends Phaser.Scene {
     this.coins = saved && saved.coins !== null ? saved.coins : START_COINS;
     const rawPlayer = saved && saved.player ? saved.player : { ...DEFAULT_PLAYER, name: 'Доктор' };
     this.player = normalizePlayer({ ...rawPlayer, name: rawPlayer.name || 'Доктор' });
+    this.reputation = saved && Number.isFinite(saved.reputation) ? saved.reputation : 50;
     this.wardrobeOpen = false;
+    this.modalOpen = false;
+    this.patientClickGuard = false;
 
     this.world = new IsoWorld(this, layout, saved ? saved.items : null);
     this.grid = this.world.grid;
@@ -58,14 +55,18 @@ export default class IsoHospitalScene extends Phaser.Scene {
     this.actors = new ActorLayer(this, this.world, this.pathfinder);
 
     this.spawnPlayer();
-    this.spawnDummies();
+    this.patients = new PatientRunner(this, this.world, this.actors, this.playerActor, {
+      notify: (text) => this.notify(text),
+      reward: (reward) => this.applyTreatmentReward(reward),
+      penalty: (amount) => this.changeReputation(-amount),
+    });
     this.marker = this.add.graphics().setDepth(91);
 
     this.build = new BuildMode(this, this.world, {
       getCoins: () => this.coins,
       spend: (n) => { this.coins -= n; },
       earn: (n) => { this.coins += n; },
-      onChange: () => this.persist(),
+      onChange: () => { this.persist(); this.patients.changed(); },
       notify: (text) => this.notify(text),
     });
 
@@ -104,27 +105,6 @@ export default class IsoHospitalScene extends Phaser.Scene {
       name: this.player.name,
       icon: role.icon,
       accent: accent.color,
-    });
-  }
-
-  spawnDummies() {
-    const usedNames = new Set();
-    DUMMY_PATIENTS.forEach((slot) => {
-      let name = randomItem(PATIENT_NAMES);
-      for (let guard = 0; usedNames.has(name) && guard < 20; guard += 1) {
-        name = randomItem(PATIENT_NAMES);
-      }
-      usedNames.add(name);
-      const disease = randomItem(DISEASES);
-      this.actors.spawn({
-        kind: 'patient',
-        x: slot.x,
-        y: slot.y,
-        sprite: randomItem(PATIENT_SKINS),
-        name,
-        icon: diseaseIcon(disease.id),
-        accent: disease.color,
-      });
     });
   }
 
@@ -170,12 +150,19 @@ export default class IsoHospitalScene extends Phaser.Scene {
   }
 
   handleTap(pointer) {
-    if (this.hud && this.hud.isOverUi(pointer)) {
+    if (this.patientClickGuard) {
+      this.patientClickGuard = false;
+      return;
+    }
+    if (this.modalOpen || (this.hud && this.hud.isOverUi(pointer))) {
       return;
     }
     const tile = this.pointerTile(pointer);
     if (this.build.active) {
       this.build.tap(tile, !!pointer.wasTouch);
+      return;
+    }
+    if (this.patients.tryTapTile(tile)) {
       return;
     }
     if (!this.grid.isWalkable(tile.x, tile.y)) {
@@ -194,6 +181,10 @@ export default class IsoHospitalScene extends Phaser.Scene {
   }
 
   onEscape() {
+    if (this.modalOpen && this.patients) {
+      this.patients.closeDialog();
+      return;
+    }
     if (this.build.active && this.build.tool !== 'none') {
       this.build.cancel();
     } else if (this.build.active) {
@@ -210,12 +201,29 @@ export default class IsoHospitalScene extends Phaser.Scene {
   }
 
   persist() {
-    saveIso(this.coins, this.world.serialize(), this.player);
+    saveIso(this.coins, this.world.serialize(), this.player, { reputation: this.reputation });
+  }
+
+  /** Награда за вылеченного пациента: монеты и репутация, затем сохранение. */
+  applyTreatmentReward(reward) {
+    if (!reward) {
+      return;
+    }
+    this.coins += Number(reward.coins) || 0;
+    this.changeReputation(Number(reward.reputation) || 0);
+  }
+
+  changeReputation(amount) {
+    const next = Math.max(0, Math.min(100, this.reputation + (Number(amount) || 0)));
+    this.reputation = next;
+    this.persist();
+    return next;
   }
 
   resetHospital() {
     clearIsoSave();
-    saveIso(null, null, this.player);
+    this.reputation = 50;
+    saveIso(null, null, this.player, { reputation: this.reputation });
     this.scene.stop('IsoHospitalHud');
     this.scene.restart();
   }
@@ -228,6 +236,9 @@ export default class IsoHospitalScene extends Phaser.Scene {
   cleanup() {
     if (this.pathfinder) {
       this.pathfinder.dispose();
+    }
+    if (this.patients) {
+      this.patients.destroy();
     }
     if (this.actors) {
       this.actors.clear();
@@ -261,6 +272,9 @@ export default class IsoHospitalScene extends Phaser.Scene {
   update(time, delta) {
     const dt = Math.min(delta, 50) / 1000;
     this.pathfinder.update();
+    if (this.patients) {
+      this.patients.update(dt * 1000, time);
+    }
     this.actors.update(dt, time);
 
     const pointer = this.input.activePointer;
@@ -290,6 +304,8 @@ export default class IsoHospitalScene extends Phaser.Scene {
     const pointer = this.input.activePointer;
     return {
       coins: this.coins,
+      reputation: this.reputation,
+      patients: this.patients ? this.patients.count() : 0,
       build: this.build.state(),
       message: this.messages.length ? this.messages[this.messages.length - 1].text : '',
       zoom: this.cameras.main.zoom,
