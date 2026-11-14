@@ -11,6 +11,7 @@ export default class IsoGrid {
     this.cols = cols;
     this.rows = rows;
     this.floor = new Uint8Array(cols * rows);
+    this.blocked = new Uint8Array(cols * rows); // стены и прочие непроходимые тайлы
     this.owner = new Int32Array(cols * rows).fill(-1); // индекс предмета, занимающего тайл
     this.objects = [];
   }
@@ -27,6 +28,16 @@ export default class IsoGrid {
     if (this.inBounds(x, y)) {
       this.floor[this.index(x, y)] = value ? 1 : 0;
     }
+  }
+
+  setBlocked(x, y, value = 1) {
+    if (this.inBounds(x, y)) {
+      this.blocked[this.index(x, y)] = value ? 1 : 0;
+    }
+  }
+
+  isBlocked(x, y) {
+    return this.inBounds(x, y) && this.blocked[this.index(x, y)] === 1;
   }
 
   fillFloor(x0, y0, w, d, value = 1) {
@@ -46,7 +57,7 @@ export default class IsoGrid {
   }
 
   isWalkable(x, y) {
-    return this.hasFloor(x, y) && !this.isOccupied(x, y);
+    return this.hasFloor(x, y) && !this.isBlocked(x, y) && !this.isOccupied(x, y);
   }
 
   canPlace(x, y, w, d) {

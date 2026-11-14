@@ -132,7 +132,7 @@ export default class IsoTestScene extends Phaser.Scene {
       .image(0, 0, isoKey('staff_doctor'))
       .setOrigin(0.5, anchorOf(this, 'staff_doctor'))
       .setScale(SPRITE_SCALE);
-    this.sorter.add(this.walker, this.walkerBox());
+    this.sorter.add(this.walker, this.walkerBox(), { dynamic: true });
     this.placeWalker(0);
   }
 

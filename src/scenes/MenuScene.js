@@ -170,6 +170,15 @@ export default class MenuScene extends Phaser.Scene {
       depth: 10,
     });
 
+    createButton(this, 450, 688, 'Больница v2 (этап 11)', () => this.scene.start('IsoHospitalScene'), {
+      width: 290,
+      height: 48,
+      fontSize: 19,
+      color: 0x3f9b4a,
+      hoverColor: 0x55b963,
+      depth: 10,
+    });
+
     createButton(this, 1120, 688, 'Об игре', () => this.openDisclaimer(), {
       width: 200,
       height: 48,

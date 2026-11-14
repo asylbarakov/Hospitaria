@@ -40,3 +40,33 @@ export function anchorOf(scene, name) {
   const anchors = scene.cache.json.get(ANCHORS_KEY) || {};
   return anchors[name] ? anchors[name].anchorY : 1;
 }
+
+// ---- стены (assets/final/walls) ----------------------------------------------------------
+
+const WALLS_KEY = 'iso_walls_meta';
+const WALL_NAMES = [
+  'wall_tall_r', 'wall_tall_l', 'col_tall', 'wall_low_r', 'wall_low_l', 'col_low',
+  'door_tall_r', 'door_tall_l', 'window_tall_r', 'window_tall_l',
+];
+
+export function wallKey(name) {
+  return isoKey(`walls_${name}`);
+}
+
+/** Вызывать в preload(): PNG стен и walls.json (размеры и якоря). */
+export function queueWallAssets(scene) {
+  if (!scene.cache.json.exists(WALLS_KEY)) {
+    scene.load.json(WALLS_KEY, `${BASE}walls/walls.json`);
+  }
+  WALL_NAMES.forEach((name) => {
+    if (!scene.textures.exists(wallKey(name))) {
+      scene.load.image(wallKey(name), `${BASE}walls/${name}.png`);
+    }
+  });
+}
+
+/** {w, h, ax, ay} куска стены в пикселях PNG (2x). */
+export function wallMeta(scene, name) {
+  const meta = scene.cache.json.get(WALLS_KEY) || {};
+  return meta[name] || { w: 0, h: 0, ax: 0, ay: 0 };
+}

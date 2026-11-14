@@ -109,3 +109,7 @@
 | rug_01, rug_02 | final/rug_NN.png (плоские, лежат на полу) | P3 | [ ] |
 
 **Важно про вывески:** просите табличку **без надписей** (`blank sign plate`). ИИ плохо рисует кириллицу, а надписи удобнее подставлять кодом.
+
+## Стены (этап 11)
+
+Куски стен генерирует `tools/make_walls.py` (PIL, без нейросети) в `assets/final/walls/`: `wall_tall_*`, `wall_low_*`, `col_*`, `door_tall_*`, `window_tall_*` и `walls.json` с размерами и якорями. Правила расстановки в `src/iso/layoutBuilder.js`.
