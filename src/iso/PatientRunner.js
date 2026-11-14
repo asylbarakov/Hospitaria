@@ -17,7 +17,8 @@ export default class PatientRunner {
    * @param {import('./IsoWorld.js').default} world
    * @param {import('./ActorLayer.js').default} actors
    * @param {import('./IsoActor.js').default} playerActor
-   * @param {{notify?:Function, reward?:Function, penalty?:Function}} hooks
+   * @param {{notify?:Function, reward?:Function, penalty?:Function,
+   *   event?:Function}} hooks
    */
   constructor(scene, world, actors, playerActor, hooks = {}) {
     this.scene = scene;
@@ -28,6 +29,7 @@ export default class PatientRunner {
       notify: hooks.notify || (() => {}),
       reward: hooks.reward || (() => {}),
       penalty: hooks.penalty || (() => {}),
+      event: hooks.event || (() => {}),
     };
     this.views = new PatientViews(scene, actors, (agent) => this.tapAgent(agent));
     this.dialog = new PatientDialog(scene, this.points);
@@ -52,10 +54,21 @@ export default class PatientRunner {
         this.hooks.reward(event.reward, event.agent);
         this.views.float(event.agent, `+${event.reward.coins}`, '#ffe082');
         this.hooks.notify(`Пациент ${event.agent.name} вылечен: +${event.reward.coins} монет`);
+        this.hooks.event('patientTreated', {
+          diseaseId: event.agent.disease ? event.agent.disease.id : null,
+          stars: event.reward.stars,
+          coins: event.reward.coins,
+          auto: Number.isFinite(event.agent.autoStars),
+        });
+        this.hooks.event('coinsEarned', {
+          amount: event.reward.coins,
+          source: 'treatment',
+        });
         break;
       case 'angry':
         this.closeDialogFor(event.agent);
         this.hooks.penalty(event.penalty, event.agent);
+        this.hooks.event('patientLeftAngry', { reason: event.reason });
         this.views.float(event.agent, `−${event.penalty}`, '#ff8a80');
         this.hooks.notify(event.reason === 'room'
           ? `${event.agent.name} ушёл: в кабинете нет нужной мебели`

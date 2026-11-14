@@ -23,7 +23,10 @@ export function loadIsoSave() {
       reputation: Number.isFinite(data.reputation)
         ? Math.max(0, Math.min(100, data.reputation))
         : null,
+      experience: Number.isFinite(data.experience) ? Math.max(0, data.experience) : null,
+      crystals: Number.isFinite(data.crystals) ? Math.max(0, data.crystals) : null,
       staff: Array.isArray(data.staff) ? data.staff : null,
+      quests: data.quests && typeof data.quests === 'object' ? data.quests : null,
     };
   } catch (err) {
     return null;
@@ -34,7 +37,8 @@ export function loadIsoSave() {
  * @param {number|null} coins
  * @param {Array|null} items
  * @param {object|null} player
- * @param {{reputation?:number}|null} stats репутация и другие поля этапов v2
+ * @param {{reputation?:number, experience?:number, crystals?:number,
+ *   staff?:Array, quests?:object}|null} stats поля этапов v2
  */
 export function saveIso(coins, items, player = null, stats = null) {
   try {
@@ -62,6 +66,23 @@ export function saveIso(coins, items, player = null, stats = null) {
         name: entry && entry.name,
         postItemId: entry && Number.isFinite(entry.postItemId) ? entry.postItemId : null,
       }));
+    }
+    const experience = stats && Number.isFinite(stats.experience)
+      ? stats.experience
+      : (previous && Number.isFinite(previous.experience) ? previous.experience : null);
+    if (Number.isFinite(experience)) {
+      data.experience = Math.max(0, Math.round(experience));
+    }
+    const crystals = stats && Number.isFinite(stats.crystals)
+      ? stats.crystals
+      : (previous && Number.isFinite(previous.crystals) ? previous.crystals : null);
+    if (Number.isFinite(crystals)) {
+      data.crystals = Math.max(0, Math.round(crystals));
+    }
+    if (stats && stats.quests && typeof stats.quests === 'object') {
+      data.quests = stats.quests;
+    } else if (previous && previous.quests) {
+      data.quests = previous.quests;
     }
     window.localStorage.setItem(KEY, JSON.stringify(data));
   } catch (err) {

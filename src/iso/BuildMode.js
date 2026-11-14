@@ -12,7 +12,7 @@ export default class BuildMode {
    * @param {Phaser.Scene} scene
    * @param {import('./IsoWorld.js').default} world
    * @param {{getCoins:()=>number, spend:(n:number)=>void, earn:(n:number)=>void,
-   *   onChange:()=>void, notify:(text:string)=>void}} hooks
+   *   onChange:()=>void, notify:(text:string)=>void, onEvent?:Function}} hooks
    */
   constructor(scene, world, hooks) {
     this.scene = scene;
@@ -151,13 +151,26 @@ export default class BuildMode {
       }
       if (this.world.addItem(this.type, this.target.x, this.target.y, this.rot)) {
         this.hooks.spend(price);
+        if (this.hooks.onEvent) {
+          this.hooks.onEvent('itemBought', {
+            type: this.type,
+            price,
+            x: this.target.x,
+            y: this.target.y,
+          });
+        }
         this.hooks.onChange();
       }
     } else if (this.tool === 'sell' && this.sellEntry) {
       const refund = this.refundOf(this.sellEntry);
-      this.world.removeItem(this.sellEntry.item.gridId);
+      const item = this.sellEntry.item;
+      const sold = { type: item.type, refund, x: item.x, y: item.y };
+      this.world.removeItem(item.gridId);
       this.sellEntry = null;
       this.hooks.earn(refund);
+      if (this.hooks.onEvent) {
+        this.hooks.onEvent('itemSold', sold);
+      }
       this.hooks.notify(`Продано за ${refund}`);
       this.hooks.onChange();
     }

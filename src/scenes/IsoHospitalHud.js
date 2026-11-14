@@ -2,6 +2,7 @@ import { createButton } from '../ui/Button.js';
 import { CATALOG, CATALOG_BY_TYPE, SELL_REFUND } from '../data/buildCatalog.js';
 import { isoKey } from '../iso/isoAssets.js';
 import StaffPanel from '../iso/StaffPanel.js';
+import QuestPanel from '../iso/QuestPanel.js';
 
 const FONT = 'Arial, "Segoe UI", sans-serif';
 const PANEL_Y = 540;
@@ -22,9 +23,13 @@ export default class IsoHospitalHud extends Phaser.Scene {
     this.resetArmedUntil = 0;
     this.rects = [];
 
-    this.add.image(40, 40, isoKey('icons_icon_coin')).setScale(0.26).setDepth(10);
+    this.coinIcon = this.add.image(40, 40, isoKey('icons_icon_coin')).setScale(0.26).setDepth(10);
     this.coinText = this.add
       .text(72, 40, '', { fontFamily: FONT, fontSize: '30px', fontStyle: 'bold', color: '#fff3b0', stroke: '#10222e', strokeThickness: 5 })
+      .setOrigin(0, 0.5).setDepth(10);
+    this.crystalIcon = this.add.image(200, 40, isoKey('icons_icon_crystal')).setScale(0.2).setDepth(10);
+    this.crystalText = this.add
+      .text(222, 40, '', { fontFamily: FONT, fontSize: '24px', fontStyle: 'bold', color: '#9fe7ff', stroke: '#10222e', strokeThickness: 4 })
       .setOrigin(0, 0.5).setDepth(10);
     this.message = this.add
       .text(640, 90, '', { fontFamily: FONT, fontSize: '26px', fontStyle: 'bold', color: '#ffffff', stroke: '#b3261e', strokeThickness: 6 })
@@ -62,6 +67,13 @@ export default class IsoHospitalHud extends Phaser.Scene {
       onClose: () => this.staffPanel.hide(),
     });
     this.addButton(1180, 340, 180, 'Персонал', () => this.toggleStaff(), 0x2f80c9, 0x4a9be0);
+    this.questPanel = new QuestPanel(this, {
+      onClaim: (category, id) => this.claimQuest(category, id),
+      onClose: () => this.questPanel.hide(),
+      onShow: () => this.setTopStatsVisible(false),
+      onHide: () => this.setTopStatsVisible(true),
+    });
+    this.questButton = this.addButton(1180, 400, 180, 'Задания', () => this.toggleQuests(), 0x8d7bb5, 0xa695cc);
 
     const inBuild = () => this.state && this.state.build.active;
     this.rotateButton = this.addButton(1020, PANEL_Y + 55, 150, 'Повернуть', () => this.world().build.rotate(), 0x2f80c9, 0x4a9be0, inBuild, true);
@@ -83,10 +95,46 @@ export default class IsoHospitalHud extends Phaser.Scene {
       this.staffPanel.hide();
       return;
     }
+    this.questPanel.hide();
     if (this.state && this.state.build.active) {
       this.world().build.setActive(false);
     }
     this.staffPanel.show();
+  }
+
+  toggleQuests() {
+    if (this.questPanel.visible) {
+      this.questPanel.hide();
+      return;
+    }
+    this.staffPanel.hide();
+    if (this.state && this.state.build.active) {
+      this.world().build.setActive(false);
+    }
+    this.questPanel.show();
+  }
+
+  claimQuest(category, id) {
+    const main = this.world();
+    if (!main.quests) {
+      return { ok: false, hint: 'Задания недоступны' };
+    }
+    const result = main.quests.claim(category, id);
+    if (result.ok) {
+      main.stats.applyQuestReward(result.reward);
+      main.notify(`Награда за задание: +${result.reward.coins} монет`);
+    }
+    return result;
+  }
+
+  /** На весь экран задания прячем верхние счётчики, чтобы они не лезли на окно. */
+  setTopStatsVisible(visible) {
+    [this.coinIcon, this.coinText, this.crystalIcon, this.crystalText,
+      this.reputationText, this.info].forEach((item) => {
+      if (item) {
+        item.setVisible(visible);
+      }
+    });
   }
 
   buildPanelBackground() {
@@ -181,6 +229,9 @@ export default class IsoHospitalHud extends Phaser.Scene {
     if (this.staffPanel && this.staffPanel.visible) {
       return true;
     }
+    if (this.questPanel && this.questPanel.visible) {
+      return true;
+    }
     if (this.state && this.state.build.active && pointer.y >= PANEL_Y) {
       return true;
     }
@@ -225,6 +276,9 @@ export default class IsoHospitalHud extends Phaser.Scene {
     this.sellButton.label.setText(b.tool === 'sell' ? 'Продажа' : 'Продать');
     this.resetButton.label.setText(this.resetArmedUntil > time ? 'Точно?' : 'Сброс');
     this.staffPanel.update(state.staff, state.coins);
+    this.crystalText.setText(String(state.crystals || 0));
+    this.questButton.label.setText(state.quests && state.quests.claimable ? 'Задания!' : 'Задания');
+    this.questPanel.update(state.quests, state.coins, state.crystals || 0);
     this.buttons.forEach((entry) => {
       entry.container.setVisible(!entry.shown || entry.shown());
     });

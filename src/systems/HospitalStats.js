@@ -1,5 +1,5 @@
-// Экономика v2 на этапе 14: монеты и репутация больницы.
-// Опыт, уровень, расходы и зарплаты появятся на этапе 17; баланс хранится в data.
+// Экономика v2: монеты, репутация, опыт и кристаллы больницы.
+// Уровни, расходы и зарплаты появятся на этапе 17; баланс хранится в data.
 
 export const START_REPUTATION = 50;
 export const MAX_REPUTATION = 100;
@@ -14,16 +14,20 @@ function clampReputation(value) {
 
 export default class HospitalStats {
   /**
-   * @param {{coins?:number, reputation?:number, startCoins?:number,
-   *   onChange?:Function}} options onChange вызывается после наград и штрафов
+   * @param {{coins?:number, reputation?:number, experience?:number, crystals?:number,
+   *   startCoins?:number, onChange?:Function}} options onChange вызывается после наград и штрафов
    */
   constructor(options = {}) {
     this.startCoins = Number.isFinite(options.startCoins) ? options.startCoins : 0;
     this.onChange = typeof options.onChange === 'function' ? options.onChange : () => {};
     this._coins = 0;
     this._reputation = START_REPUTATION;
+    this._experience = 0;
+    this._crystals = 0;
     this.coins = options.coins;
     this.reputation = options.reputation;
+    this.experience = options.experience;
+    this.crystals = options.crystals;
   }
 
   get coins() {
@@ -42,9 +46,47 @@ export default class HospitalStats {
     this._reputation = clampReputation(value);
   }
 
+  get experience() {
+    return this._experience;
+  }
+
+  set experience(value) {
+    this._experience = Math.max(0, Math.round(Number(value) || 0));
+  }
+
+  get crystals() {
+    return this._crystals;
+  }
+
+  set crystals(value) {
+    this._crystals = Math.max(0, Math.round(Number(value) || 0));
+  }
+
   addCoins(amount) {
     this.coins = this._coins + (Number(amount) || 0);
     return this._coins;
+  }
+
+  addExperience(amount) {
+    this.experience = this._experience + (Number(amount) || 0);
+    return this._experience;
+  }
+
+  addCrystals(amount) {
+    this.crystals = this._crystals + (Number(amount) || 0);
+    return this._crystals;
+  }
+
+  /** Награда задания: монеты, опыт и кристаллы одним сохранением. */
+  applyQuestReward(reward) {
+    if (!reward) {
+      return this.crystals;
+    }
+    this.addCoins(reward.coins);
+    this.addExperience(reward.experience);
+    this.addCrystals(reward.crystals);
+    this.onChange();
+    return this._crystals;
   }
 
   /** Изменение репутации с ограничением 0..100; сразу сохраняет через onChange. */
@@ -69,5 +111,7 @@ export default class HospitalStats {
   reset() {
     this.coins = this.startCoins;
     this.reputation = START_REPUTATION;
+    this.experience = 0;
+    this.crystals = 0;
   }
 }

@@ -9,9 +9,10 @@ import StaffRunner from './StaffRunner.js';
  * @param {import('./IsoWorld.js').default} world
  * @param {import('./PatientRunner.js').default} patients
  * @param {Array} savedStaff
+ * @param {object|null} bus шина событий для заданий
  * @returns {{flow: StaffFlow, runner: StaffRunner}}
  */
-export default function createStaff(scene, world, patients, savedStaff) {
+export default function createStaff(scene, world, patients, savedStaff, bus = null) {
   const flow = new StaffFlow({
     world: new StaffPoints(world),
     patients: patients.flow,
@@ -21,6 +22,11 @@ export default function createStaff(scene, world, patients, savedStaff) {
     penalty: (n) => scene.stats.changeReputation(-n),
     notify: (text) => scene.notify(text),
     onChange: () => scene.persist(),
+    onEvent: (event) => {
+      if (bus && event.type === 'hired') {
+        bus.emit('staffHired', { roleId: event.agent.roleId, name: event.agent.name });
+      }
+    },
   });
   const runner = new StaffRunner(scene, flow, scene.actors);
   return { flow, runner };
