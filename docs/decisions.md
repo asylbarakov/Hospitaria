@@ -96,3 +96,10 @@
 7. **Максимум пациентов.** В v2 пока нет уровня и опыта (экономика этапа 17), поэтому
    лимит берётся из `PATIENT_CONFIG.maxPatients = 4`. Функция `maxPatientsForLevel`
    из v0.1 остаётся для старой сцены и будет подключена к v2 вместе с прокачкой.
+8. **Разгрузка модулей (по замечанию к этапу 14).** `IsoWorld` и `IsoHospitalScene`
+   держатся в пределах ~300 строк. Брони вынесены в чистый `TileReservations`, точки
+   интереса — в адаптер `PatientPoints` (слоты и `standNear` живут в `worldSlots`).
+   Управление игроком — в `PlayerControl`, монеты и репутация — в `HospitalStats`,
+   подсветка непроходимого тайла — в `TapMarker`. Публичные методы `reserveTile`,
+   `isTileFree`, `releaseTile`, а также `coins`, `reputation`, `playerActor` сохранены
+   ради тестов и «Гардероба».

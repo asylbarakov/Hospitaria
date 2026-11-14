@@ -1,17 +1,20 @@
 import * as layout from '../data/layout.js';
 import { START_COINS } from '../data/buildCatalog.js';
 import { ACTOR_ICONS } from '../data/actorConfig.js';
-import { DEFAULT_PLAYER, accentById, normalizePlayer, roleById } from '../data/playerSkins.js';
+import { DEFAULT_PLAYER } from '../data/playerSkins.js';
 import IsoWorld from '../iso/IsoWorld.js';
 import IsoCamera from '../iso/IsoCamera.js';
 import BuildMode from '../iso/BuildMode.js';
 import ActorLayer from '../iso/ActorLayer.js';
 import Pathfinder from '../iso/Pathfinder.js';
 import PatientRunner from '../iso/PatientRunner.js';
+import PlayerControl from '../iso/PlayerControl.js';
+import TapMarker from '../iso/TapMarker.js';
 import { queueIsoAssets, queueWallAssets } from '../iso/isoAssets.js';
 import {
-  screenToTileIndex, tileCenter, tileToScreen, worldBounds,
+  screenToTileIndex, tileCenter, worldBounds,
 } from '../iso/IsoMath.js';
+import HospitalStats, { START_REPUTATION } from '../systems/HospitalStats.js';
 import { clearIsoSave, loadIsoSave, saveIso } from '../systems/IsoSave.js';
 
 // Этап 13: изометрическая больница. Мир из layout.js, режим строительства,
@@ -40,10 +43,13 @@ export default class IsoHospitalScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#10222e');
 
     const saved = loadIsoSave();
-    this.coins = saved && saved.coins !== null ? saved.coins : START_COINS;
+    this.stats = new HospitalStats({
+      coins: saved && saved.coins !== null ? saved.coins : START_COINS,
+      reputation: saved && Number.isFinite(saved.reputation) ? saved.reputation : START_REPUTATION,
+      startCoins: START_COINS,
+      onChange: () => this.persist(),
+    });
     const rawPlayer = saved && saved.player ? saved.player : { ...DEFAULT_PLAYER, name: 'Доктор' };
-    this.player = normalizePlayer({ ...rawPlayer, name: rawPlayer.name || 'Доктор' });
-    this.reputation = saved && Number.isFinite(saved.reputation) ? saved.reputation : 50;
     this.wardrobeOpen = false;
     this.modalOpen = false;
     this.patientClickGuard = false;
@@ -54,18 +60,25 @@ export default class IsoHospitalScene extends Phaser.Scene {
     this.pathfinder = new Pathfinder(this.grid);
     this.actors = new ActorLayer(this, this.world, this.pathfinder);
 
-    this.spawnPlayer();
-    this.patients = new PatientRunner(this, this.world, this.actors, this.playerActor, {
-      notify: (text) => this.notify(text),
-      reward: (reward) => this.applyTreatmentReward(reward),
-      penalty: (amount) => this.changeReputation(-amount),
+    this.playerCtl = new PlayerControl({
+      world: this.world,
+      actors: this.actors,
+      stats: this.stats,
+      player: rawPlayer,
+      onChange: () => this.persist(),
     });
-    this.marker = this.add.graphics().setDepth(91);
+    this.playerCtl.spawn();
+    this.patients = new PatientRunner(this, this.world, this.actors, this.playerCtl.actor, {
+      notify: (text) => this.notify(text),
+      reward: (reward) => this.stats.applyReward(reward),
+      penalty: (amount) => this.stats.changeReputation(-amount),
+    });
+    this.marker = new TapMarker(this);
 
     this.build = new BuildMode(this, this.world, {
-      getCoins: () => this.coins,
-      spend: (n) => { this.coins -= n; },
-      earn: (n) => { this.coins += n; },
+      getCoins: () => this.stats.coins,
+      spend: (n) => this.stats.addCoins(-n),
+      earn: (n) => this.stats.addCoins(n),
       onChange: () => { this.persist(); this.patients.changed(); },
       notify: (text) => this.notify(text),
     });
@@ -92,38 +105,31 @@ export default class IsoHospitalScene extends Phaser.Scene {
     this.events.once('shutdown', () => this.cleanup());
   }
 
-  // ---- персонажи ---------------------------------------------------------------------
+  // ---- игрок и экономика -------------------------------------------------------------
 
-  spawnPlayer() {
-    const role = roleById(this.player.role);
-    const accent = accentById(this.player.accent);
-    this.playerActor = this.actors.spawn({
-      kind: 'player',
-      x: layout.ENTRANCE.x + 0.5,
-      y: layout.ENTRANCE.y + 0.5,
-      sprite: this.player.skin,
-      name: this.player.name,
-      icon: role.icon,
-      accent: accent.color,
-    });
+  get coins() {
+    return this.stats.coins;
   }
 
-  refreshPlayerLook() {
-    const role = roleById(this.player.role);
-    this.playerActor.setSkin(this.player.skin);
-    this.playerActor.setName(this.player.name);
-    this.playerActor.setIcon(role.icon);
-    this.playerActor.setAccent(accentById(this.player.accent).color);
+  set coins(value) {
+    this.stats.coins = value;
+  }
+
+  get reputation() {
+    return this.stats.reputation;
+  }
+
+  get player() {
+    return this.playerCtl ? this.playerCtl.player : null;
+  }
+
+  get playerActor() {
+    return this.playerCtl ? this.playerCtl.actor : null;
   }
 
   /** Вызывается из «Гардероба»: применяет новый облик и монеты, затем сохраняет. */
   applyPlayer(player, coins) {
-    this.player = normalizePlayer(player);
-    if (Number.isFinite(coins)) {
-      this.coins = coins;
-    }
-    this.refreshPlayerLook();
-    this.persist();
+    this.playerCtl.apply(player, coins);
   }
 
   openWardrobe() {
@@ -166,12 +172,12 @@ export default class IsoHospitalScene extends Phaser.Scene {
       return;
     }
     if (!this.grid.isWalkable(tile.x, tile.y)) {
-      this.blockedFlash = { x: tile.x, y: tile.y, until: this.time.now + 350 };
+      this.marker.flash(tile.x, tile.y, this.time.now);
       return;
     }
-    this.actors.moveTo(this.playerActor, tile.x, tile.y).then((ok) => {
+    this.playerCtl.walkTo(tile).then((ok) => {
       if (!ok) {
-        this.blockedFlash = { x: tile.x, y: tile.y, until: this.time.now + 350 };
+        this.marker.flash(tile.x, tile.y, this.time.now);
       }
     });
   }
@@ -201,29 +207,15 @@ export default class IsoHospitalScene extends Phaser.Scene {
   }
 
   persist() {
-    saveIso(this.coins, this.world.serialize(), this.player, { reputation: this.reputation });
-  }
-
-  /** Награда за вылеченного пациента: монеты и репутация, затем сохранение. */
-  applyTreatmentReward(reward) {
-    if (!reward) {
-      return;
-    }
-    this.coins += Number(reward.coins) || 0;
-    this.changeReputation(Number(reward.reputation) || 0);
-  }
-
-  changeReputation(amount) {
-    const next = Math.max(0, Math.min(100, this.reputation + (Number(amount) || 0)));
-    this.reputation = next;
-    this.persist();
-    return next;
+    saveIso(this.stats.coins, this.world.serialize(), this.playerCtl.player, {
+      reputation: this.stats.reputation,
+    });
   }
 
   resetHospital() {
     clearIsoSave();
-    this.reputation = 50;
-    saveIso(null, null, this.player, { reputation: this.reputation });
+    this.stats.reset();
+    saveIso(null, null, this.playerCtl.player, { reputation: this.stats.reputation });
     this.scene.stop('IsoHospitalHud');
     this.scene.restart();
   }
@@ -251,22 +243,6 @@ export default class IsoHospitalScene extends Phaser.Scene {
     this.scene.stop('IsoHospitalHud');
   }
 
-  diamond(g, x, y) {
-    const points = [
-      tileToScreen(x, y),
-      tileToScreen(x + 1, y),
-      tileToScreen(x + 1, y + 1),
-      tileToScreen(x, y + 1),
-    ];
-    g.beginPath();
-    g.moveTo(points[0].x, points[0].y);
-    for (let i = 1; i < points.length; i += 1) {
-      g.lineTo(points[i].x, points[i].y);
-    }
-    g.closePath();
-    g.fillPath();
-  }
-
   // ---- цикл --------------------------------------------------------------------------
 
   update(time, delta) {
@@ -285,12 +261,7 @@ export default class IsoHospitalScene extends Phaser.Scene {
       this.build.hover(tile);
     }
     this.build.update();
-
-    this.marker.clear();
-    if (this.blockedFlash && this.blockedFlash.until > time) {
-      this.marker.fillStyle(0xe53935, 0.55);
-      this.diamond(this.marker, this.blockedFlash.x, this.blockedFlash.y);
-    }
+    this.marker.update(time);
 
     this.world.sorter.sort();
     this.world.updateWallFade(this.actors.fadeTargets());

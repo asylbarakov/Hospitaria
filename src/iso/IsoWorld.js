@@ -5,10 +5,7 @@ import {
   standCandidates, tileKey, unwrapItem,
 } from './connectivity.js';
 import { PATH_CONFIG } from '../data/pathConfig.js';
-import { FALLBACK_WAIT_TILES, roomHint } from '../data/patientFlow.js';
-import {
-  fallbackSlots, paySlots, receptionSlots, roomReady, treatmentSlots, waitingSlots,
-} from './worldSlots.js';
+import TileReservations from './TileReservations.js';
 import { anchorOf, isoKey, wallKey, wallMeta } from './isoAssets.js';
 import {
   HALF_H, HALF_W, SPRITE_SCALE, footprintScreen, tileToScreen,
@@ -39,7 +36,7 @@ export default class IsoWorld {
     this.wallSprites = [];
     this.openTiles = data.openTiles;
     this.entrance = layout.ENTRANCE;
-    this.reserved = new Map(); // "x:y" -> { owner, until }
+    this.reserved = new TileReservations();
     this.placementCache = { key: '', issue: null };
 
     this.buildFloors(data.floors);
@@ -181,66 +178,9 @@ export default class IsoWorld {
     return nearestWalkableOf(this.grid, x, y, maxRadius);
   }
 
-  /** Первый проходимый тайл рядом с точкой: сюда встаёт игрок во время приёма. */
-  standNear(x, y) {
-    const cx = Math.floor(x);
-    const cy = Math.floor(y);
-    const around = [
-      [1, 0], [-1, 0], [0, 1], [0, -1],
-      [1, 1], [-1, 1], [1, -1], [-1, -1],
-      [2, 0], [-2, 0], [0, 2], [0, -2],
-    ];
-    for (const [dx, dy] of around) {
-      if (this.grid.isWalkable(cx + dx, cy + dy)) {
-        return { x: cx + dx, y: cy + dy };
-      }
-    }
-    return this.nearestWalkable(x, y, 3);
-  }
-
-  // ---- точки интереса пациентов (этап 14) --------------------------------------------
-
+  /** Предметы мебели: для точек интереса пациентов и проверок строительства. */
   items() {
     return [...this.furniture.values()].map(({ item }) => item);
-  }
-
-  revision() {
-    return this.grid.revision;
-  }
-
-  slotsFor(kind) {
-    const items = this.items();
-    if (kind === 'reception') {
-      return receptionSlots(this.grid, items);
-    }
-    if (kind === 'pay') {
-      return paySlots(this.grid, items);
-    }
-    if (kind === 'waiting') {
-      return waitingSlots(this.grid, items);
-    }
-    return [];
-  }
-
-  treatmentSlots(roomId) {
-    return treatmentSlots(this.grid, this.items(), this.layout.ROOMS, roomId);
-  }
-
-  fallbackSlots() {
-    return fallbackSlots(this.grid, FALLBACK_WAIT_TILES);
-  }
-
-  /** {ok, hint}: есть ли в комнате мебель для лечения. */
-  roomReady(roomId) {
-    return {
-      ok: roomReady(this.items(), this.layout.ROOMS, roomId),
-      hint: roomHint(roomId),
-    };
-  }
-
-  roomName(roomId) {
-    const room = this.layout.ROOMS.find((item) => item.id === roomId);
-    return room ? room.name : 'Кабинет';
   }
 
   isDoorTile(x, y) {
@@ -255,28 +195,19 @@ export default class IsoWorld {
 
   /** Короткая бронь узкого места (двери), чтобы двое не прошли одновременно. */
   reserveTile(x, y, owner, now = this.nowMs(), ttl = PATH_CONFIG.doorReserveMs) {
-    this.reserved.set(tileKey(x, y), { owner, until: now + ttl });
+    this.reserved.reserve(x, y, owner, now, ttl);
   }
 
   isTileFree(x, y, owner, now = this.nowMs()) {
-    const entry = this.reserved.get(tileKey(x, y));
-    return !entry || entry.owner === owner || entry.until <= now;
+    return this.reserved.isFree(x, y, owner, now);
   }
 
   releaseTile(x, y, owner) {
-    const key = tileKey(x, y);
-    const entry = this.reserved.get(key);
-    if (entry && entry.owner === owner) {
-      this.reserved.delete(key);
-    }
+    this.reserved.release(x, y, owner);
   }
 
   releaseActorTiles(owner) {
-    for (const [key, entry] of this.reserved) {
-      if (entry.owner === owner) {
-        this.reserved.delete(key);
-      }
-    }
+    this.reserved.releaseOwner(owner);
   }
 
   /** Ставит предмет. Возвращает запись предмета или null, если место занято. */

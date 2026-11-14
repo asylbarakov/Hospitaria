@@ -3,6 +3,7 @@
 
 import PatientFlow from './PatientFlow.js';
 import PatientDialog from './PatientDialog.js';
+import PatientPoints from './PatientPoints.js';
 import PatientViews from './PatientViews.js';
 import { PATIENT_SKINS } from '../data/actorConfig.js';
 import { FLOW_STATES } from '../data/patientFlow.js';
@@ -20,38 +21,24 @@ export default class PatientRunner {
    */
   constructor(scene, world, actors, playerActor, hooks = {}) {
     this.scene = scene;
-    this.world = world;
     this.actors = actors;
     this.player = playerActor;
+    this.points = new PatientPoints(world);
     this.hooks = {
       notify: hooks.notify || (() => {}),
       reward: hooks.reward || (() => {}),
       penalty: hooks.penalty || (() => {}),
     };
     this.views = new PatientViews(scene, actors, (agent) => this.tapAgent(agent));
-    this.dialog = new PatientDialog(scene, world);
+    this.dialog = new PatientDialog(scene, this.points);
     this.talkCooldownUntil = 0;
 
     this.flow = new PatientFlow({
-      world: this.adapter(),
+      world: this.points,
       skinPool: PATIENT_SKINS,
       navigate: (agent, point) => this.sendMove(agent, point),
       onEvent: (event) => this.onEvent(event),
     });
-  }
-
-  adapter() {
-    const world = this.world;
-    return {
-      revision: () => world.revision(),
-      entrance: () => ({ x: world.entrance.x + 0.5, y: world.entrance.y + 0.5 }),
-      waitingSlots: () => world.slotsFor('waiting'),
-      receptionSlots: () => world.slotsFor('reception'),
-      paySlots: () => world.slotsFor('pay'),
-      fallbackSlots: () => world.fallbackSlots(),
-      treatmentSlots: (roomId) => world.treatmentSlots(roomId),
-      roomReady: (roomId) => world.roomReady(roomId),
-    };
   }
 
   // ---- события менеджера -------------------------------------------------------------
@@ -59,10 +46,7 @@ export default class PatientRunner {
   onEvent(event) {
     switch (event.type) {
       case 'spawned':
-        this.views.create(event.agent, {
-          x: this.world.entrance.x + 0.5,
-          y: this.world.entrance.y + 0.5,
-        });
+        this.views.create(event.agent, this.points.entrance());
         break;
       case 'treated':
         this.hooks.reward(event.reward, event.agent);
@@ -266,7 +250,7 @@ export default class PatientRunner {
     if (!point) {
       return;
     }
-    const tile = this.world.standNear(point.x, point.y);
+    const tile = this.points.standNear(point.x, point.y);
     if (tile) {
       this.actors.moveTo(this.player, tile.x, tile.y);
     }

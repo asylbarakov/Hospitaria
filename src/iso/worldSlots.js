@@ -2,7 +2,7 @@
 // Слот это один предмет: кресло, диван, кушетка, стойка регистратуры или касса.
 // Один агент занимает один слот, поэтому занятость считается по ключу `item:<gridId>`.
 
-import { standCandidates } from './connectivity.js';
+import { nearestWalkable, standCandidates } from './connectivity.js';
 import {
   PAY_ITEM_TYPES, RECEPTION_ITEM_TYPES, TREATMENT_ITEMS, WAITING_ITEM_TYPES,
 } from '../data/patientFlow.js';
@@ -102,4 +102,21 @@ export function fallbackSlots(grid, tiles) {
     }
   });
   return out;
+}
+
+/** Первый проходимый тайл рядом с точкой: сюда встаёт игрок во время приёма. */
+export function standNear(grid, x, y, maxRadius = 3) {
+  const cx = Math.floor(x);
+  const cy = Math.floor(y);
+  const around = [
+    [1, 0], [-1, 0], [0, 1], [0, -1],
+    [1, 1], [-1, 1], [1, -1], [-1, -1],
+    [2, 0], [-2, 0], [0, 2], [0, -2],
+  ];
+  for (const [dx, dy] of around) {
+    if (grid.isWalkable(cx + dx, cy + dy)) {
+      return { x: cx + dx, y: cy + dy };
+    }
+  }
+  return nearestWalkable(grid, x, y, maxRadius);
 }

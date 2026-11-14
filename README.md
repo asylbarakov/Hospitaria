@@ -129,7 +129,11 @@ src/iso/IsoDepth.js      сортировка по глубине по осно�
 src/iso/IsoCamera.js     камера: перетаскивание, зум колесом и щипком, границы
 src/iso/isoAssets.js     загрузка PNG из assets/final (в том числе стен)
 src/iso/layoutBuilder.js построитель карты по src/data/layout.js: пол, стены, двери, окна, таблички, мебель
-src/iso/IsoWorld.js      мир на сцене: спрайты, прозрачность стен, standTileFor и бронь дверей
+src/iso/IsoWorld.js      мир на сцене: спрайты, прозрачность стен, standTileFor; брони — обёртки
+src/iso/TileReservations.js  чистые брони тайлов (двери и узкие проходы)
+src/iso/PatientPoints.js адаптер точек интереса пациентов поверх IsoWorld и worldSlots
+src/iso/PlayerControl.js спавн игрока, смена облика и ходьба по тапу
+src/iso/TapMarker.js     красный ромб на тайле, куда нельзя пройти
 src/iso/BuildMode.js     строительство: призрак, поворот, покупка, продажа, защита проходов
 src/iso/IsoActor.js      персонаж: позиция в тайлах, путь, поворот, походка и дыхание
 src/iso/ActorLayer.js    слой персонажей: маршруты, ожидание у двери, регистрация в IsoDepth
@@ -146,6 +150,7 @@ src/data/buildCatalog.js каталог предметов для строите
 src/data/playerSkins.js  облики игрока, роли, акценты и цены «Гардероба»
 src/data/actorConfig.js  скорости, размеры, иконки статусов и места пациентов-заглушек
 src/data/pathConfig.js   лимит запросов пути, ожидание у двери, радиус подходов к мебели
+src/systems/HospitalStats.js  монеты и репутация v2, награды и сброс
 src/systems/IsoSave.js   сохранение расстановки, монет и игрока (ключ hospitaria.iso.layout.v1)
 src/scenes/IsoHospitalScene.js, IsoHospitalHud.js   сцена больницы v2 и её интерфейс
 src/scenes/IsoCreatorScene.js, IsoWardrobeScene.js  создание персонажа v2 и гардероб
