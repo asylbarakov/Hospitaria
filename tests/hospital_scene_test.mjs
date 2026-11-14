@@ -58,6 +58,17 @@ assert.equal(s.coins, START_COINS);
 const w = s.world;
 const n0 = w.furniture.size;
 assert.equal(n0, 51);
+assert.equal(s.pathfinder.backend, 'bfs', 'в node Pathfinder падает на BFS');
+const firstFurniture = [...w.furniture.values()][0];
+const stand = w.standTileFor(firstFurniture);
+assert(stand && s.grid.isWalkable(stand.x, stand.y), 'есть подход к мебели');
+assert(stand.facing && Number.isFinite(stand.facing.x), 'есть тайл для взгляда');
+assert(w.isDoorTile(24, 34), 'вход — дверной тайл');
+assert.equal(w.placementIssue('hall_sofa', 24, 34, 0), 'door', 'на дверь не поставить');
+w.reserveTile(24, 34, 'other', 0);
+assert.equal(w.isTileFree(24, 34, s.playerActor, 0), false, 'дверь занята другим');
+assert.equal(w.isTileFree(24, 34, s.playerActor, 9999), true, 'бронь истекает');
+w.releaseTile(24, 34, 'other');
 
 // ходьба: от входа до терапевта
 s.handleTap({ x: 0, y: 0, wasTouch: false }); // тап по произвольной точке не должен падать

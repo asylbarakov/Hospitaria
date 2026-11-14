@@ -22,6 +22,7 @@
 ## 3. ТЕХНИЧЕСКИЕ ОГРАНИЧЕНИЯ (СТРОГО)
 
 - Phaser 3 подключается через CDN в index.html. Сборщиков (Vite, webpack) НЕ использовать.
+- EasyStar.js (только версия 0.4.4) подключается через CDN в index.html: `https://cdn.jsdelivr.net/npm/easystarjs@0.4.4/bin/easystar-0.4.4.min.js`. Другие библиотеки не добавлять; при отсутствии CDN поиск пути падает на BFS из `IsoGrid`.
 - Чистый JavaScript с ES-модулями. Без TypeScript и без других библиотек.
 - Звуки делаются через Web Audio API (простые бипы).
 - Графика: UI и меню v0.1 рисуются кодом (Phaser Graphics, generateTexture). С версии v2 (изометрия) мир, мебель,

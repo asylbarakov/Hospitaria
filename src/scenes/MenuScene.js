@@ -173,7 +173,7 @@ export default class MenuScene extends Phaser.Scene {
 
     const iso = loadIsoSave();
     const hasIsoPlayer = !!(iso && iso.player);
-    createButton(this, 450, 688, 'Больница v2 (этап 12)', () => {
+    createButton(this, 450, 688, 'Больница v2', () => {
       this.scene.start(hasIsoPlayer ? 'IsoHospitalScene' : 'IsoCreatorScene');
     }, {
       width: 290,

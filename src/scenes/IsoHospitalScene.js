@@ -10,14 +10,15 @@ import IsoWorld from '../iso/IsoWorld.js';
 import IsoCamera from '../iso/IsoCamera.js';
 import BuildMode from '../iso/BuildMode.js';
 import ActorLayer from '../iso/ActorLayer.js';
+import Pathfinder from '../iso/Pathfinder.js';
 import { queueIsoAssets, queueWallAssets } from '../iso/isoAssets.js';
 import {
   screenToTileIndex, tileCenter, tileToScreen, worldBounds,
 } from '../iso/IsoMath.js';
 import { clearIsoSave, loadIsoSave, saveIso } from '../systems/IsoSave.js';
 
-// Этап 12: изометрическая больница. Мир из layout.js, режим строительства,
-// игрок и пациенты-заглушки через IsoActor/ActorLayer. BFS-путь, EasyStar придёт в 13.
+// Этап 13: изометрическая больница. Мир из layout.js, режим строительства,
+// игрок и пациенты через IsoActor/ActorLayer, поиск пути Pathfinder (EasyStar/BFS).
 
 const ICON_FILES = ACTOR_ICONS.map((name) => `icons/${name}.png`);
 
@@ -53,7 +54,8 @@ export default class IsoHospitalScene extends Phaser.Scene {
     this.world = new IsoWorld(this, layout, saved ? saved.items : null);
     this.grid = this.world.grid;
     this.messages = [];
-    this.actors = new ActorLayer(this, this.world);
+    this.pathfinder = new Pathfinder(this.grid);
+    this.actors = new ActorLayer(this, this.world, this.pathfinder);
 
     this.spawnPlayer();
     this.spawnDummies();
@@ -180,17 +182,11 @@ export default class IsoHospitalScene extends Phaser.Scene {
       this.blockedFlash = { x: tile.x, y: tile.y, until: this.time.now + 350 };
       return;
     }
-    const path = this.grid.findPath(
-      Math.floor(this.playerActor.pos.x),
-      Math.floor(this.playerActor.pos.y),
-      tile.x,
-      tile.y,
-    );
-    if (path === null) {
-      this.blockedFlash = { x: tile.x, y: tile.y, until: this.time.now + 350 };
-      return;
-    }
-    this.playerActor.setPath(path);
+    this.actors.moveTo(this.playerActor, tile.x, tile.y).then((ok) => {
+      if (!ok) {
+        this.blockedFlash = { x: tile.x, y: tile.y, until: this.time.now + 350 };
+      }
+    });
   }
 
   toggleBuild() {
@@ -230,6 +226,12 @@ export default class IsoHospitalScene extends Phaser.Scene {
   }
 
   cleanup() {
+    if (this.pathfinder) {
+      this.pathfinder.dispose();
+    }
+    if (this.actors) {
+      this.actors.clear();
+    }
     if (this.iso) {
       this.iso.destroy();
     }
@@ -258,7 +260,8 @@ export default class IsoHospitalScene extends Phaser.Scene {
 
   update(time, delta) {
     const dt = Math.min(delta, 50) / 1000;
-    this.actors.update(dt);
+    this.pathfinder.update();
+    this.actors.update(dt, time);
 
     const pointer = this.input.activePointer;
     const inside = pointer.x >= 0 && pointer.y >= 0 && pointer.x <= this.scale.width && pointer.y <= this.scale.height;

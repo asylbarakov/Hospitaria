@@ -1,5 +1,10 @@
 import IsoDepth, { isBehind } from './IsoDepth.js';
 import { buildLayout, footprintOf } from './layoutBuilder.js';
+import {
+  evaluatePlacement, facingTile as facingTileOf, nearestWalkable as nearestWalkableOf,
+  standCandidates, tileKey, unwrapItem,
+} from './connectivity.js';
+import { PATH_CONFIG } from '../data/pathConfig.js';
 import { anchorOf, isoKey, wallKey, wallMeta } from './isoAssets.js';
 import {
   HALF_H, HALF_W, SPRITE_SCALE, footprintScreen, tileToScreen,
@@ -28,6 +33,10 @@ export default class IsoWorld {
     this.sorter = new IsoDepth(100);
     this.furniture = new Map(); // gridId -> { item, sprite }
     this.wallSprites = [];
+    this.openTiles = data.openTiles;
+    this.entrance = layout.ENTRANCE;
+    this.reserved = new Map(); // "x:y" -> { owner, until }
+    this.placementCache = { key: '', issue: null };
 
     this.buildFloors(data.floors);
     this.buildPieces(data.pieces);
@@ -114,13 +123,100 @@ export default class IsoWorld {
 
   canPlaceItem(type, x, y, rot = 0) {
     const fp = footprintOf(type, rot);
-    return !!fp && this.grid.canPlace(x, y, fp.w, fp.d);
+    if (!fp || this.overlapsDoor(x, y, fp.w, fp.d)) {
+      return false;
+    }
+    return this.grid.canPlace(x, y, fp.w, fp.d);
+  }
+
+  /** Дверные тайлы всегда остаются проходимыми: мебель на них не ставим. */
+  overlapsDoor(x, y, w, d) {
+    for (let ty = y; ty < y + d; ty += 1) {
+      for (let tx = x; tx < x + w; tx += 1) {
+        if (this.openTiles.has(tileKey(tx, ty))) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Причина отказа: null | 'door' | 'occupied' | 'passage'.
+   * Проверяет и свободное место, и то, что после постановки все двери и подходы
+   * к мебели останутся достижимыми от входа.
+   */
+  placementIssue(type, x, y, rot = 0) {
+    const key = `${this.grid.revision}:${type}:${x}:${y}:${rot}`;
+    if (this.placementCache.key === key) {
+      return this.placementCache.issue;
+    }
+    const items = [...this.furniture.values()].map(({ item }) => item);
+    const issue = evaluatePlacement(
+      this.grid, this.openTiles, items, type, x, y, rot, this.entrance,
+    );
+    this.placementCache = { key, issue };
+    return issue;
+  }
+
+  /** Ближайший проходимый тайл рядом с предметом; facing — тайл, на который смотрит актёр. */
+  standTileFor(target) {
+    const item = unwrapItem(target);
+    if (!item) {
+      return null;
+    }
+    const stand = standCandidates(this.grid, item)[0];
+    return stand ? { ...stand, facing: facingTileOf(item, stand) } : null;
+  }
+
+  facingTile(target, from) {
+    return facingTileOf(target, from);
+  }
+
+  nearestWalkable(x, y, maxRadius = PATH_CONFIG.maxStandRadius) {
+    return nearestWalkableOf(this.grid, x, y, maxRadius);
+  }
+
+  isDoorTile(x, y) {
+    return this.openTiles.has(tileKey(x, y));
+  }
+
+  nowMs() {
+    return this.scene && this.scene.time && Number.isFinite(this.scene.time.now)
+      ? this.scene.time.now
+      : Date.now();
+  }
+
+  /** Короткая бронь узкого места (двери), чтобы двое не прошли одновременно. */
+  reserveTile(x, y, owner, now = this.nowMs(), ttl = PATH_CONFIG.doorReserveMs) {
+    this.reserved.set(tileKey(x, y), { owner, until: now + ttl });
+  }
+
+  isTileFree(x, y, owner, now = this.nowMs()) {
+    const entry = this.reserved.get(tileKey(x, y));
+    return !entry || entry.owner === owner || entry.until <= now;
+  }
+
+  releaseTile(x, y, owner) {
+    const key = tileKey(x, y);
+    const entry = this.reserved.get(key);
+    if (entry && entry.owner === owner) {
+      this.reserved.delete(key);
+    }
+  }
+
+  releaseActorTiles(owner) {
+    for (const [key, entry] of this.reserved) {
+      if (entry.owner === owner) {
+        this.reserved.delete(key);
+      }
+    }
   }
 
   /** Ставит предмет. Возвращает запись предмета или null, если место занято. */
   addItem(type, x, y, rot = 0) {
     const fp = footprintOf(type, rot);
-    if (!fp) {
+    if (!fp || !this.canPlaceItem(type, x, y, rot)) {
       return null;
     }
     const gridId = this.grid.place(x, y, fp.w, fp.d, { type });

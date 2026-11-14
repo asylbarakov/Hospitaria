@@ -14,6 +14,12 @@ export default class IsoGrid {
     this.blocked = new Uint8Array(cols * rows); // стены и прочие непроходимые тайлы
     this.owner = new Int32Array(cols * rows).fill(-1); // индекс предмета, занимающего тайл
     this.objects = [];
+    this.revision = 0; // растёт при любом изменении: Pathfinder пересобирает матрицу
+    const size = cols * rows;
+    this._prev = new Int32Array(size);
+    this._queue = new Int32Array(size);
+    this._seen = new Uint32Array(size);
+    this._generation = 0;
   }
 
   inBounds(x, y) {
@@ -27,12 +33,14 @@ export default class IsoGrid {
   setFloor(x, y, value = 1) {
     if (this.inBounds(x, y)) {
       this.floor[this.index(x, y)] = value ? 1 : 0;
+      this.revision += 1;
     }
   }
 
   setBlocked(x, y, value = 1) {
     if (this.inBounds(x, y)) {
       this.blocked[this.index(x, y)] = value ? 1 : 0;
+      this.revision += 1;
     }
   }
 
@@ -83,6 +91,7 @@ export default class IsoGrid {
         this.owner[this.index(i, j)] = id;
       }
     }
+    this.revision += 1;
     return id;
   }
 
@@ -97,6 +106,7 @@ export default class IsoGrid {
         this.owner[this.index(i, j)] = -1;
       }
     }
+    this.revision += 1;
   }
 
   objectAt(x, y) {
@@ -123,49 +133,72 @@ export default class IsoGrid {
   /**
    * Путь по тайлам, 8 направлений, диагональ не режет углы.
    * Возвращает массив тайлов без стартового, либо null, если дойти нельзя.
+   * Массивы поиска переиспользуются: 200 запросов должны укладываться в 50 мс.
    */
   findPath(sx, sy, tx, ty) {
-    if (!this.isWalkable(tx, ty) || !this.inBounds(sx, sy)) {
+    const cols = this.cols;
+    const goal = ty * cols + tx;
+    if (!this.inBounds(sx, sy) || !this.inBounds(tx, ty)) {
       return null;
     }
-    if (sx === tx && sy === ty) {
+    const start = sy * cols + sx;
+    if (!this.isWalkable(tx, ty)) {
+      return null;
+    }
+    if (start === goal) {
       return [];
     }
-    const size = this.cols * this.rows;
-    const prev = new Int32Array(size).fill(-2);
-    const start = this.index(sx, sy);
-    const goal = this.index(tx, ty);
+    const floor = this.floor;
+    const blocked = this.blocked;
+    const owner = this.owner;
+    const walk = (index) => floor[index] === 1 && blocked[index] === 0 && owner[index] === -1;
+    const stamp = this._generation + 1;
+    this._generation = stamp;
+    const seen = this._seen;
+    const prev = this._prev;
+    const queue = this._queue;
+    seen[start] = stamp;
     prev[start] = -1;
-    const queue = [start];
-    for (let head = 0; head < queue.length; head += 1) {
+    queue[0] = start;
+    let tail = 1;
+    let found = false;
+    for (let head = 0; head < tail; head += 1) {
       const cur = queue[head];
       if (cur === goal) {
+        found = true;
         break;
       }
-      const cx = cur % this.cols;
-      const cy = (cur - cx) / this.cols;
-      for (const [dx, dy] of DIRS) {
+      const cx = cur % cols;
+      const cy = (cur - cx) / cols;
+      for (let d = 0; d < DIRS.length; d += 1) {
+        const dx = DIRS[d][0];
+        const dy = DIRS[d][1];
         const nx = cx + dx;
         const ny = cy + dy;
-        if (!this.isWalkable(nx, ny)) {
+        if (nx < 0 || ny < 0 || nx >= cols || ny >= this.rows) {
           continue;
         }
-        if (dx !== 0 && dy !== 0 && (!this.isWalkable(cx + dx, cy) || !this.isWalkable(cx, cy + dy))) {
+        const ni = ny * cols + nx;
+        if (seen[ni] === stamp || !walk(ni)) {
           continue;
         }
-        const ni = this.index(nx, ny);
-        if (prev[ni] === -2) {
-          prev[ni] = cur;
-          queue.push(ni);
+        if (dx !== 0 && dy !== 0) {
+          if (!walk(cy * cols + nx) || !walk(ny * cols + cx)) {
+            continue;
+          }
         }
+        seen[ni] = stamp;
+        prev[ni] = cur;
+        queue[tail] = ni;
+        tail += 1;
       }
     }
-    if (prev[goal] === -2) {
+    if (!found) {
       return null;
     }
     const path = [];
     for (let cur = goal; cur !== start; cur = prev[cur]) {
-      path.push({ x: cur % this.cols, y: Math.floor(cur / this.cols) });
+      path.push({ x: cur % cols, y: Math.floor(cur / cols) });
     }
     return path.reverse();
   }

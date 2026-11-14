@@ -78,8 +78,15 @@ export default class BuildMode {
     return { x: tile.x - Math.floor((fp.w - 1) / 2), y: tile.y - Math.floor((fp.d - 1) / 2) };
   }
 
+  issue() {
+    if (!this.target) {
+      return 'occupied';
+    }
+    return this.world.placementIssue(this.type, this.target.x, this.target.y, this.rot);
+  }
+
   isValid() {
-    return !!this.target && this.world.canPlaceItem(this.type, this.target.x, this.target.y, this.rot);
+    return !!this.target && this.issue() === null;
   }
 
   priceOf() {
@@ -131,7 +138,10 @@ export default class BuildMode {
         return;
       }
       if (!this.isValid()) {
-        this.hooks.notify('Сюда поставить нельзя');
+        const issue = this.issue();
+        this.hooks.notify(issue === 'passage'
+          ? 'Нельзя перекрывать единственный проход к комнате'
+          : 'Сюда поставить нельзя');
         return;
       }
       const price = this.priceOf();

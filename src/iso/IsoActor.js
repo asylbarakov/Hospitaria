@@ -105,11 +105,18 @@ export default class IsoActor {
   /** @param {Array<{x:number,y:number}>|null} tiles путь без стартового тайла */
   setPath(tiles) {
     this.path = Array.isArray(tiles) ? tiles.map((tile) => ({ x: tile.x, y: tile.y })) : [];
+    if (this.path.length) {
+      const last = this.path[this.path.length - 1];
+      this.goal = { x: last.x, y: last.y };
+    }
+    this.waitMs = 0;
     return this.path;
   }
 
   stop() {
     this.path.length = 0;
+    this.goal = null;
+    this.waitMs = 0;
     this.moving = false;
   }
 
