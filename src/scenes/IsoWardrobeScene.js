@@ -1,7 +1,7 @@
 import { createButton } from '../ui/Button.js';
 import { iconKey, isoKey } from '../iso/isoAssets.js';
 import {
-  ACCENTS, PLAYER_SKINS, isSkinOwned, normalizePlayer, skinById,
+  ACCENTS, PLAYER_SKINS, buySkin, isSkinOwned, normalizePlayer, skinById,
 } from '../data/playerSkins.js';
 
 const W = 1280;
@@ -161,11 +161,12 @@ export default class IsoWardrobeScene extends Phaser.Scene {
   }
 
   buy(skin) {
-    this.coins -= skin.price;
-    if (!this.player.owned.includes(skin.id)) {
-      this.player.owned.push(skin.id);
+    const result = buySkin(this.player, this.coins, skin.id);
+    if (!result.ok) {
+      return;
     }
-    this.player.skin = skin.id;
+    this.coins = result.coins;
+    this.player = result.player;
     this.pending = null;
     this.apply();
     this.setHint(`Куплено: ${skin.title}`, '#2f7f4f');

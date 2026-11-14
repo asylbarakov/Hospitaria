@@ -2,7 +2,10 @@ import { createButton } from '../ui/Button.js';
 import { queueIsoAssets, isoKey } from '../iso/isoAssets.js';
 import { loadIsoSave, saveIso } from '../systems/IsoSave.js';
 import {
-  ACCENTS, DEFAULT_PLAYER, MAX_PLAYER_NAME, PLAYER_ROLES, PLAYER_SKINS,
+  askName, bindKeyboard, randomName, updateNameField,
+} from './creatorName.js';
+import {
+  ACCENTS, DEFAULT_PLAYER, PLAYER_ROLES, PLAYER_SKINS,
   accentById, normalizePlayer, skinById,
 } from '../data/playerSkins.js';
 
@@ -38,7 +41,7 @@ export default class IsoCreatorScene extends Phaser.Scene {
     this.createSkins();
     this.createAccents();
     this.createFooter();
-    this.bindKeyboard();
+    bindKeyboard(this);
     this.refresh();
   }
 
@@ -109,28 +112,22 @@ export default class IsoCreatorScene extends Phaser.Scene {
       .setOrigin(0, 0.5)
       .setVisible(false);
     this.hintText = this.add
-      .text(W / 2, 204, 'Начните печатать на клавиатуре', { fontFamily: FONT, fontSize: '18px', color: '#8aa6b0' })
+      .text(W / 2, 204, 'Нажмите на поле, чтобы ввести имя, или выберите случайное', { fontFamily: FONT, fontSize: '18px', color: '#8aa6b0' })
       .setOrigin(0.5);
+    // Телефон без клавиатуры: тап по полю открывает системное окно ввода.
+    this.add.zone(640, 155, 460, 62).setInteractive({ useHandCursor: true })
+      .on('pointerup', () => askName(this));
+    createButton(this, 985, 155, 'Случайное', () => randomName(this), {
+      width: 170, height: 52, fontSize: 20, color: 0x2f80c9, hoverColor: 0x4a9be0, depth: 20,
+    });
     this.time.addEvent({
       delay: 520,
       loop: true,
       callback: () => {
         this.caretOn = !this.caretOn;
-        this.updateNameField();
+        updateNameField(this);
       },
     });
-  }
-
-  updateNameField() {
-    const hasName = this.nameValue.length > 0;
-    this.nameText.setText(hasName ? this.nameValue : 'Имя персонажа');
-    this.nameText.setColor(hasName ? '#24444f' : '#8aa6b0');
-    if (hasName) {
-      this.caret.setPosition(W / 2 + this.nameText.width / 2 + 4, 155);
-      this.caret.setVisible(this.caretOn);
-    } else {
-      this.caret.setVisible(false);
-    }
   }
 
   createRoles() {
@@ -238,36 +235,6 @@ export default class IsoCreatorScene extends Phaser.Scene {
     this.roleMarks.forEach((entry) => entry.mark.setVisible(entry.role === this.player.role));
     this.paintSkinCards();
     this.paintAccents();
-  }
-
-  bindKeyboard() {
-    this.onKeyDown = (event) => {
-      if (event.key === 'Enter') {
-        this.finish();
-        return;
-      }
-      if (event.key === 'Escape') {
-        this.goBack();
-        return;
-      }
-      if (event.key === 'Backspace') {
-        this.nameValue = this.nameValue.slice(0, -1);
-        this.hintText.setText('');
-        this.updateNameField();
-        return;
-      }
-      if (
-        event.key.length === 1
-        && this.nameValue.length < MAX_PLAYER_NAME
-        && /[A-Za-zА-Яа-яЁё0-9 \-]/.test(event.key)
-      ) {
-        this.nameValue += event.key;
-        this.hintText.setText('');
-        this.updateNameField();
-      }
-    };
-    this.input.keyboard.on('keydown', this.onKeyDown);
-    this.events.once('shutdown', () => this.input.keyboard.off('keydown', this.onKeyDown));
   }
 
   finish() {

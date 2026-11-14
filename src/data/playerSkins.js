@@ -71,3 +71,34 @@ export function normalizePlayer(raw) {
     owned: [...new Set(owned)],
   };
 }
+
+const NAME_CHARS = /[^A-Za-zА-Яа-яЁё0-9 \-]/g;
+
+/** Оставляет допустимые символы и обрезает до MAX_PLAYER_NAME. */
+export function sanitizeName(raw) {
+  const text = typeof raw === 'string' ? raw : '';
+  return text.replace(NAME_CHARS, '').replace(/\s+/g, ' ').trim().slice(0, MAX_PLAYER_NAME);
+}
+
+/**
+ * Покупка или выбор облика без побочных эффектов.
+ * @returns {{ok:boolean, reason?:'unknown'|'coins', player:object, coins:number}}
+ */
+export function buySkin(player, coins, skinId) {
+  const skin = PLAYER_SKINS.find((item) => item.id === skinId);
+  const current = normalizePlayer(player);
+  if (!skin) {
+    return { ok: false, reason: 'unknown', player: current, coins };
+  }
+  if (isSkinOwned(skin.id, current.owned)) {
+    return { ok: true, player: { ...current, skin: skin.id }, coins };
+  }
+  if (coins < skin.price) {
+    return { ok: false, reason: 'coins', player: current, coins };
+  }
+  return {
+    ok: true,
+    player: { ...current, skin: skin.id, owned: [...current.owned, skin.id] },
+    coins: coins - skin.price,
+  };
+}
