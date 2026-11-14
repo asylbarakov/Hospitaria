@@ -10,7 +10,7 @@
 // тайл вокруг внутреннего прямоугольника. Тонкая плита стены прилегает к внутренней стороне:
 //   N: y в [ty+1-T, ty+1]   S: y в [ty, ty+T]   W: x в [tx+1-T, tx+1]   E: x в [tx, tx+T]
 // Верхние (N) и левые (W) стены на границе здания высокие, остальные низкие, чтобы
-// коридоры за комнатами были видны. Дверь в низкой стене это просто проём без спрайта.
+// коридоры за комнатами были видны. Дверь в любой стене это проём с белой рамкой (door_tall_* или door_low_*), тайл проходим.
 
 import IsoGrid from './IsoGrid.js';
 import { CATALOG_BY_TYPE } from '../data/buildCatalog.js';
@@ -31,8 +31,8 @@ function wallPiece(side, tx, ty, tall, kind) {
   const run = side === 'N' || side === 'S' ? 'r' : 'l';
   const height = tall ? 'tall' : 'low';
   let name = `wall_${height}_${run}`;
-  if (kind === 'door' && tall) {
-    name = `door_tall_${run}`;
+  if (kind === 'door') {
+    name = `door_${height}_${run}`;
   } else if (kind === 'window' && tall) {
     name = `window_tall_${run}`;
   }

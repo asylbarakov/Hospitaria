@@ -10,6 +10,7 @@
   wall_*_l  стена вдоль оси y (запад комнаты), зеркало с затемнением
   col_*     столб-угол t x t, якорь в переднем нижнем углу
   door_tall_*, window_tall_*  сегмент с проёмом / окном
+  door_low_*  проём в низкой стене (рамка выше стены, это дверь комнаты)
 tall = полная высота 192 px (384 в 2x), low = низкая стена 64 px (128 в 2x).
 
 Запуск: python3 tools/make_walls.py
@@ -110,10 +111,11 @@ def top_cap(cv, pts, H):
     cv.poly([(x, y - H) for x, y in pts], CAP_TOP)
 
 
-def segment_r(H, kind="plain"):
-    """Сегмент стены вдоль x: лицевая грань v=0, толщина уходит в -v."""
+def segment_r(H, kind="plain", canvas_h=None):
+    """Сегмент стены вдоль x: лицевая грань v=0, толщина уходит в -v.
+    canvas_h выше H нужен для двери в низкой стене: рамка проёма выше самой стены."""
     w = int(TILE_DX * (1 + T)) + 8
-    ax, ay = 4, H + 14
+    ax, ay = 4, (canvas_h or H) + 14
     hc = ay + TILE_DY + 8
     cv = Canvas(w, hc, ax, ay)
     a, b = pt(0, 0), pt(1, 0)
@@ -121,7 +123,9 @@ def segment_r(H, kind="plain"):
     # верх: от лицевой кромки к задней
     top_cap(cv, [pt(0, 0), pt(1, 0), pt(1, -T), pt(0, -T)], H)
     draw_face(cv, a, b, H, 1.0)
-    if kind == "door":
+    if kind == "door" and canvas_h:
+        door_low(cv, a, b)
+    elif kind == "door":
         door(cv, a, b, H)
     elif kind == "window":
         window(cv, a, b, H)
@@ -151,6 +155,34 @@ def door(cv, a, b, H):
     cv.poly([(p0[0] - fr, p0[1]), (p0[0], p0[1]), (p0[0], p0[1] - DOOR_H), (p0[0] - fr, p0[1] - DOOR_H - fr)], WHITE)
     cv.poly([(p1[0], p1[1]), (p1[0] + fr, p1[1]), (p1[0] + fr, p1[1] - DOOR_H - fr), (p1[0], p1[1] - DOOR_H)], shade(WHITE, 0.93))
     cv.poly([(p0[0] - fr, p0[1] - DOOR_H - fr), (p0[0], p0[1] - DOOR_H), (p1[0], p1[1] - DOOR_H), (p1[0] + fr, p1[1] - DOOR_H - fr)], WHITE)
+
+
+def door_low(cv, a, b):
+    """Проём в низкой стене: объёмные белые косяки с мятной вставкой и перемычка выше стены."""
+    u0, u1 = 0.18, 0.82
+    p0, p1 = lerp(a, b, u0), lerp(a, b, u1)
+    carve(cv, [(p0[0], p0[1]), (p1[0], p1[1]), (p1[0], p1[1] - DOOR_H - 40), (p0[0], p0[1] - DOOR_H - 40)])
+    fr, beam = 24, 36
+    top = DOOR_H
+    # внутренняя боковина левого косяка (видна, смотрит в +x)
+    jx, back = pt(u0, 0), pt(u0, -T)
+    cv.poly([jx, back, (back[0], back[1] - top), (jx[0], jx[1] - top)], shade(WHITE, 0.86))
+    # косяки: белая лицевая полоса с мятной вставкой посередине
+    for (x0, y0, x1, y1, k) in ((p0[0] - fr, p0[1] - (fr * 0.5), p0[0], p0[1], 1.0),
+                                (p1[0], p1[1], p1[0] + fr, p1[1] - (fr * 0.5), 0.93)):
+        cv.poly([(x0, y0 + 0), (x1, y1 + 0), (x1, y1 - top), (x0, y0 - top)], shade(WHITE, k))
+        mx0, mx1 = x0 + (x1 - x0) * 0.3, x0 + (x1 - x0) * 0.7
+        my0 = y0 + (y1 - y0) * 0.3
+        my1 = y0 + (y1 - y0) * 0.7
+        cv.poly([(mx0, my0), (mx1, my1), (mx1, my1 - top + 10), (mx0, my0 - top + 10)], shade(TEAL, k))
+    # перемычка: мятная лицевая грань + белый кант сверху
+    l0 = (p0[0] - fr, p0[1] - fr * 0.5)
+    r1 = (p1[0] + fr, p1[1] - fr * 0.5)
+    cv.poly([(l0[0], l0[1] - top), (r1[0], r1[1] - top), (r1[0], r1[1] - top - beam), (l0[0], l0[1] - top - beam)], TEAL)
+    cv.poly([(l0[0], l0[1] - top - beam), (r1[0], r1[1] - top - beam), (r1[0], r1[1] - top - beam - 9), (l0[0], l0[1] - top - beam - 9)], CAP)
+    cv.line((l0[0], l0[1] - top), (r1[0], r1[1] - top), shade(RAIL_SH, 1.0), 2)
+    # порог: светлая плашка на полу
+    cv.poly([(p0[0], p0[1]), (p1[0], p1[1]), (p1[0], p1[1] - 6), (p0[0], p0[1] - 6)], shade(RAIL, 0.96))
 
 
 def window(cv, a, b, H):
@@ -220,6 +252,11 @@ def main():
         save(f"{kind}_tall_r", img, ax, ay)
         m, mx = mirror(img, ax)
         save(f"{kind}_tall_l", m, mx, ay)
+    # Дверь в низкой стене: низкие стенки по краям и белая рамка проёма высотой DOOR_H.
+    img, ax, ay = segment_r(H_LOW, "door", canvas_h=DOOR_H + 14 + 50)
+    save("door_low_r", img, ax, ay)
+    m, mx = mirror(img, ax)
+    save("door_low_l", m, mx, ay)
     meta["_comment"] = "w,h: размер PNG (2x). ax,ay: пиксель якоря. Подробности в tools/make_walls.py"
     meta["_const"] = {"T": T, "H_TALL": H_TALL, "H_LOW": H_LOW}
     (OUT / "walls.json").write_text(json.dumps(meta, indent=1, ensure_ascii=False), encoding="utf-8")

@@ -46,7 +46,7 @@ export function anchorOf(scene, name) {
 const WALLS_KEY = 'iso_walls_meta';
 const WALL_NAMES = [
   'wall_tall_r', 'wall_tall_l', 'col_tall', 'wall_low_r', 'wall_low_l', 'col_low',
-  'door_tall_r', 'door_tall_l', 'window_tall_r', 'window_tall_l',
+  'door_tall_r', 'door_tall_l', 'door_low_r', 'door_low_l', 'window_tall_r', 'window_tall_l',
 ];
 
 export function wallKey(name) {
