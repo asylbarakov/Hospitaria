@@ -1,20 +1,29 @@
 import * as layout from '../data/layout.js';
 import { START_COINS } from '../data/buildCatalog.js';
+import { DISEASES } from '../data/diseases.js';
+import { PATIENT_NAMES } from '../data/patientConfig.js';
+import {
+  ACTOR_ICONS, DUMMY_PATIENTS, PATIENT_SKINS, diseaseIcon,
+} from '../data/actorConfig.js';
+import { DEFAULT_PLAYER, accentById, normalizePlayer, roleById } from '../data/playerSkins.js';
 import IsoWorld from '../iso/IsoWorld.js';
 import IsoCamera from '../iso/IsoCamera.js';
 import BuildMode from '../iso/BuildMode.js';
-import { anchorOf, isoKey, queueIsoAssets, queueWallAssets } from '../iso/isoAssets.js';
+import ActorLayer from '../iso/ActorLayer.js';
+import { queueIsoAssets, queueWallAssets } from '../iso/isoAssets.js';
 import {
-  SPRITE_SCALE, screenToTileIndex, tileCenter, tileToScreen, worldBounds,
+  screenToTileIndex, tileCenter, tileToScreen, worldBounds,
 } from '../iso/IsoMath.js';
 import { clearIsoSave, loadIsoSave, saveIso } from '../systems/IsoSave.js';
 
-// Этап 11: изометрическая больница. Мир из layout.js, режим строительства, персонаж
-// ходит по тапу (простой BFS, EasyStar придёт на этапе 13).
+// Этап 12: изометрическая больница. Мир из layout.js, режим строительства,
+// игрок и пациенты-заглушки через IsoActor/ActorLayer. BFS-путь, EasyStar придёт в 13.
 
-const WALK_SPEED = 3.4; // тайлов в секунду
-const WALKER_RADIUS = 0.2;
-const ICON_FILES = ['icons/icon_coin.png'];
+const ICON_FILES = ACTOR_ICONS.map((name) => `icons/${name}.png`);
+
+function randomItem(list) {
+  return list[Math.floor(Math.random() * list.length)];
+}
 
 export default class IsoHospitalScene extends Phaser.Scene {
   constructor() {
@@ -25,7 +34,8 @@ export default class IsoHospitalScene extends Phaser.Scene {
     const label = this.add
       .text(640, 360, 'Загрузка больницы…', { fontFamily: 'Arial, sans-serif', fontSize: '28px', color: '#ffffff' })
       .setOrigin(0.5);
-    this.load.on('progress', (v) => label.setText(`Загрузка больницы… ${Math.round(v * 100)}%`));
+    this.onLoadProgress = (v) => label.setText(`Загрузка больницы… ${Math.round(v * 100)}%`);
+    this.load.on('progress', this.onLoadProgress);
     queueIsoAssets(this, ICON_FILES);
     queueWallAssets(this);
   }
@@ -36,13 +46,17 @@ export default class IsoHospitalScene extends Phaser.Scene {
 
     const saved = loadIsoSave();
     this.coins = saved && saved.coins !== null ? saved.coins : START_COINS;
+    const rawPlayer = saved && saved.player ? saved.player : { ...DEFAULT_PLAYER, name: 'Доктор' };
+    this.player = normalizePlayer({ ...rawPlayer, name: rawPlayer.name || 'Доктор' });
+    this.wardrobeOpen = false;
+
     this.world = new IsoWorld(this, layout, saved ? saved.items : null);
     this.grid = this.world.grid;
     this.messages = [];
-    this.path = [];
-    this.walkClock = 0;
+    this.actors = new ActorLayer(this, this.world);
 
-    this.buildWalker();
+    this.spawnPlayer();
+    this.spawnDummies();
     this.marker = this.add.graphics().setDepth(91);
 
     this.build = new BuildMode(this, this.world, {
@@ -67,6 +81,7 @@ export default class IsoHospitalScene extends Phaser.Scene {
 
     this.input.keyboard.on('keydown-R', () => this.build.rotate());
     this.input.keyboard.on('keydown-B', () => this.toggleBuild());
+    this.input.keyboard.on('keydown-G', () => this.openWardrobe());
     this.input.keyboard.on('keydown-ESC', () => this.onEscape());
 
     this.scene.launch('IsoHospitalHud');
@@ -74,54 +89,75 @@ export default class IsoHospitalScene extends Phaser.Scene {
     this.events.once('shutdown', () => this.cleanup());
   }
 
-  // ---- персонаж ----------------------------------------------------------------------
+  // ---- персонажи ---------------------------------------------------------------------
 
-  buildWalker() {
-    this.pos = { x: layout.ENTRANCE.x + 0.5, y: layout.ENTRANCE.y + 0.5 };
-    this.shadow = this.add.ellipse(0, 0, 46, 20, 0x000000, 0.28).setDepth(1);
-    this.walker = this.add
-      .image(0, 0, isoKey('staff_doctor'))
-      .setOrigin(0.5, anchorOf(this, 'staff_doctor'))
-      .setScale(SPRITE_SCALE);
-    this.world.sorter.add(this.walker, this.walkerBox(), { dynamic: true });
-    this.placeWalker(0);
+  spawnPlayer() {
+    const role = roleById(this.player.role);
+    const accent = accentById(this.player.accent);
+    this.playerActor = this.actors.spawn({
+      kind: 'player',
+      x: layout.ENTRANCE.x + 0.5,
+      y: layout.ENTRANCE.y + 0.5,
+      sprite: this.player.skin,
+      name: this.player.name,
+      icon: role.icon,
+      accent: accent.color,
+    });
   }
 
-  walkerBox() {
-    const r = WALKER_RADIUS;
-    return { minX: this.pos.x - r, maxX: this.pos.x + r, minY: this.pos.y - r, maxY: this.pos.y + r };
-  }
-
-  placeWalker(bob) {
-    const p = tileToScreen(this.pos.x, this.pos.y);
-    this.walker.setPosition(p.x, p.y - bob);
-    this.shadow.setPosition(p.x, p.y);
-  }
-
-  updateWalker(dt) {
-    let bob = 0;
-    if (this.path.length > 0) {
-      const target = this.path[0];
-      const dx = target.x + 0.5 - this.pos.x;
-      const dy = target.y + 0.5 - this.pos.y;
-      const dist = Math.hypot(dx, dy);
-      const step = WALK_SPEED * dt;
-      if (dist <= step) {
-        this.pos.x = target.x + 0.5;
-        this.pos.y = target.y + 0.5;
-        this.path.shift();
-      } else {
-        this.pos.x += (dx / dist) * step;
-        this.pos.y += (dy / dist) * step;
+  spawnDummies() {
+    const usedNames = new Set();
+    DUMMY_PATIENTS.forEach((slot) => {
+      let name = randomItem(PATIENT_NAMES);
+      for (let guard = 0; usedNames.has(name) && guard < 20; guard += 1) {
+        name = randomItem(PATIENT_NAMES);
       }
-      if (Math.abs(dx - dy) > 0.01) {
-        this.walker.setFlipX(dx - dy < 0);
-      }
-      this.walkClock += dt * WALK_SPEED * 5;
-      bob = Math.abs(Math.sin(this.walkClock)) * 4;
-      this.world.sorter.updateBox(this.walker, this.walkerBox());
+      usedNames.add(name);
+      const disease = randomItem(DISEASES);
+      this.actors.spawn({
+        kind: 'patient',
+        x: slot.x,
+        y: slot.y,
+        sprite: randomItem(PATIENT_SKINS),
+        name,
+        icon: diseaseIcon(disease.id),
+        accent: disease.color,
+      });
+    });
+  }
+
+  refreshPlayerLook() {
+    const role = roleById(this.player.role);
+    this.playerActor.setSkin(this.player.skin);
+    this.playerActor.setName(this.player.name);
+    this.playerActor.setIcon(role.icon);
+    this.playerActor.setAccent(accentById(this.player.accent).color);
+  }
+
+  /** Вызывается из «Гардероба»: применяет новый облик и монеты, затем сохраняет. */
+  applyPlayer(player, coins) {
+    this.player = normalizePlayer(player);
+    if (Number.isFinite(coins)) {
+      this.coins = coins;
     }
-    this.placeWalker(bob);
+    this.refreshPlayerLook();
+    this.persist();
+  }
+
+  openWardrobe() {
+    if (this.wardrobeOpen) {
+      return;
+    }
+    this.wardrobeOpen = true;
+    this.scene.launch('IsoWardrobeScene');
+    this.scene.pause('IsoHospitalHud');
+    this.scene.pause();
+  }
+
+  closeWardrobe() {
+    this.wardrobeOpen = false;
+    this.scene.resume('IsoHospitalHud');
+    this.scene.resume();
   }
 
   // ---- ввод --------------------------------------------------------------------------
@@ -144,12 +180,17 @@ export default class IsoHospitalScene extends Phaser.Scene {
       this.blockedFlash = { x: tile.x, y: tile.y, until: this.time.now + 350 };
       return;
     }
-    const path = this.grid.findPath(Math.floor(this.pos.x), Math.floor(this.pos.y), tile.x, tile.y);
+    const path = this.grid.findPath(
+      Math.floor(this.playerActor.pos.x),
+      Math.floor(this.playerActor.pos.y),
+      tile.x,
+      tile.y,
+    );
     if (path === null) {
       this.blockedFlash = { x: tile.x, y: tile.y, until: this.time.now + 350 };
       return;
     }
-    this.path = path;
+    this.playerActor.setPath(path);
   }
 
   toggleBuild() {
@@ -173,11 +214,12 @@ export default class IsoHospitalScene extends Phaser.Scene {
   }
 
   persist() {
-    saveIso(this.coins, this.world.serialize());
+    saveIso(this.coins, this.world.serialize(), this.player);
   }
 
   resetHospital() {
     clearIsoSave();
+    saveIso(null, null, this.player);
     this.scene.stop('IsoHospitalHud');
     this.scene.restart();
   }
@@ -191,22 +233,23 @@ export default class IsoHospitalScene extends Phaser.Scene {
     if (this.iso) {
       this.iso.destroy();
     }
-    this.input.keyboard.off('keydown-R');
-    this.input.keyboard.off('keydown-B');
-    this.input.keyboard.off('keydown-ESC');
+    if (this.load && this.onLoadProgress) this.load.off('progress', this.onLoadProgress);
+    for (const key of ['R', 'B', 'G', 'ESC']) this.input.keyboard.off(`keydown-${key}`);
     this.scene.stop('IsoHospitalHud');
   }
 
   diamond(g, x, y) {
-    const a = tileToScreen(x, y);
-    const b = tileToScreen(x + 1, y);
-    const c = tileToScreen(x + 1, y + 1);
-    const d = tileToScreen(x, y + 1);
+    const points = [
+      tileToScreen(x, y),
+      tileToScreen(x + 1, y),
+      tileToScreen(x + 1, y + 1),
+      tileToScreen(x, y + 1),
+    ];
     g.beginPath();
-    g.moveTo(a.x, a.y);
-    g.lineTo(b.x, b.y);
-    g.lineTo(c.x, c.y);
-    g.lineTo(d.x, d.y);
+    g.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i += 1) {
+      g.lineTo(points[i].x, points[i].y);
+    }
     g.closePath();
     g.fillPath();
   }
@@ -215,7 +258,7 @@ export default class IsoHospitalScene extends Phaser.Scene {
 
   update(time, delta) {
     const dt = Math.min(delta, 50) / 1000;
-    this.updateWalker(dt);
+    this.actors.update(dt);
 
     const pointer = this.input.activePointer;
     const inside = pointer.x >= 0 && pointer.y >= 0 && pointer.x <= this.scale.width && pointer.y <= this.scale.height;
@@ -233,8 +276,10 @@ export default class IsoHospitalScene extends Phaser.Scene {
     }
 
     this.world.sorter.sort();
-    this.world.updateWallFade(this.walkerBox(), tileToScreen(this.pos.x, this.pos.y));
-    this.messages = this.messages.filter((m) => m.until > time);
+    this.world.updateWallFade(this.actors.fadeTargets());
+    if (this.messages.length && this.messages[0].until <= time) {
+      this.messages = this.messages.filter((m) => m.until > time);
+    }
   }
 
   /** Данные для HUD. */

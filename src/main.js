@@ -13,6 +13,8 @@ import IsoTestScene from './scenes/IsoTestScene.js';
 import IsoHudScene from './scenes/IsoHudScene.js';
 import IsoHospitalScene from './scenes/IsoHospitalScene.js';
 import IsoHospitalHud from './scenes/IsoHospitalHud.js';
+import IsoCreatorScene from './scenes/IsoCreatorScene.js';
+import IsoWardrobeScene from './scenes/IsoWardrobeScene.js';
 import { applyTextQuality } from './ui/textQuality.js';
 
 applyTextQuality();
@@ -52,6 +54,8 @@ const config = {
     IsoHudScene,
     IsoHospitalScene,
     IsoHospitalHud,
+    IsoCreatorScene,
+    IsoWardrobeScene,
   ],
 };
 

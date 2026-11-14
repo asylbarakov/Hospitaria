@@ -10,6 +10,8 @@ import {
 
 const FONT = 'Arial, "Segoe UI", sans-serif';
 const FADE_ALPHA = 0.32;
+const FADE_RADIUS = 3; // тайлов: дальше стены не проверяем
+const BODY_OFFSET = 70; // px выше ног: примерная середина тела
 const SIGN_SCALE = 0.7;
 
 export default class IsoWorld {
@@ -157,17 +159,42 @@ export default class IsoWorld {
 
   // ---- стены перед персонажем --------------------------------------------------------
 
-  /** Делает полупрозрачными куски стен, которые закрывают персонажа (стоящего позади них). */
-  updateWallFade(walkerBox, screenPoint) {
-    const px = screenPoint.x;
-    const py = screenPoint.y - 70; // примерно середина тела
-    this.wallSprites.forEach((w) => {
-      const r = w.rect;
-      const covers = px >= r.x - 20 && px <= r.x + r.w + 20 && py >= r.y && py <= r.y + r.h;
-      const inFront = isBehind(walkerBox, w.box) && !isBehind(w.box, walkerBox);
-      const target = covers && inFront ? FADE_ALPHA : 1;
-      const alpha = w.sprite.alpha + (target - w.sprite.alpha) * 0.25;
-      w.sprite.setAlpha(Math.abs(alpha - target) < 0.01 ? target : alpha);
-    });
+  /**
+   * Делает полупрозрачными куски стен, которые закрывают актёров.
+   * @param {Array<{pos:{x:number,y:number}, box:object}>} actors
+   */
+  updateWallFade(actors) {
+    const list = Array.isArray(actors) ? actors : [];
+    const walls = this.wallSprites;
+    for (let w = 0; w < walls.length; w += 1) {
+      const wall = walls[w];
+      let fade = false;
+      for (let i = 0; i < list.length; i += 1) {
+        const actor = list[i];
+        if (this.wallFar(wall, actor.pos)) {
+          continue;
+        }
+        const point = actor.screen || tileToScreen(actor.pos.x, actor.pos.y);
+        const px = point.x;
+        const py = point.y - BODY_OFFSET;
+        const r = wall.rect;
+        const covers = px >= r.x - 20 && px <= r.x + r.w + 20 && py >= r.y && py <= r.y + r.h;
+        const inFront = isBehind(actor.box, wall.box) && !isBehind(wall.box, actor.box);
+        if (covers && inFront) {
+          fade = true;
+          break;
+        }
+      }
+      const target = fade ? FADE_ALPHA : 1;
+      const alpha = wall.sprite.alpha + (target - wall.sprite.alpha) * 0.25;
+      wall.sprite.setAlpha(Math.abs(alpha - target) < 0.01 ? target : alpha);
+    }
+  }
+
+  /** Стена слишком далеко от точки в тайлах, чтобы закрывать актёра. */
+  wallFar(wall, pos) {
+    const dx = Math.max(wall.box.minX - pos.x, 0, pos.x - wall.box.maxX);
+    const dy = Math.max(wall.box.minY - pos.y, 0, pos.y - wall.box.maxY);
+    return dx * dx + dy * dy > FADE_RADIUS * FADE_RADIUS;
   }
 }

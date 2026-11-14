@@ -39,7 +39,8 @@ export default class IsoHospitalHud extends Phaser.Scene {
     this.addButton(1180, 40, 180, 'Меню', () => this.world().exitToMenu(), 0x5b7f8c, 0x729aa8);
     this.buildToggle = this.addButton(1180, 100, 180, 'Строить (B)', () => this.world().toggleBuild(), 0xe08a1e, 0xf2a43f);
     this.addButton(1180, 160, 180, 'Зум 100%', () => this.world().iso.setZoom(1), 0x3f9b4a, 0x55b963);
-    this.resetButton = this.addButton(1180, 220, 180, 'Сброс', () => this.onReset(), 0x8a4a4a, 0xa96060);
+    this.addButton(1180, 220, 180, 'Гардероб', () => this.world().openWardrobe(), 0x7b5bb8, 0x9273cf);
+    this.resetButton = this.addButton(1180, 280, 180, 'Сброс', () => this.onReset(), 0x8a4a4a, 0xa96060);
 
     const inBuild = () => this.state && this.state.build.active;
     this.rotateButton = this.addButton(1020, PANEL_Y + 55, 150, 'Повернуть', () => this.world().build.rotate(), 0x2f80c9, 0x4a9be0, inBuild, true);

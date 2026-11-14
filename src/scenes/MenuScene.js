@@ -2,6 +2,7 @@ import { createButton } from '../ui/Button.js';
 import { buildMenuScenery } from '../ui/menuScenery.js';
 import { MENU_TEXTURES as T } from '../ui/menuTextures.js';
 import Save from '../systems/Save.js';
+import { loadIsoSave } from '../systems/IsoSave.js';
 
 const W = 1280;
 const H = 720;
@@ -170,7 +171,11 @@ export default class MenuScene extends Phaser.Scene {
       depth: 10,
     });
 
-    createButton(this, 450, 688, 'Больница v2 (этап 11)', () => this.scene.start('IsoHospitalScene'), {
+    const iso = loadIsoSave();
+    const hasIsoPlayer = !!(iso && iso.player);
+    createButton(this, 450, 688, 'Больница v2 (этап 12)', () => {
+      this.scene.start(hasIsoPlayer ? 'IsoHospitalScene' : 'IsoCreatorScene');
+    }, {
       width: 290,
       height: 48,
       fontSize: 19,

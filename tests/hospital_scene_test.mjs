@@ -63,11 +63,13 @@ assert.equal(n0, 51);
 s.handleTap({ x: 0, y: 0, wasTouch: false }); // тап по произвольной точке не должен падать
 s.iso.centerOn(0, 0);
 const tIn = { x: 5, y: 8 };
-const path = s.grid.findPath(Math.floor(s.pos.x), Math.floor(s.pos.y), tIn.x, tIn.y);
+const path = s.grid.findPath(Math.floor(s.playerActor.pos.x), Math.floor(s.playerActor.pos.y), tIn.x, tIn.y);
 assert(path && path.length > 20, 'путь вход -> терапевт: ' + (path && path.length));
-s.path = path;
-for (let i = 0; i < 1200 && s.path.length; i += 1) { s.update(i * 16, 16); }
-assert(s.path.length === 0 && Math.floor(s.pos.x) === 5 && Math.floor(s.pos.y) === 8, 'дошёл');
+s.playerActor.setPath(path);
+for (let i = 0; i < 1200 && s.playerActor.path.length; i += 1) { s.update(i * 16, 16); }
+assert(s.playerActor.path.length === 0
+  && Math.floor(s.playerActor.pos.x) === 5
+  && Math.floor(s.playerActor.pos.y) === 8, 'дошёл');
 
 // строительство
 const b = s.build;
@@ -127,9 +129,11 @@ s2.create();
 assert.equal(s2.world.furniture.size, n0 + 1, 'загрузка из сохранения');
 assert.equal(s2.coins, raw.coins);
 
-// сброс
+// сброс: планировка возвращается к исходной, игрок остаётся
 s2.resetHospital();
-assert(!('hospitaria.iso.layout.v1' in store));
+const resetRaw = JSON.parse(store['hospitaria.iso.layout.v1']);
+assert.equal(resetRaw.items, null, 'сброс вернул планировку по умолчанию');
+assert(resetRaw.player && resetRaw.player.role, 'игрок сохранился при сбросе');
 
 // HUD: создаётся и обновляется
 const h = new Hud();

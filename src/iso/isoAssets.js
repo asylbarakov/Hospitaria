@@ -8,6 +8,11 @@ export function isoKey(name) {
   return `iso_${name}`;
 }
 
+/** Ключ иконки из assets/final/icons: icon_waiting -> iso_icons_icon_waiting. */
+export function iconKey(name) {
+  return isoKey(`icons_${name}`);
+}
+
 /** Вызывать в preload() сцены: ставит в очередь anchors.json, затем все спрайты из него. */
 export function queueIsoAssets(scene, extraFiles = []) {
   const { load } = scene;
