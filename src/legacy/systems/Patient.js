@@ -1,6 +1,6 @@
-import Avatar from './Avatar.js';
-import { getRandomDisease } from '../data/diseases.js';
-import { PATIENT_NAMES, PATIENT_CONFIG } from '../data/patientConfig.js';
+import Avatar from '../../systems/Avatar.js';
+import { getRandomDisease } from '../../data/diseases.js';
+import { PATIENT_NAMES, PATIENT_CONFIG } from '../../data/patientConfig.js';
 import {
   drawSymptomBubble,
   drawPatienceBar,
@@ -15,7 +15,7 @@ import {
   SKIN_COLORS,
   HAIRSTYLES,
   HAIR_COLORS,
-} from '../data/avatarOptions.js';
+} from '../../data/avatarOptions.js';
 
 const FONT = 'Arial, "Segoe UI", sans-serif';
 // Полоска терпения шириной 68 px: 34 шага по 2 px.

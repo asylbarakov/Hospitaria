@@ -1,8 +1,8 @@
-import { MINIGAME_KEYS } from '../data/treatmentConfig.js';
+import { MINIGAME_KEYS } from '../../data/treatmentConfig.js';
 import { recordTreatment } from './DailyTasks.js';
 import { recordTreatmentStats, checkAchievements } from './Achievements.js';
-import { playCoin, playSuccess, playError } from './Sound.js';
-import { spawnRewardBurst } from '../ui/particles.js';
+import { playCoin, playSuccess, playError } from '../../systems/Sound.js';
+import { spawnRewardBurst } from '../../ui/particles.js';
 
 export function startMiniGame(scene, patient, forcedGameKey = null) {
   if (!patient) {

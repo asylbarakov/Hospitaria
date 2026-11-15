@@ -1,6 +1,6 @@
 import Save from '../systems/Save.js';
-import Avatar from '../systems/Avatar.js';
-import { DEFAULT_AVATAR, normalizeAvatar } from '../data/avatarOptions.js';
+import Avatar from '../../systems/Avatar.js';
+import { DEFAULT_AVATAR, normalizeAvatar } from '../../data/avatarOptions.js';
 import { createHospitalWorld } from '../systems/roomPainter.js';
 import { PatientManager } from '../systems/Patients.js';
 import { startMiniGame } from '../systems/treatmentFlow.js';

@@ -25,7 +25,7 @@ class FakeScene {
 }
 globalThis.Phaser = { Scene: FakeScene, AUTO: 0 };
 
-const { default: IsoTestScene } = await import(R + 'scenes/IsoTestScene.js');
+const { default: IsoTestScene } = await import(R + 'debug/IsoTestScene.js');
 const M = await import(R + 'iso/IsoMath.js');
 
 const handlers = {};

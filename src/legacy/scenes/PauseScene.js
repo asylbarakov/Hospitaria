@@ -1,7 +1,7 @@
-import { createButton } from '../ui/Button.js';
-import { openDialog } from '../ui/Dialog.js';
-import { HUD_FONT } from '../ui/hudDrawing.js';
-import { playError } from '../systems/Sound.js';
+import { createButton } from '../../ui/Button.js';
+import { openDialog } from '../../ui/Dialog.js';
+import { HUD_FONT } from '../../ui/hudDrawing.js';
+import { playError } from '../../systems/Sound.js';
 import Save from '../systems/Save.js';
 
 const W = 1280;

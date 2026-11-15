@@ -1,4 +1,4 @@
-import { HUD_FONT } from './hudDrawing.js';
+import { HUD_FONT } from '../../ui/hudDrawing.js';
 import { drawSymptomBubble } from '../systems/patientDrawing.js';
 
 export function createAchievementCard(scene, parent, achievement, state, x, y) {

@@ -1,10 +1,10 @@
-import { createButton } from '../ui/Button.js';
+import { createButton } from '../../ui/Button.js';
 import { createBottomBar } from '../ui/BottomBar.js';
 import { openHelpPanel } from '../ui/HelpPanel.js';
-import { openDialog } from '../ui/Dialog.js';
+import { openDialog } from '../../ui/Dialog.js';
 import { ensureVignette } from '../ui/textures.js';
-import { ROLES } from '../data/avatarOptions.js';
-import { xpToNextLevel } from '../data/progression.js';
+import { ROLES } from '../../data/avatarOptions.js';
+import { xpToNextLevel } from '../../data/progression.js';
 import {
   HUD_FONT,
   drawTopBar,
@@ -13,7 +13,7 @@ import {
   drawHeartIcon,
   drawCrossIcon,
   drawXpBar,
-} from '../ui/hudDrawing.js';
+} from '../../ui/hudDrawing.js';
 
 const W = 1280;
 

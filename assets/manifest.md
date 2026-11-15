@@ -113,3 +113,7 @@
 ## Стены (этап 11)
 
 Куски стен генерирует `tools/make_walls.py` (PIL, без нейросети) в `assets/final/walls/`: `wall_tall_*`, `wall_low_*`, `col_*`, `door_tall_*`, `window_tall_*` и `walls.json` с размерами и якорями. Правила расстановки в `src/iso/layoutBuilder.js`.
+
+## Состав и вес (v0.2)
+
+`assets/final/` весит около 6 МБ (лимит релиза 8 МБ): isometric-спрайты 2x (масштаб 0.5), стены, иконки, UI-рамки, `anchors.json`. `assets/raw/` в игру не загружается. Боковая версия v0.1 рисуется кодом и ассетов не использует.

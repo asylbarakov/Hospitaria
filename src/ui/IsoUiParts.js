@@ -161,13 +161,15 @@ export function progressBar(scene, x, y, width, height, options = {}) {
 export function text(scene, x, y, value, options = {}) {
   const {
     size = 18, color = UI_INK, bold = false, origin = [0, 0], depth = 0,
-    wrap = null, align = 'left',
+    wrap = null, align = 'left', stroke = null, strokeThickness = 0,
   } = options;
   return scene.add.text(x, y, value, {
     fontFamily: UI_FONT,
     fontSize: `${Math.max(16, size)}px`,
     fontStyle: bold ? 'bold' : 'normal',
     color,
+    stroke: stroke || undefined,
+    strokeThickness,
     align,
     lineSpacing: options.lineSpacing || 6,
     wordWrap: wrap ? { width: wrap } : undefined,

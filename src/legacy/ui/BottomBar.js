@@ -1,5 +1,5 @@
-import { createButton } from './Button.js';
-import { HUD_FONT } from './hudDrawing.js';
+import { createButton } from '../../ui/Button.js';
+import { HUD_FONT } from '../../ui/hudDrawing.js';
 
 export function createBottomBar(scene, callbacks = {}) {
   const g = scene.add.graphics().setDepth(0);

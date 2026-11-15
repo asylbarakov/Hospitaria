@@ -251,6 +251,6 @@ export default class IsoCreatorScene extends Phaser.Scene {
   }
 
   goBack() {
-    this.scene.start('MenuScene');
+    this.scene.start('MainMenuScene');
   }
 }

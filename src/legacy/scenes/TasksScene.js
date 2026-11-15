@@ -1,13 +1,13 @@
-import { createButton } from '../ui/Button.js';
-import { HUD_FONT, drawCoinIcon } from '../ui/hudDrawing.js';
+import { createButton } from '../../ui/Button.js';
+import { HUD_FONT, drawCoinIcon } from '../../ui/hudDrawing.js';
 import { DAILY_TASKS } from '../data/dailyTasks.js';
 import {
   getTaskProgress,
   isTaskComplete,
   isTaskClaimed,
 } from '../systems/DailyTasks.js';
-import { playCoin, playError } from '../systems/Sound.js';
-import { spawnRewardBurst } from '../ui/particles.js';
+import { playCoin, playError } from '../../systems/Sound.js';
+import { spawnRewardBurst } from '../../ui/particles.js';
 import { checkAchievements } from '../systems/Achievements.js';
 
 const W = 1280;

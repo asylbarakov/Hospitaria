@@ -1,6 +1,6 @@
-import { PATIENT_CONFIG } from '../data/patientConfig.js';
+import { PATIENT_CONFIG } from '../../data/patientConfig.js';
 import { Patient } from './Patient.js';
-import { playError } from './Sound.js';
+import { playError } from '../../systems/Sound.js';
 
 const FONT = 'Arial, "Segoe UI", sans-serif';
 

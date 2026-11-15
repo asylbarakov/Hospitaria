@@ -39,6 +39,7 @@ export function loadIsoSave() {
       staff: Array.isArray(data.staff) ? data.staff : null,
       quests: data.quests && typeof data.quests === 'object' ? data.quests : null,
       settings: data.settings && typeof data.settings === 'object' ? data.settings : null,
+      migration: data.migration && typeof data.migration === 'object' ? data.migration : null,
     };
   } catch (err) {
     return null;
@@ -126,6 +127,11 @@ export function saveIso(coins, items, player = null, stats = null) {
       data.settings = { ...stats.settings };
     } else if (previous && previous.settings) {
       data.settings = previous.settings;
+    }
+    if (stats && stats.migration && typeof stats.migration === 'object') {
+      data.migration = stats.migration;
+    } else if (previous && previous.migration) {
+      data.migration = previous.migration;
     }
     window.localStorage.setItem(KEY, JSON.stringify(data));
   } catch (err) {

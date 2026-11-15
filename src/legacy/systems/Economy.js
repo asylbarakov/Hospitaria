@@ -1,6 +1,6 @@
-import { xpToNextLevel } from '../data/progression.js';
-import { normalizeAvatar } from '../data/avatarOptions.js';
-import { PATIENT_CONFIG } from '../data/patientConfig.js';
+import { xpToNextLevel } from '../../data/progression.js';
+import { normalizeAvatar } from '../../data/avatarOptions.js';
+import { PATIENT_CONFIG } from '../../data/patientConfig.js';
 
 export const MAX_PATIENTS_CAP = 6;
 

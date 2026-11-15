@@ -1,5 +1,5 @@
-import { createButton } from '../ui/Button.js';
-import { HUD_FONT } from '../ui/hudDrawing.js';
+import { createButton } from '../../ui/Button.js';
+import { HUD_FONT } from '../../ui/hudDrawing.js';
 
 const W = 1280;
 const H = 720;

@@ -1,8 +1,8 @@
 import Save from './Save.js';
 import { addExperience, maxPatientsForLevel } from './Economy.js';
 import { claimTask } from './DailyTasks.js';
-import { playLevelUp } from './Sound.js';
-import { spawnRewardBurst } from '../ui/particles.js';
+import { playLevelUp } from '../../systems/Sound.js';
+import { spawnRewardBurst } from '../../ui/particles.js';
 import {
   purchaseItem,
   equipItem,

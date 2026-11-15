@@ -1,16 +1,6 @@
 import BootScene from './scenes/BootScene.js';
-import MenuScene from './scenes/MenuScene.js';
-import CreatorScene from './scenes/CreatorScene.js';
-import HospitalScene from './scenes/HospitalScene.js';
-import UIScene from './scenes/UIScene.js';
+import MainMenuScene from './scenes/MainMenuScene.js';
 import MiniGameScene from './scenes/MiniGameScene.js';
-import ShopScene from './scenes/ShopScene.js';
-import TasksScene from './scenes/TasksScene.js';
-import PauseScene from './scenes/PauseScene.js';
-import DisclaimerScene from './scenes/DisclaimerScene.js';
-import AchievementsScene from './scenes/AchievementsScene.js';
-import IsoTestScene from './scenes/IsoTestScene.js';
-import IsoHudScene from './scenes/IsoHudScene.js';
 import IsoHospitalScene from './scenes/IsoHospitalScene.js';
 import IsoHospitalHud from './scenes/IsoHospitalHud.js';
 import IsoCreatorScene from './scenes/IsoCreatorScene.js';
@@ -19,7 +9,25 @@ import { applyTextQuality } from './ui/textQuality.js';
 
 applyTextQuality();
 
-const config = {
+// Сцены v0.1 (?legacy=1) и отладочные (?debug=1) подгружаются динамически,
+// поэтому в обычном запуске их код не скачивается.
+const params = new URLSearchParams(window.location.search);
+
+async function loadExtraScenes() {
+  const extra = [];
+  if (params.get('legacy') === '1') {
+    const legacy = await import('./legacy/index.js');
+    extra.push(...legacy.default);
+  }
+  if (params.get('debug') === '1') {
+    const debug = await import('./debug/index.js');
+    extra.push(...debug.default);
+  }
+  return extra;
+}
+
+function makeConfig(extra) {
+  return {
   type: Phaser.AUTO,
   parent: 'game',
   width: 1280,
@@ -40,26 +48,21 @@ const config = {
   },
   scene: [
     BootScene,
-    MenuScene,
-    CreatorScene,
-    HospitalScene,
-    UIScene,
+    MainMenuScene,
     MiniGameScene,
-    ShopScene,
-    TasksScene,
-    PauseScene,
-    DisclaimerScene,
-    AchievementsScene,
-    IsoTestScene,
-    IsoHudScene,
     IsoHospitalScene,
     IsoHospitalHud,
     IsoCreatorScene,
     IsoWardrobeScene,
+    ...extra,
   ],
-};
+  };
+}
 
-const game = new Phaser.Game(config);
-
-// Удобный доступ из консоли разработчика (F12) для отладки.
-window.hospitalGame = game;
+loadExtraScenes()
+  .catch(() => [])
+  .then((extra) => {
+    const game = new Phaser.Game(makeConfig(extra));
+    // Доступ из консоли разработчика (F12) для отладки.
+    window.hospitalGame = game;
+  });

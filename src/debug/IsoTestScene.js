@@ -183,7 +183,7 @@ export default class IsoTestScene extends Phaser.Scene {
 
   exitToMenu() {
     this.scene.stop('IsoHudScene');
-    this.scene.start('MenuScene');
+    this.scene.start('MainMenuScene');
   }
 
   cleanup() {

@@ -1,7 +1,7 @@
-import { createButton } from '../ui/Button.js';
+import { createButton } from '../../ui/Button.js';
 import { createStepper } from '../ui/Stepper.js';
 import Save from '../systems/Save.js';
-import Avatar from '../systems/Avatar.js';
+import Avatar from '../../systems/Avatar.js';
 import {
   ROLES,
   SKIN_COLORS,
@@ -11,7 +11,7 @@ import {
   ACCESSORIES,
   DEFAULT_AVATAR,
   normalizeAvatar,
-} from '../data/avatarOptions.js';
+} from '../../data/avatarOptions.js';
 
 const W = 1280;
 const H = 720;

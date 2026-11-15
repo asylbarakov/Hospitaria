@@ -8,7 +8,7 @@ import {
   floorBaseY,
 } from '../data/rooms.js';
 import { drawFurniture } from './furniturePainter.js';
-import { shade } from './avatarColors.js';
+import { shade } from '../../systems/avatarColors.js';
 import {
   drawCeiling,
   drawWainscot,

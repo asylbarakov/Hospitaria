@@ -1,10 +1,10 @@
-import { createButton } from '../ui/Button.js';
+import { createButton } from '../../ui/Button.js';
 import { createShopCard } from '../ui/ShopCard.js';
-import { HUD_FONT, drawCoinIcon } from '../ui/hudDrawing.js';
+import { HUD_FONT, drawCoinIcon } from '../../ui/hudDrawing.js';
 import { SHOP_TABS, getShopItems } from '../data/shopItems.js';
 import { ownsItem, isItemEquipped } from '../systems/ShopActions.js';
-import { playCoin, playError } from '../systems/Sound.js';
-import { spawnSparkle } from '../ui/particles.js';
+import { playCoin, playError } from '../../systems/Sound.js';
+import { spawnSparkle } from '../../ui/particles.js';
 import { checkAchievements } from '../systems/Achievements.js';
 
 const W = 1280;

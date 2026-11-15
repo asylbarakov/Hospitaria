@@ -1,6 +1,6 @@
 import { ACHIEVEMENTS } from '../data/achievements.js';
 import Save from './Save.js';
-import { playCoin } from './Sound.js';
+import { playCoin } from '../../systems/Sound.js';
 
 const FONT = 'Arial, "Segoe UI", sans-serif';
 let checking = false;

@@ -1,7 +1,7 @@
-import { createButton } from '../ui/Button.js';
-import { HUD_FONT, drawCoinIcon } from '../ui/hudDrawing.js';
+import { createButton } from '../../ui/Button.js';
+import { HUD_FONT, drawCoinIcon } from '../../ui/hudDrawing.js';
 import { ACHIEVEMENTS } from '../data/achievements.js';
-import { DISEASES } from '../data/diseases.js';
+import { DISEASES } from '../../data/diseases.js';
 import { createAchievementCard, createCollectionCard } from '../ui/achievementCards.js';
 import {
   ensureAchievements,

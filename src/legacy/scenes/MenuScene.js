@@ -1,8 +1,7 @@
-import { createButton } from '../ui/Button.js';
+import { createButton } from '../../ui/Button.js';
 import { buildMenuScenery } from '../ui/menuScenery.js';
 import { MENU_TEXTURES as T } from '../ui/menuTextures.js';
 import Save from '../systems/Save.js';
-import { loadIsoSave } from '../systems/IsoSave.js';
 
 const W = 1280;
 const H = 720;
@@ -161,28 +160,6 @@ export default class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setDepth(10);
-
-    createButton(this, 160, 688, 'Изометрия v2 (тест)', () => this.scene.start('IsoTestScene'), {
-      width: 270,
-      height: 48,
-      fontSize: 19,
-      color: 0x2f80c9,
-      hoverColor: 0x4a9be0,
-      depth: 10,
-    });
-
-    const iso = loadIsoSave();
-    const hasIsoPlayer = !!(iso && iso.player);
-    createButton(this, 450, 688, 'Больница v2', () => {
-      this.scene.start(hasIsoPlayer ? 'IsoHospitalScene' : 'IsoCreatorScene');
-    }, {
-      width: 290,
-      height: 48,
-      fontSize: 19,
-      color: 0x3f9b4a,
-      hoverColor: 0x55b963,
-      depth: 10,
-    });
 
     createButton(this, 1120, 688, 'Об игре', () => this.openDisclaimer(), {
       width: 200,

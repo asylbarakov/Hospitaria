@@ -1,8 +1,8 @@
 import { todayKey } from './DailyTasks.js';
 import { ROOMS } from '../data/rooms.js';
 import { checkAchievements } from './Achievements.js';
-import { playCoin } from './Sound.js';
-import { spawnRewardBurst } from '../ui/particles.js';
+import { playCoin } from '../../systems/Sound.js';
+import { spawnRewardBurst } from '../../ui/particles.js';
 
 const FONT = 'Arial, "Segoe UI", sans-serif';
 

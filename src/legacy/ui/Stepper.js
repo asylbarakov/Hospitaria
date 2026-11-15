@@ -1,4 +1,4 @@
-import { createButton } from './Button.js';
+import { createButton } from '../../ui/Button.js';
 
 const FONT = 'Arial, "Segoe UI", sans-serif';
 

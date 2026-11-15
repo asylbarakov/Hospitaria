@@ -226,7 +226,7 @@ export default class IsoHospitalScene extends Phaser.Scene {
 
   exitToMenu() {
     this.scene.stop('IsoHospitalHud');
-    this.scene.start('MenuScene');
+    this.scene.start('MainMenuScene');
   }
 
   // ---- цикл --------------------------------------------------------------------------

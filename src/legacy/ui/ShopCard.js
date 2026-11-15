@@ -1,5 +1,5 @@
-import { createButton } from './Button.js';
-import { HUD_FONT, drawCoinIcon } from './hudDrawing.js';
+import { createButton } from '../../ui/Button.js';
+import { HUD_FONT, drawCoinIcon } from '../../ui/hudDrawing.js';
 
 const CARD_W = 252;
 const CARD_H = 205;
