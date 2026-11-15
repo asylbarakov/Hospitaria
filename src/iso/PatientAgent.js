@@ -42,6 +42,7 @@ export default class PatientAgent {
     this.diagnosed = false;
     this.treating = false;
     this.paying = false;
+    this.playerStars = null;
     this.timeoutSent = false;
     this.misses = 0;
     this.removed = false;
@@ -106,6 +107,17 @@ export default class PatientAgent {
     this.diagnosed = true;
     this.treating = true;
     this.timer = this.timing.treatmentMs;
+    return true;
+  }
+
+  /** Игрок ответил верно: ждём мини-игру, таймер лечения ещё не идёт. */
+  markDiagnosed() {
+    if (this.state !== FLOW_STATES.IN_TREATMENT || this.diagnosed) {
+      return false;
+    }
+    this.diagnosed = true;
+    this.treating = false;
+    this.timer = 0;
     return true;
   }
 

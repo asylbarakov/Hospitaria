@@ -28,6 +28,8 @@ export default class IsoCamera {
     this.dragLast = { x: 0, y: 0 };
     this.moved = false;
     this.pinch = null;
+    this.savedView = null;
+    this.focusTween = null;
 
     const input = scene.input;
     // Для щипка нужен второй палец; указатели создаются один раз на весь Phaser.Game.
@@ -45,7 +47,73 @@ export default class IsoCamera {
     Object.entries(this.handlers).forEach(([name, fn]) => input.on(name, fn));
   }
 
+  // ---- фокус на комнате (этап 18) --------------------------------------------------
+
+  /** Плавный наезд на точку мира. Возврат — через restore(). */
+  focusOn(wx, wy, zoom = 1.1, duration = 420, onComplete = null) {
+    this.savedView = {
+      scrollX: this.cam.scrollX,
+      scrollY: this.cam.scrollY,
+      zoom: this.cam.zoom,
+    };
+    this.animateTo(wx, wy, zoom, duration, onComplete);
+  }
+
+  /** Возврат камеры туда, где она была до focusOn. */
+  restore(duration = 320, onComplete = null) {
+    const view = this.savedView;
+    this.savedView = null;
+    if (!view) {
+      if (onComplete) {
+        onComplete();
+      }
+      return;
+    }
+    const wx = view.scrollX + this.cam.width / 2;
+    const wy = view.scrollY + this.cam.height / 2;
+    this.animateTo(wx, wy, view.zoom, duration, onComplete);
+  }
+
+  animateTo(wx, wy, zoom, duration, onComplete) {
+    const cam = this.cam;
+    const targetZoom = Math.min(this.maxZoom, Math.max(this.minZoom, zoom));
+    const scrollX = wx - cam.width / 2;
+    const scrollY = wy - cam.height / 2;
+
+    if (this.focusTween) {
+      this.focusTween.stop();
+      this.focusTween = null;
+    }
+    if (!duration) {
+      cam.setZoom(targetZoom);
+      cam.scrollX = scrollX;
+      cam.scrollY = scrollY;
+      if (onComplete) {
+        onComplete();
+      }
+      return;
+    }
+    this.focusTween = this.scene.tweens.add({
+      targets: cam,
+      scrollX,
+      scrollY,
+      zoom: targetZoom,
+      duration,
+      ease: 'Sine.easeInOut',
+      onComplete: () => {
+        this.focusTween = null;
+        if (onComplete) {
+          onComplete();
+        }
+      },
+    });
+  }
+
   destroy() {
+    if (this.focusTween) {
+      this.focusTween.stop();
+      this.focusTween = null;
+    }
     Object.entries(this.handlers).forEach(([name, fn]) => this.scene.input.off(name, fn));
     this.handlers = {};
   }

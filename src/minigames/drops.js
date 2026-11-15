@@ -131,9 +131,9 @@ export function createDrops(scene, root, ctx) {
     g.lineStyle(2, 0x1e88e5, 0.8);
     g.strokeCircle(0, 0, 15);
     drop.add(g);
-    drop.setSize(40, 40);
+    drop.setSize(52, 52);
     drop.setInteractive(
-      new Phaser.Geom.Circle(0, 0, 22),
+      new Phaser.Geom.Circle(0, 0, 26),
       Phaser.Geom.Circle.Contains,
     );
     drop.on('pointerdown', () => resolveDrop(drop, true));

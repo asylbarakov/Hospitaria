@@ -28,6 +28,7 @@ export default class PatientRunner {
       penalty: hooks.penalty || (() => {}),
       event: hooks.event || (() => {}),
       isRoomUnlocked: hooks.isRoomUnlocked || (() => true),
+      playTreatment: hooks.playTreatment || ((agent) => this.flow.finishPlayerTreatment(agent, { stars: 2 })),
     };
     this.views = new PatientViews(scene, actors, (agent) => this.tapAgent(agent));
     this.dialog = new PatientDialog(scene, this.points);
@@ -205,7 +206,14 @@ export default class PatientRunner {
   }
 
   chooseDiagnosis(agent, disease) {
-    const result = this.flow.diagnose(agent, disease.id === agent.disease.id);
+    const result = this.flow.diagnoseForPlayer(agent, disease.id === agent.disease.id);
+    if (result.ok && result.needsGame) {
+      const started = this.hooks.playTreatment(agent);
+      if (started && !started.ok) {
+        this.hooks.notify(started.hint);
+      }
+      return;
+    }
     if (!result.ok && result.hint) {
       this.hooks.notify(result.hint);
     }
@@ -276,21 +284,10 @@ export default class PatientRunner {
 
   // ---- служебное ---------------------------------------------------------------------
 
-  now() {
-    return this.scene.time && Number.isFinite(this.scene.time.now) ? this.scene.time.now : 0;
-  }
-
-  changed() {
-    this.flow.applyWorldChange();
-  }
-
-  count() {
-    return this.flow.count();
-  }
-
-  waitingCount() {
-    return this.flow.agents.filter((agent) => agent.state === FLOW_STATES.WAITING).length;
-  }
+  now() { return this.scene.time && Number.isFinite(this.scene.time.now) ? this.scene.time.now : 0; }
+  changed() { this.flow.applyWorldChange(); }
+  count() { return this.flow.count(); }
+  waitingCount() { return this.flow.agents.filter((agent) => agent.state === FLOW_STATES.WAITING).length; }
 
   destroy() {
     this.closeDialog();

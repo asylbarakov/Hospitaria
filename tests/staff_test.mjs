@@ -2,6 +2,7 @@
 import assert from 'node:assert';
 import StaffFlow from '../src/iso/StaffFlow.js';
 import { FLOW_STATES } from '../src/data/patientFlow.js';
+import { DISEASES } from '../src/data/diseases.js';
 
 function seeded(seed = 7) {
   let value = seed;
@@ -126,6 +127,7 @@ const patient = {
   timer: 1000,
   roomId: 'therapist',
   diagnosed: false,
+  disease: DISEASES.find((item) => item.id === 'runny-nose'),
 };
 const patients = {
   agents: [patient],

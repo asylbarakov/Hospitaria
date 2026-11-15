@@ -2,6 +2,7 @@
 // врач/лаборант лечат, медсестра зовёт пациентов и помогает с приёмом.
 
 import { FLOW_STATES } from '../data/patientFlow.js';
+import { canAutoTreat } from '../systems/treatmentRooms.js';
 
 export default function automateStaff(flow, dt) {
   if (!flow.patients) {
@@ -50,7 +51,8 @@ function treatPatient(flow, agent) {
     return false;
   }
   const patient = flow.patients.agents.find((item) => item.state === FLOW_STATES.IN_TREATMENT
-    && !item.diagnosed && item.roomId === roomId);
+    && !item.diagnosed && item.roomId === roomId
+    && canAutoTreat(item.disease));
   if (!patient) {
     return false;
   }

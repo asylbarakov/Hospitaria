@@ -16,6 +16,7 @@ import createQuests from '../iso/QuestSetup.js';
 import createEconomy from '../iso/EconomySetup.js';
 import handleSceneTap, { handleSceneEscape } from '../iso/IsoSceneInput.js';
 import { persistScene, resetSceneSave } from '../iso/IsoPersistence.js';
+import createTreatment from '../iso/TreatmentRunner.js';
 import { queueIsoAssets, queueWallAssets } from '../iso/isoAssets.js';
 import {
   screenToTileIndex, tileCenter, worldBounds,
@@ -86,6 +87,7 @@ export default class IsoHospitalScene extends Phaser.Scene {
       penalty: (amount, agent, kind) => economySystem.penalty(amount, agent, kind),
       event: (type, payload) => this.bus.emit(type, payload),
       isRoomUnlocked: (roomId) => this.roomLocks.isUnlocked(roomId),
+      playTreatment: (agent) => this.treatment.start(agent),
     });
     const staff = createStaff(
       this,
@@ -128,6 +130,12 @@ export default class IsoHospitalScene extends Phaser.Scene {
     const start = tileCenter(layout.ENTRANCE.x, layout.ENTRANCE.y - 8);
     this.iso.setZoom(0.75);
     this.iso.centerOn(start.x, start.y);
+    this.treatment = createTreatment(this, {
+      iso: this.iso,
+      world: this.world,
+      patients: this.patients,
+      notify: (text) => this.notify(text),
+    });
 
     this.input.keyboard.on('keydown-R', () => this.build.rotate());
     this.input.keyboard.on('keydown-B', () => this.toggleBuild());

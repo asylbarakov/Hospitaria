@@ -12,18 +12,8 @@ import {
   drawMiniGameHeader,
 } from '../ui/minigameDrawing.js';
 import { showMiniGameResult } from '../ui/MiniGameResult.js';
-import { MINIGAME_KEYS, MINIGAME_TIME_LIMIT } from '../data/treatmentConfig.js';
+import { MINIGAME_KEYS, MINIGAME_TIME_LIMIT, MINIGAME_TITLES } from '../data/treatmentConfig.js';
 import { getTreatmentReward } from '../systems/treatmentRewards.js';
-
-const GAME_TITLES = {
-  exam: 'Осмотр',
-  thermometer: 'Градусник',
-  medicine: 'Подбор лекарства',
-  injection: 'Укол / капельница',
-  breath: 'Дыхание',
-  drops: 'Капли',
-  compress: 'Компресс',
-};
 
 const GAME_FACTORIES = {
   exam: createExam,
@@ -44,6 +34,7 @@ export default class MiniGameScene extends Phaser.Scene {
     this.patient = data.patient || null;
     this.onFinish = typeof data.onFinish === 'function' ? data.onFinish : null;
     this.requestedGameKey = data.gameKey || null;
+    this.roomName = data.roomName || null;
     this.currentGame = null;
     this.gameRoot = null;
     this.result = null;
@@ -91,7 +82,7 @@ export default class MiniGameScene extends Phaser.Scene {
     this.gameKey = gameKey;
 
     this.add
-      .text(640, 52, GAME_TITLES[gameKey], {
+      .text(640, 52, MINIGAME_TITLES[gameKey], {
         fontFamily: MG_FONT,
         fontSize: '28px',
         fontStyle: 'bold',
@@ -99,6 +90,17 @@ export default class MiniGameScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setDepth(2);
+
+    if (this.roomName) {
+      this.add
+        .text(640, 88, `Кабинет: ${this.roomName}`, {
+          fontFamily: MG_FONT,
+          fontSize: '15px',
+          color: '#5b7f8c',
+        })
+        .setOrigin(0.5)
+        .setDepth(2);
+    }
 
     const timerPill = this.add.graphics().setDepth(2);
     timerPill.fillStyle(0xeaf3ff, 1);
@@ -118,7 +120,7 @@ export default class MiniGameScene extends Phaser.Scene {
 
     this.skipButton = createButton(this, 1165, 52, 'Пропустить', () => this.skipGame(), {
       width: 160,
-      height: 46,
+      height: 52,
       fontSize: 17,
       color: 0x8a6d5b,
       hoverColor: 0xa88a76,
