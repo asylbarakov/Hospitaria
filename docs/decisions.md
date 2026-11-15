@@ -308,3 +308,12 @@
    есть известный кабинет, допустимая игра и положительная награда, а у каждого
    кабинета — запись в `ROOM_MINIGAMES`. `tests/treatment_rooms_test.mjs` прогоняет
    контракт, приоритет игрока, перенос результата и полный запуск/финиш в mock-сцене.
+
+## Правки по ревью этапов 17.5–18
+
+- Файлы >300 строк разбиты без изменения публичного API: `IsoWorld` (методы кабинетов и
+  визуала в `worldRooms.js`, `worldVisuals.js`), `PatientFlow` (`patientFlowTreatment.js`),
+  `Quests` (`questsView.js`, `questRewards.js`), `IsoHospitalScene` (`sceneMethods.js`),
+  `tools/balance_sim.mjs` (итоги в `balanceSummary.mjs`). Приём: `Object.assign(Class.prototype, методы)`.
+- Фокус камеры на кабинет при лечении уже работал (`IsoCamera.focusOn/restore`, `TreatmentRunner`).
+- Проверено тестами (`tests/run_all.sh`, 15 из 15) и `tools/balance_sim.mjs`; в браузере не запускалось.

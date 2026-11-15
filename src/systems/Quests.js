@@ -3,9 +3,11 @@
 // Награды не начисляет само — сцена забирает reward и добавляет монеты/опыт/кристаллы.
 
 import {
-  DAILY_QUESTS, QUEST_CATEGORIES, QUEST_EVENTS, STORY_QUESTS, WEEKLY_QUESTS,
+  DAILY_QUESTS, QUEST_EVENTS, STORY_QUESTS, WEEKLY_QUESTS,
   questsByCategory,
 } from '../data/quests.js';
+import { count, rewardsOf } from './questRewards.js';
+import questsView from './questsView.js';
 
 export function dateKey(date = new Date()) {
   const year = date.getFullYear();
@@ -22,20 +24,6 @@ export function weekKey(date = new Date()) {
   const yearStart = new Date(Date.UTC(copy.getUTCFullYear(), 0, 1));
   const week = Math.ceil((((copy - yearStart) / 86400000) + 1) / 7);
   return `${copy.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
-}
-
-function count(value) {
-  const n = Number(value);
-  return Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
-}
-
-function rewardsOf(quest) {
-  const reward = (quest && quest.reward) || {};
-  return {
-    coins: count(reward.coins),
-    experience: count(reward.experience),
-    crystals: count(reward.crystals),
-  };
 }
 
 function matches(quest, payload) {
@@ -227,59 +215,6 @@ export default class Quests {
     return { ok: true, quest, reward: rewardsOf(quest) };
   }
 
-  /** Данные для экрана заданий. */
-  state() {
-    this.ensure();
-    const entries = (category, quests) => {
-      const story = category === 'story';
-      const current = story ? this.currentStory() : null;
-      return quests.map((quest) => {
-        const claimed = this.claimed(category, quest.id);
-        const progress = claimed
-          ? quest.target
-          : Math.min(quest.target, this.progressOf(category, quest.id));
-        const complete = progress >= quest.target;
-        const active = !story || claimed || (current && current.id === quest.id);
-        return {
-          id: quest.id,
-          title: quest.title,
-          description: quest.description,
-          target: quest.target,
-          progress: active ? progress : 0,
-          complete: active && complete,
-          claimed,
-          locked: !active,
-          reward: rewardsOf(quest),
-        };
-      });
-    };
-    const daily = entries('daily', DAILY_QUESTS);
-    const weekly = entries('weekly', WEEKLY_QUESTS);
-    const story = entries('story', STORY_QUESTS);
-    const claimable = (list) => list.filter((item) => item.complete && !item.claimed).length;
-    this.claimable = claimable(daily) + claimable(weekly) + claimable(story);
-    return {
-      revision: this.revision,
-      daily: { ...QUEST_CATEGORIES.daily, resetKey: this.daily.key, quests: daily },
-      weekly: { ...QUEST_CATEGORIES.weekly, resetKey: this.weekly.key, quests: weekly },
-      story: {
-        ...QUEST_CATEGORIES.story,
-        quests: story,
-        done: story.filter((item) => item.claimed).length,
-        total: story.length,
-        currentId: this.currentStory() ? this.currentStory().id : null,
-      },
-      claimable: this.claimable,
-    };
-  }
-
-  hasClaimable() {
-    if (!Number.isFinite(this.claimable) || this.claimable === 0) {
-      this.state();
-    }
-    return this.claimable > 0;
-  }
-
   serialize() {
     return {
       daily: { key: this.daily.key, progress: { ...this.daily.progress }, claimed: [...this.daily.claimed] },
@@ -303,3 +238,5 @@ export default class Quests {
     this.unsubs = [];
   }
 }
+
+Object.assign(Quests.prototype, questsView);

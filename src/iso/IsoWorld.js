@@ -1,4 +1,4 @@
-import IsoDepth, { isBehind } from './IsoDepth.js';
+import IsoDepth from './IsoDepth.js';
 import { buildLayout, footprintOf } from './layoutBuilder.js';
 import {
   evaluatePlacement, facingTile as facingTileOf, nearestWalkable as nearestWalkableOf,
@@ -7,18 +7,14 @@ import {
 import { PATH_CONFIG } from '../data/pathConfig.js';
 import TileReservations from './TileReservations.js';
 import { anchorOf, isoKey, wallKey, wallMeta } from './isoAssets.js';
+import worldRooms from './worldRooms.js';
+import worldVisuals from './worldVisuals.js';
 import {
   HALF_H, HALF_W, SPRITE_SCALE, footprintScreen, tileToScreen,
 } from './IsoMath.js';
 
 // Изометрический мир больницы: пол, стены, таблички и мебель на сцене Phaser.
 // Данные строит layoutBuilder (чистая логика), здесь только спрайты и порядок отрисовки.
-
-const FONT = 'Arial, "Segoe UI", sans-serif';
-const FADE_ALPHA = 0.32;
-const FADE_RADIUS = 3; // тайлов: дальше стены не проверяем
-const BODY_OFFSET = 70; // px выше ног: примерная середина тела
-const SIGN_SCALE = 0.7;
 
 export default class IsoWorld {
   /**
@@ -96,47 +92,6 @@ export default class IsoWorld {
     });
   }
 
-  buildSigns(signs) {
-    this.signSprites = [];
-    signs.forEach((sign) => {
-      const p = tileToScreen(sign.x, sign.y);
-      const board = this.scene.add.image(0, 0, isoKey('sign_blank')).setOrigin(0.5, anchorOf(this.scene, 'sign_blank'));
-      board.setScale(SIGN_SCALE);
-      const label = this.scene.add
-        .text(0, -board.displayHeight * 0.33, sign.text, {
-          fontFamily: FONT, fontSize: '20px', fontStyle: 'bold', color: '#ffffff', stroke: '#0f6b57', strokeThickness: 3,
-        })
-        .setOrigin(0.5);
-      const maxWidth = board.displayWidth * 0.66;
-      if (label.width > maxWidth) {
-        label.setScale(maxWidth / label.width);
-      }
-      const lock = this.makeLockIcon(board);
-      const holder = this.scene.add.container(p.x, p.y - sign.lift, [board, label, lock]);
-      holder.setDepth(8000);
-      this.signSprites.push(holder);
-      this.signs.push({ roomId: sign.id, holder, lock });
-    });
-  }
-
-  /** Маленький нарисованный замок на табличке закрытого кабинета. */
-  makeLockIcon(board) {
-    const g = this.scene.add.graphics();
-    const x = board.displayWidth * 0.34;
-    const y = -board.displayHeight * 0.05;
-    g.fillStyle(0x2b1b12, 0.35);
-    g.fillRoundedRect(x - 10, y - 7, 24, 20, 5);
-    g.fillStyle(0xf2c14e, 1);
-    g.fillRoundedRect(x - 12, y - 8, 24, 20, 5);
-    g.lineStyle(4, 0xf2c14e, 1);
-    g.beginPath();
-    g.arc(x, y - 8, 8, Math.PI, 0, false);
-    g.strokePath();
-    g.fillStyle(0x6b4a12, 1);
-    g.fillCircle(x, y + 1, 2.5);
-    return g.setVisible(false);
-  }
-
   createItemSprite(item) {
     const fp = footprintScreen(item.x, item.y, item.w, item.d);
     const sprite = this.scene.add
@@ -190,32 +145,6 @@ export default class IsoWorld {
     return issue;
   }
 
-  /** Двери закрытых кабинетов не участвуют в проверке связности построек. */
-  activeOpenTiles() {
-    if (!this.closedRooms || this.closedRooms.size === 0) {
-      return this.openTiles;
-    }
-    const closedDoors = new Set();
-    this.closedRooms.forEach((roomId) => {
-      const room = this.roomById(roomId);
-      if (room) {
-        this.doorTilesOf(room).forEach((tile) => closedDoors.add(tileKey(tile.x, tile.y)));
-      }
-    });
-    return new Set([...this.openTiles].filter((key) => !closedDoors.has(key)));
-  }
-
-  itemInClosedRoom(item) {
-    return (this.layout.ROOMS || []).some((room) => {
-      if (room.kind !== 'room' || !this.closedRooms.has(room.id)) {
-        return false;
-      }
-      return item.x >= room.x && item.y >= room.y
-        && item.x + item.w <= room.x + room.w
-        && item.y + item.d <= room.y + room.h;
-    });
-  }
-
   /** Ближайший проходимый тайл рядом с предметом; facing — тайл, на который смотрит актёр. */
   standTileFor(target) {
     const item = unwrapItem(target);
@@ -244,128 +173,6 @@ export default class IsoWorld {
   }
 
   // ---- закрытые кабинеты (этап 17.5) -------------------------------------------------
-
-  roomById(roomId) {
-    return (this.layout.ROOMS || []).find((room) => room.id === roomId) || null;
-  }
-
-  roomName(roomId) {
-    const room = this.roomById(roomId);
-    return room ? room.name : 'Кабинет';
-  }
-
-  /** id комнаты по тайлу: внутренность или дверной проём. */
-  roomForTile(x, y) {
-    const rooms = this.layout.ROOMS || [];
-    for (const room of rooms) {
-      if (room.kind !== 'room') {
-        continue;
-      }
-      if (x >= room.x && x < room.x + room.w && y >= room.y && y < room.y + room.h) {
-        return room.id;
-      }
-      if (this.doorTilesOf(room).some((tile) => tile.x === x && tile.y === y)) {
-        return room.id;
-      }
-    }
-    return null;
-  }
-
-  /** Дверные тайлы комнаты в координатах сетки. */
-  doorTilesOf(room) {
-    return (room.doors || []).map((door) => {
-      if (door.side === 'N') {
-        return { x: door.at, y: room.y - 1 };
-      }
-      if (door.side === 'S') {
-        return { x: door.at, y: room.y + room.h };
-      }
-      if (door.side === 'W') {
-        return { x: room.x - 1, y: door.at };
-      }
-      return { x: room.x + room.w, y: door.at };
-    });
-  }
-
-  /** Закрытая комната, в которую попадает прямоугольник застройки. */
-  isRoomLockedAt(x, y, w = 1, d = 1) {
-    for (const room of this.layout.ROOMS || []) {
-      if (room.kind !== 'room' || !this.closedRooms.has(room.id)) {
-        continue;
-      }
-      const overlap = x < room.x + room.w && x + w > room.x
-        && y < room.y + room.h && y + d > room.y;
-      if (overlap) {
-        return room.id;
-      }
-    }
-    return null;
-  }
-
-  /** Затемняет комнату, запирает двери и показывает замок на табличке. */
-  applyRoomLocks() {
-    if (!this.roomLocks) {
-      return;
-    }
-    (this.layout.ROOMS || []).forEach((room) => {
-      if (room.kind !== 'room' || this.roomLocks.isUnlocked(room.id)) {
-        return;
-      }
-      this.closedRooms.add(room.id);
-      this.doorTilesOf(room).forEach((tile) => this.grid.setBlocked(tile.x, tile.y, 1));
-      this.tintRoom(room, true);
-      const sign = this.signs.find((entry) => entry.roomId === room.id);
-      if (sign && sign.lock) {
-        sign.lock.setVisible(true);
-      }
-    });
-  }
-
-  tintRoom(room, closed) {
-    for (let y = room.y; y < room.y + room.h; y += 1) {
-      for (let x = room.x; x < room.x + room.w; x += 1) {
-        const floor = this.floorSprites.get(`${x}:${y}`);
-        if (!floor) {
-          continue;
-        }
-        if (closed) {
-          floor.setTint(0x6f838c).setAlpha(0.8);
-        } else {
-          floor.clearTint().setAlpha(1);
-        }
-      }
-    }
-    this.furniture.forEach(({ item, sprite }) => {
-      const inside = item.x >= room.x && item.y >= room.y
-        && item.x + item.w <= room.x + room.w
-        && item.y + item.d <= room.y + room.h;
-      if (!inside) {
-        return;
-      }
-      if (closed) {
-        sprite.setTint(0x8fa0a5).setAlpha(0.7);
-      } else {
-        sprite.clearTint().setAlpha(1);
-      }
-    });
-  }
-
-  /** Открывает комнату без перезапуска сцены: двери снова проходимы, цвета возвращаются. */
-  setRoomUnlocked(roomId) {
-    const room = this.roomById(roomId);
-    if (!room || !this.closedRooms.has(roomId)) {
-      return;
-    }
-    this.closedRooms.delete(roomId);
-    this.doorTilesOf(room).forEach((tile) => this.grid.setBlocked(tile.x, tile.y, 0));
-    this.tintRoom(room, false);
-    const sign = this.signs.find((entry) => entry.roomId === roomId);
-    if (sign && sign.lock) {
-      sign.lock.setVisible(false);
-    }
-    this.placementCache = { key: '', issue: null };
-    this.sorter.sort();
-  }
 
   nowMs() {
     return this.scene && this.scene.time && Number.isFinite(this.scene.time.now)
@@ -430,44 +237,7 @@ export default class IsoWorld {
     }));
   }
 
-  // ---- стены перед персонажем --------------------------------------------------------
-
-  /**
-   * Делает полупрозрачными куски стен, которые закрывают актёров.
-   * @param {Array<{pos:{x:number,y:number}, box:object}>} actors
-   */
-  updateWallFade(actors) {
-    const list = Array.isArray(actors) ? actors : [];
-    const walls = this.wallSprites;
-    for (let w = 0; w < walls.length; w += 1) {
-      const wall = walls[w];
-      let fade = false;
-      for (let i = 0; i < list.length; i += 1) {
-        const actor = list[i];
-        if (this.wallFar(wall, actor.pos)) {
-          continue;
-        }
-        const point = actor.screen || tileToScreen(actor.pos.x, actor.pos.y);
-        const px = point.x;
-        const py = point.y - BODY_OFFSET;
-        const r = wall.rect;
-        const covers = px >= r.x - 20 && px <= r.x + r.w + 20 && py >= r.y && py <= r.y + r.h;
-        const inFront = isBehind(actor.box, wall.box) && !isBehind(wall.box, actor.box);
-        if (covers && inFront) {
-          fade = true;
-          break;
-        }
-      }
-      const target = fade ? FADE_ALPHA : 1;
-      const alpha = wall.sprite.alpha + (target - wall.sprite.alpha) * 0.25;
-      wall.sprite.setAlpha(Math.abs(alpha - target) < 0.01 ? target : alpha);
-    }
-  }
-
-  /** Стена слишком далеко от точки в тайлах, чтобы закрывать актёра. */
-  wallFar(wall, pos) {
-    const dx = Math.max(wall.box.minX - pos.x, 0, pos.x - wall.box.maxX);
-    const dy = Math.max(wall.box.minY - pos.y, 0, pos.y - wall.box.maxY);
-    return dx * dx + dy * dy > FADE_RADIUS * FADE_RADIUS;
-  }
 }
+
+// Методы кабинетов и визуала вынесены в отдельные файлы (лимит 300 строк на файл).
+Object.assign(IsoWorld.prototype, worldRooms, worldVisuals);
