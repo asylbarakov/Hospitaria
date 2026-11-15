@@ -18,6 +18,7 @@ export default function buildHudState(scene) {
       : 0,
     build: scene.build.state(),
     staff: scene.staff ? scene.staff.hudState() : null,
+    rooms: scene.roomLocks ? scene.roomLocks.serialize() : [],
     quests: scene.quests ? scene.quests.state() : null,
     message: scene.messages.length ? scene.messages[scene.messages.length - 1].text : '',
     zoom: scene.cameras.main.zoom,

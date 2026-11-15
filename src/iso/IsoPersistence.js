@@ -11,6 +11,7 @@ export function persistScene(scene) {
     crystals: stats.crystals,
     debt: stats.debt,
     statistics: stats.statistics,
+    rooms: scene.roomLocks ? scene.roomLocks.serialize() : undefined,
     economy: scene.economy ? scene.economy.serialize() : undefined,
     staff: scene.staff ? scene.staff.exportStaff() : undefined,
     quests: scene.quests ? scene.quests.serialize() : undefined,
@@ -26,6 +27,9 @@ export function resetSceneSave(scene) {
   if (scene.quests) {
     scene.quests.reset();
   }
+  if (scene.roomLocks) {
+    scene.roomLocks.reset();
+  }
   saveIso(null, null, scene.playerCtl.player, {
     reputation: scene.stats.reputation,
     experience: 0,
@@ -35,5 +39,6 @@ export function resetSceneSave(scene) {
     economy: scene.economy ? scene.economy.serialize() : null,
     staff: [],
     quests: scene.quests ? scene.quests.serialize() : null,
+    rooms: scene.roomLocks ? scene.roomLocks.serialize() : undefined,
   });
 }

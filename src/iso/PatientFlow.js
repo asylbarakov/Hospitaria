@@ -5,9 +5,11 @@
 
 import PatientAgent from './PatientAgent.js';
 import PatientSlots from './PatientSlots.js';
-import { getRandomDisease } from '../data/diseases.js';
+import { DISEASES, getRandomDisease } from '../data/diseases.js';
 import { PATIENT_NAMES } from '../data/patientConfig.js';
-import { FLOW_STATES, PATIENT_FLOW, roomHint } from '../data/patientFlow.js';
+import {
+  FLOW_STATES, PATIENT_FLOW, roomForDisease, roomHint,
+} from '../data/patientFlow.js';
 import { getTreatmentReward } from '../systems/treatmentRewards.js';
 
 function pick(list, random) {
@@ -34,6 +36,10 @@ export default class PatientFlow {
     this.skinPool = Array.isArray(options.skinPool) && options.skinPool.length
       ? options.skinPool
       : [null];
+    // Кабинеты, закрытые на этапе 17.5, не принимают пациентов.
+    this.isRoomUnlocked = typeof options.isRoomUnlocked === 'function'
+      ? options.isRoomUnlocked
+      : () => true;
 
     this.agents = [];
     this.spawned = 0;
@@ -84,11 +90,23 @@ export default class PatientFlow {
     });
   }
 
+  /** Случайная болезнь только из открытых кабинетов. */
+  pickDisease() {
+    const open = DISEASES.filter((disease) => this.isRoomUnlocked(roomForDisease(disease)));
+    if (!open.length) {
+      return null;
+    }
+    return open[Math.floor(this.random() * open.length)];
+  }
+
   spawn(forcedDisease = null) {
     if (this.agents.length >= this.maxPatients || this.spawned >= this.maxSpawned) {
       return null;
     }
-    const disease = forcedDisease || getRandomDisease(this.random);
+    const disease = forcedDisease || this.pickDisease() || getRandomDisease(this.random);
+    if (!this.isRoomUnlocked(roomForDisease(disease))) {
+      return null;
+    }
     const agent = new PatientAgent({
       id: this.nextId,
       name: pick(PATIENT_NAMES, this.random),
@@ -120,6 +138,9 @@ export default class PatientFlow {
       };
     }
 
+    if (!this.isRoomUnlocked(agent.roomId)) {
+      return { ok: false, hint: 'Сначала откройте кабинет для этого пациента' };
+    }
     const ready = this.world.roomReady(agent.roomId);
     if (!ready || !ready.ok) {
       return { ok: false, hint: (ready && ready.hint) || roomHint(agent.roomId) };
@@ -183,7 +204,7 @@ export default class PatientFlow {
       case 'treated': {
         this.slots.releaseTreatment(agent);
         const stars = Number.isFinite(agent.autoStars) ? agent.autoStars : this.timing.treatmentStars;
-        const reward = getTreatmentReward(agent.disease, stars);
+        const reward = getTreatmentReward(agent.disease, stars, false, this.random);
         this.emit({ type: 'treated', agent, reward });
         if (!this.slots.sendPay(agent)) {
           this.sendExit(agent);

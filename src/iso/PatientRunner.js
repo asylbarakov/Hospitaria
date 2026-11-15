@@ -1,6 +1,4 @@
-// Пациенты на сцене изометрии (этап 14): связывает PatientFlow, IsoActor, шкалу
-// терпения и диалог диагноза. Логика цикла остаётся в PatientFlow, здесь Phaser.
-
+// Пациенты на сцене изометрии (этап 14): PatientFlow, IsoActor, шкала и диалог.
 import PatientFlow from './PatientFlow.js';
 import PatientDialog from './PatientDialog.js';
 import PatientPoints from './PatientPoints.js';
@@ -10,7 +8,6 @@ import { FLOW_STATES } from '../data/patientFlow.js';
 
 const TALK_DISTANCE = 2.4;
 const TAP_RADIUS = 1.4;
-
 export default class PatientRunner {
   /**
    * @param {Phaser.Scene} scene
@@ -30,6 +27,7 @@ export default class PatientRunner {
       reward: hooks.reward || (() => {}),
       penalty: hooks.penalty || (() => {}),
       event: hooks.event || (() => {}),
+      isRoomUnlocked: hooks.isRoomUnlocked || (() => true),
     };
     this.views = new PatientViews(scene, actors, (agent) => this.tapAgent(agent));
     this.dialog = new PatientDialog(scene, this.points);
@@ -40,6 +38,7 @@ export default class PatientRunner {
       skinPool: PATIENT_SKINS,
       navigate: (agent, point) => this.sendMove(agent, point),
       onEvent: (event) => this.onEvent(event),
+      isRoomUnlocked: (roomId) => this.hooks.isRoomUnlocked(roomId),
     });
   }
 

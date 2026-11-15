@@ -104,6 +104,12 @@ for (let i = 0; i < 5; i += 1) story.bus.emit('patientTreated', { stars: 2 });
 assert.equal(entryOf(story.quests, 'story', 'story-treat-5').complete, true, 'пять пациентов учтены');
 assert.equal(entryOf(story.quests, 'story', 'story-treat-10').locked, true, 'следующий шаг ещё закрыт');
 
+// 5b. Действие для будущего шага не теряется: лабораторию можно открыть заранее.
+story.bus.emit('roomUnlocked', { roomId: 'lab' });
+assert.equal(story.quests.progressOf('story', 'story-first-room'), 1, 'любой кабинет учтён заранее');
+assert.equal(story.quests.progressOf('story', 'story-lab-room'), 1, 'заранее открытая лаборатория учтена');
+assert.equal(entryOf(story.quests, 'story', 'story-lab-room').locked, true, 'забрать награду всё равно можно только по порядку');
+
 // 6. Смена даты сбрасывает ежедневные, но не сюжет и не недельные в тот же день.
 const beforeKey = dateKey(new Date(2026, 10, 9, 12, 0, 0));
 assert.equal(story.quests.serialize().daily.key, beforeKey);

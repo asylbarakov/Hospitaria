@@ -4,6 +4,7 @@
 
 import { CATALOG, itemUnlockLevel } from '../data/buildCatalog.js';
 import { STAFF_ROLES, staffUnlockLevel } from '../data/staffCatalog.js';
+import { ROOM_UNLOCKS, STARTER_ROOMS } from '../data/roomUnlocks.js';
 import { isoKey } from './isoAssets.js';
 import { createButton } from '../ui/Button.js';
 
@@ -15,7 +16,9 @@ const TABS = [
   { id: 'furniture', title: 'Мебель', color: 0x2f80c9 },
   { id: 'staff', title: 'Персонал', color: 0x3f9b4a },
   { id: 'decor', title: 'Украшения', color: 0x8d7bb5 },
+  { id: 'rooms', title: 'Кабинеты', color: 0xc9622f },
 ];
+const CLOSED_ROOMS = ROOM_UNLOCKS.filter((entry) => !STARTER_ROOMS.includes(entry.roomId));
 const DECOR_TYPES = new Set([
   'plant_big', 'water_cooler', 'hall_sofa', 'waiting_sofa', 'waiting_chair', 'cafe_table',
 ]);
@@ -35,6 +38,7 @@ export default class ShopPanel {
     this.page = 0;
     this.coins = 0;
     this.level = 1;
+    this.roomsState = [];
     this.signature = '';
     this.cards = [];
 
@@ -113,6 +117,9 @@ export default class ShopPanel {
     if (this.tab === 'staff') {
       return STAFF_ROLES;
     }
+    if (this.tab === 'rooms') {
+      return CLOSED_ROOMS;
+    }
     return this.tab === 'decor' ? DECOR : FURNITURE;
   }
 
@@ -130,7 +137,8 @@ export default class ShopPanel {
     const staff = state && state.staff
       ? `${state.staff.hired.length}/${state.staff.max}/${state.staff.salary}`
       : '';
-    return `${this.tab}|${this.page}|${coins}|${level}|${staff}`;
+    const rooms = state && Array.isArray(state.rooms) ? state.rooms.join(',') : '';
+    return `${this.tab}|${this.page}|${coins}|${level}|${staff}|${rooms}`;
   }
 
   /** HUD вызывает каждый кадр; перестройка только при изменениях. */
@@ -145,12 +153,13 @@ export default class ShopPanel {
     this.coins = coins;
     this.level = level;
     this.staffState = state ? state.staff : null;
+    this.roomsState = state && Array.isArray(state.rooms) ? state.rooms : [];
     this.refresh();
   }
 
   refresh() {
     const signature = this.signatureFor(
-      { staff: this.staffState }, this.coins, this.level,
+      { staff: this.staffState, rooms: this.roomsState }, this.coins, this.level,
     );
     this.signature = signature;
     this.buildTabs();
@@ -183,66 +192,97 @@ export default class ShopPanel {
   }
 
   makeCard(item, index) {
-    const kind = this.tab === 'staff' ? 'staff' : 'item';
-    const unlock = kind === 'staff' ? staffUnlockLevel(item) : itemUnlockLevel(item);
-    const locked = this.level < unlock;
+    const kind = this.tab === 'staff' ? 'staff' : (this.tab === 'rooms' ? 'room' : 'item');
+    const unlock = kind === 'staff' ? staffUnlockLevel(item) : (kind === 'room' ? item.minLevel : itemUnlockLevel(item));
+    const open = kind === 'room' && this.roomsState.includes(item.roomId);
+    const locked = kind === 'room' ? (!open && this.level < unlock) : this.level < unlock;
     const col = index % 4;
     const row = Math.floor(index / 4);
     const card = this.scene.add.container(190 + col * 260, 238 + row * 180);
-    card.setAlpha(locked ? 0.5 : 1);
+    card.setAlpha(locked ? 0.62 : 1);
 
     const bg = this.scene.add.graphics();
     bg.fillStyle(0x14303f, 1);
     bg.fillRoundedRect(-CARD_W / 2, -CARD_H / 2, CARD_W, CARD_H, 14);
-    bg.lineStyle(2, locked ? 0x4a5b63 : 0x4fb3a5, 1);
+    bg.lineStyle(2, locked ? 0x4a5b63 : (open ? 0x8d7bb5 : 0x4fb3a5), 1);
     bg.strokeRoundedRect(-CARD_W / 2, -CARD_H / 2, CARD_W, CARD_H, 14);
     card.add(bg);
 
-    const key = kind === 'staff' ? item.sprite : item.type;
+    const key = kind === 'staff' ? item.sprite : (kind === 'room' ? 'sign_blank' : item.type);
     const img = this.scene.add.image(-82, -10, isoKey(key));
     img.setScale(Math.min(62 / img.width, 78 / img.height));
     card.add(img);
 
     card.add(this.scene.add.text(-38, -64, item.title, {
-      fontFamily: FONT, fontSize: '16px', fontStyle: 'bold', color: '#ffffff',
-      wordWrap: { width: 180 },
+      fontFamily: FONT, fontSize: kind === 'room' ? '15px' : '16px', fontStyle: 'bold', color: '#ffffff',
+      wordWrap: { width: kind === 'room' ? 150 : 180 },
     }));
-    const priceLabel = kind === 'staff' ? `Найм ${item.price}` : `Цена ${item.price}`;
+    const priceLabel = kind === 'staff'
+      ? `Найм ${item.price}`
+      : (kind === 'room' ? `${item.coins} монет · ${item.crystals} крист.` : `Цена ${item.price}`);
     card.add(this.scene.add.text(-38, -38, priceLabel, {
       fontFamily: FONT, fontSize: '14px', fontStyle: 'bold', color: '#ffe082',
     }));
-    const second = kind === 'staff' ? `Зарплата ${item.salary}/день` : (item.group || '');
+    const second = kind === 'staff'
+      ? `Зарплата ${item.salary}/день`
+      : (kind === 'room' ? `Мин. уровень ${item.minLevel}` : (item.group || ''));
     card.add(this.scene.add.text(-38, -16, second, {
       fontFamily: FONT, fontSize: '12px', color: '#b9e6df',
     }));
-    const hint = kind === 'staff' ? item.hint : (locked ? `Откроется на уровне ${unlock}` : 'Купить и поставить в больнице');
+    let hint = 'Купить и поставить в больнице';
+    if (kind === 'staff') {
+      hint = item.hint;
+    } else if (kind === 'room') {
+      hint = open ? 'Уже открыт и принимает пациентов' : 'Открыть вход и пустить пациентов';
+    } else if (locked) {
+      hint = `Откроется на уровне ${unlock}`;
+    }
     card.add(this.scene.add.text(-CARD_W / 2 + 10, 14, hint, {
       fontFamily: FONT, fontSize: '12px', color: '#dff3ff',
       wordWrap: { width: CARD_W - 20 },
     }));
 
-    const action = kind === 'staff' ? 'Нанять' : 'Поставить';
-    const label = locked ? `С ур. ${unlock}` : action;
+    let action = kind === 'staff' ? 'Нанять' : 'Поставить';
+    if (kind === 'room') {
+      action = open ? 'Открыт' : 'Открыть';
+    }
+    const label = locked && kind !== 'room' ? `С ур. ${unlock}` : action;
+    const baseColor = kind === 'staff' ? 0x3f9b4a : (kind === 'room' ? 0xc9622f : 0x2f80c9);
+    const hover = kind === 'staff' ? 0x55b963 : (kind === 'room' ? 0xe07a45 : 0x4a9be0);
     const button = createButton(this.scene, 0, CARD_H / 2 - 18, label, () => {
       this.choose(item, kind, locked, unlock);
     }, {
       width: 150, height: 32, fontSize: 15,
-      color: locked ? 0x6b7f86 : (kind === 'staff' ? 0x3f9b4a : 0x2f80c9),
-      hoverColor: locked ? 0x6b7f86 : (kind === 'staff' ? 0x55b963 : 0x4a9be0),
+      color: open ? 0x6b7f86 : baseColor,
+      hoverColor: open ? 0x6b7f86 : hover,
     });
     card.add(button);
 
-    if (locked) {
-      card.add(this.scene.add.text(CARD_W / 2 - 12, -CARD_H / 2 + 8, `Ур. ${unlock}`, {
-        fontFamily: FONT, fontSize: '13px', fontStyle: 'bold', color: '#ffcc80',
+    if (locked || open) {
+      const badge = open ? 'Открыт' : `Ур. ${unlock}`;
+      const badgeX = kind === 'room' ? -CARD_W / 2 + 10 : CARD_W / 2 - 12;
+      const badgeOrigin = kind === 'room' ? 0 : 1;
+      card.add(this.scene.add.text(badgeX, -CARD_H / 2 + 8, badge, {
+        fontFamily: FONT, fontSize: '12px', fontStyle: 'bold',
+        color: open ? '#b9f6ca' : '#ffcc80',
         stroke: '#10222e', strokeThickness: 3,
-      }).setOrigin(1, 0));
+      }).setOrigin(badgeOrigin, 0));
     }
     this.cards.push(card);
     return card;
   }
 
   choose(item, kind, locked, unlock) {
+    if (kind === 'room') {
+      if (this.roomsState.includes(item.roomId)) {
+        this.hooks.notify('Этот кабинет уже открыт');
+      } else if (this.level < item.minLevel) {
+        this.hooks.notify(`Кабинет откроется на уровне ${item.minLevel}`);
+      } else if (typeof this.hooks.onUnlockRoom === 'function') {
+        this.hooks.onUnlockRoom(item.roomId);
+      }
+      return;
+    }
     if (locked) {
       if (typeof this.hooks.notify === 'function') {
         this.hooks.notify(`Откроется на уровне ${unlock}`);

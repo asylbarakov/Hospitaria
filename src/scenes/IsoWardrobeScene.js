@@ -1,7 +1,8 @@
 import { createButton } from '../ui/Button.js';
 import { iconKey, isoKey } from '../iso/isoAssets.js';
 import {
-  ACCENTS, PLAYER_SKINS, buySkin, isSkinOwned, normalizePlayer, skinById,
+  ACCENTS, PLAYER_SKINS, accentCost, buyAccent, buySkin, isAccentOwned, isSkinOwned,
+  normalizePlayer, skinById, skinCost, skinCurrency,
 } from '../data/playerSkins.js';
 
 const W = 1280;
@@ -28,6 +29,7 @@ export default class IsoWardrobeScene extends Phaser.Scene {
     this.closed = false;
     this.player = normalizePlayer(this.hospital.player);
     this.coins = Number.isFinite(this.hospital.coins) ? this.hospital.coins : 0;
+    this.crystals = Number.isFinite(this.hospital.crystals) ? this.hospital.crystals : 0;
     this.pending = null;
     this.pendingUntil = 0;
     this.cards = [];
@@ -63,14 +65,19 @@ export default class IsoWardrobeScene extends Phaser.Scene {
         fontFamily: FONT, fontSize: '34px', fontStyle: 'bold', color: '#24444f',
       })
       .setOrigin(0.5);
-    this.add.image(1040, 56, iconKey('icon_coin')).setScale(0.26).setDepth(10);
+    this.add.image(960, 56, iconKey('icon_coin')).setScale(0.24).setDepth(10);
     this.coinText = this.add
-      .text(1070, 56, '', { fontFamily: FONT, fontSize: '28px', fontStyle: 'bold', color: '#fff3b0', stroke: '#10222e', strokeThickness: 5 })
+      .text(986, 56, '', { fontFamily: FONT, fontSize: '26px', fontStyle: 'bold', color: '#fff3b0', stroke: '#10222e', strokeThickness: 5 })
+      .setOrigin(0, 0.5)
+      .setDepth(10);
+    this.add.image(1062, 56, iconKey('icon_crystal')).setScale(0.22).setDepth(10);
+    this.crystalText = this.add
+      .text(1086, 56, '', { fontFamily: FONT, fontSize: '26px', fontStyle: 'bold', color: '#9fe7ff', stroke: '#10222e', strokeThickness: 5 })
       .setOrigin(0, 0.5)
       .setDepth(10);
     this.hintText = this.add
-      .text(640, 626, 'Первый облик и акцент бесплатны. Платный облик: нажмите дважды', {
-        fontFamily: FONT, fontSize: '17px', color: '#4d7b8a', align: 'center', wordWrap: { width: 900 },
+      .text(640, 626, 'Бесплатные облики и акценты доступны сразу. Платные: нажмите дважды', {
+        fontFamily: FONT, fontSize: '17px', color: '#4d7b8a', align: 'center', wordWrap: { width: 940 },
       })
       .setOrigin(0.5);
   }
@@ -82,11 +89,13 @@ export default class IsoWardrobeScene extends Phaser.Scene {
     ACCENTS.forEach((accent, index) => {
       const dot = this.add.circle(390 + index * 58, 196, 18, accent.color);
       dot.setInteractive({ useHandCursor: true });
-      dot.on('pointerup', () => {
-        this.player.accent = accent.id;
-        this.apply();
-      });
-      this.accentDots.push({ id: accent.id, dot });
+      dot.on('pointerup', () => this.onAccent(accent));
+      const price = this.add
+        .text(390 + index * 58, 226, accentCost(accent) ? `${accentCost(accent)}✦` : '', {
+          fontFamily: FONT, fontSize: '13px', fontStyle: 'bold', color: '#7a8f97',
+        })
+        .setOrigin(0.5);
+      this.accentDots.push({ id: accent.id, dot, price });
     });
   }
 
@@ -128,7 +137,9 @@ export default class IsoWardrobeScene extends Phaser.Scene {
       } else if (owned) {
         entry.status.setText('Есть').setColor('#3d8f7a');
       } else {
-        entry.status.setText(`${entry.skin.price} монет`).setColor('#b07a18');
+        const cost = skinCost(entry.skin);
+        const currency = skinCurrency(entry.skin) === 'crystals' ? 'крист.' : 'монет';
+        entry.status.setText(`${cost} ${currency}`).setColor('#b07a18');
       }
     });
   }
@@ -136,8 +147,47 @@ export default class IsoWardrobeScene extends Phaser.Scene {
   paintAccents() {
     this.accentDots.forEach((entry) => {
       const on = entry.id === this.player.accent;
+      const owned = isAccentOwned(entry.id, this.player.ownedAccents);
       entry.dot.setStrokeStyle(on ? 5 : 2, on ? 0x24444f : 0xffffff, on ? 1 : 0.8);
+      entry.dot.setAlpha(owned || on ? 1 : 0.55);
+      if (entry.price) {
+        entry.price.setColor(on ? '#2f7f4f' : (owned ? '#3d8f7a' : '#b07a18'));
+      }
     });
+  }
+
+  onAccent(accent) {
+    if (isAccentOwned(accent.id, this.player.ownedAccents)) {
+      this.player.accent = accent.id;
+      this.pending = null;
+      this.apply();
+      return;
+    }
+    const cost = accentCost(accent);
+    if (this.crystals < cost) {
+      this.setHint(`Не хватает ${cost - this.crystals} кристаллов`, '#b3261e');
+      return;
+    }
+    const key = `accent:${accent.id}`;
+    if (this.pending === key && this.time.now < this.pendingUntil) {
+      this.purchaseAccent(accent);
+      return;
+    }
+    this.pending = key;
+    this.pendingUntil = this.time.now + 4000;
+    this.setHint(`Нажмите на акцент «${accent.title}» ещё раз: ${cost} кристаллов`, '#b07a18');
+  }
+
+  purchaseAccent(accent) {
+    const result = buyAccent(this.player, this.crystals, accent.id);
+    if (!result.ok) {
+      return;
+    }
+    this.crystals = result.crystals;
+    this.player = result.player;
+    this.pending = null;
+    this.apply();
+    this.setHint(`Куплено: акцент «${accent.title}»`, '#2f7f4f');
   }
 
   onCard(skin) {
@@ -147,25 +197,32 @@ export default class IsoWardrobeScene extends Phaser.Scene {
       this.apply();
       return;
     }
-    if (this.coins < skin.price) {
-      this.setHint(`Не хватает ${skin.price - this.coins} монет`, '#b3261e');
+    const currency = skinCurrency(skin);
+    const cost = skinCost(skin);
+    const wallet = currency === 'crystals' ? this.crystals : this.coins;
+    if (wallet < cost) {
+      const label = currency === 'crystals' ? 'кристаллов' : 'монет';
+      this.setHint(`Не хватает ${cost - wallet} ${label}`, '#b3261e');
       return;
     }
-    if (this.pending === skin.id && this.time.now < this.pendingUntil) {
+    const key = `skin:${skin.id}`;
+    if (this.pending === key && this.time.now < this.pendingUntil) {
       this.buy(skin);
       return;
     }
-    this.pending = skin.id;
+    this.pending = key;
     this.pendingUntil = this.time.now + 4000;
-    this.setHint(`Нажмите «${skin.title}» ещё раз: купить за ${skin.price} монет`, '#b07a18');
+    const label = currency === 'crystals' ? 'кристаллов' : 'монет';
+    this.setHint(`Нажмите «${skin.title}» ещё раз: купить за ${cost} ${label}`, '#b07a18');
   }
 
   buy(skin) {
-    const result = buySkin(this.player, this.coins, skin.id);
+    const result = buySkin(this.player, this.coins, skin.id, this.crystals);
     if (!result.ok) {
       return;
     }
     this.coins = result.coins;
+    this.crystals = result.crystals;
     this.player = result.player;
     this.pending = null;
     this.apply();
@@ -173,7 +230,7 @@ export default class IsoWardrobeScene extends Phaser.Scene {
   }
 
   apply() {
-    this.hospital.applyPlayer(this.player, this.coins);
+    this.hospital.applyPlayer(this.player, this.coins, this.crystals);
     this.refresh();
   }
 
@@ -183,6 +240,7 @@ export default class IsoWardrobeScene extends Phaser.Scene {
 
   refresh() {
     this.coinText.setText(`${this.coins}`);
+    this.crystalText.setText(`${this.crystals}`);
     this.player.skin = skinById(this.player.skin).id;
     this.paintCards();
     this.paintAccents();

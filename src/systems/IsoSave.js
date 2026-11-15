@@ -28,6 +28,10 @@ export function loadIsoSave() {
         : null,
       experience: Number.isFinite(data.experience) ? Math.max(0, data.experience) : null,
       crystals: Number.isFinite(data.crystals) ? Math.max(0, data.crystals) : null,
+      rooms: Array.isArray(data.rooms)
+        ? data.rooms.filter((id) => typeof id === 'string')
+        : null,
+      legacyRooms: !Array.isArray(data.rooms),
       statistics: data.statistics && typeof data.statistics === 'object'
         ? data.statistics
         : null,
@@ -55,7 +59,8 @@ function pickNumber(stats, previous, field, sanitize = (n) => n) {
  * @param {Array|null} items
  * @param {object|null} player
  * @param {{reputation?:number, experience?:number, crystals?:number, debt?:number,
- *   statistics?:object, economy?:object, staff?:Array, quests?:object}|null} stats
+ *   statistics?:object, economy?:object, staff?:Array, quests?:object,
+ *   rooms?:Array<string>}|null} stats
  */
 export function saveIso(coins, items, player = null, stats = null) {
   try {
@@ -109,6 +114,12 @@ export function saveIso(coins, items, player = null, stats = null) {
       data.quests = stats.quests;
     } else if (previous && previous.quests) {
       data.quests = previous.quests;
+    }
+    const rooms = stats && Array.isArray(stats.rooms)
+      ? stats.rooms
+      : (previous && Array.isArray(previous.rooms) ? previous.rooms : null);
+    if (Array.isArray(rooms)) {
+      data.rooms = rooms.filter((id) => typeof id === 'string');
     }
     window.localStorage.setItem(KEY, JSON.stringify(data));
   } catch (err) {

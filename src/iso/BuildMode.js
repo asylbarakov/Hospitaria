@@ -86,7 +86,11 @@ export default class BuildMode {
   }
 
   isValid() {
-    return !!this.target && this.issue() === null;
+    if (!this.target || this.issue() !== null) {
+      return false;
+    }
+    const fp = this.footprint();
+    return !this.world.isRoomLockedAt(this.target.x, this.target.y, fp.w, fp.d);
   }
 
   priceOf() {
@@ -142,6 +146,14 @@ export default class BuildMode {
       const level = this.hooks.getLevel ? this.hooks.getLevel() : 1;
       if (level < unlock) {
         this.hooks.notify(`Откроется на уровне ${unlock}`);
+        return;
+      }
+      const fp = this.footprint();
+      const lockedRoom = this.world.isRoomLockedAt
+        ? this.world.isRoomLockedAt(this.target.x, this.target.y, fp.w, fp.d)
+        : null;
+      if (lockedRoom) {
+        this.hooks.notify(`Сначала откройте кабинет «${this.world.roomName(lockedRoom)}»`);
         return;
       }
       if (!this.isValid()) {

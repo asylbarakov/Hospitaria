@@ -143,7 +143,12 @@ export default class Quests {
     return STORY_QUESTS.find((quest) => !this.claimed('story', quest.id)) || null;
   }
 
-  /** Подписка на событие: двигает ежедневные, недельные и текущий сюжетный шаг. */
+  /**
+   * Подписка на событие: двигает ежедневные, недельные и сюжетные шаги.
+   * Сюжетный прогресс считается у всех незабранных шагов, даже если шаг ещё закрыт:
+   * иначе действие, сделанное заранее (например, открытая лаборатория), терялось бы,
+   * когда этот шаг станет текущим. Забрать награду всё равно можно только по порядку.
+   */
   handle(type, payload) {
     this.ensure();
     const touched = [];
@@ -158,10 +163,11 @@ export default class Quests {
         }
       });
     });
-    const story = this.currentStory();
-    if (story && story.event === type && this.advance('story', story, payload)) {
-      touched.push(story);
-    }
+    STORY_QUESTS.forEach((quest) => {
+      if (quest.event === type && this.advance('story', quest, payload)) {
+        touched.push(quest);
+      }
+    });
     if (touched.length) {
       this.revision += 1;
       this.onChange();

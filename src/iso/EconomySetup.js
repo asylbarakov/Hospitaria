@@ -4,7 +4,7 @@
 import GameState from '../systems/GameState.js';
 import HospitalEconomy from '../systems/HospitalEconomy.js';
 import { START_COINS } from '../data/buildCatalog.js';
-import { unlockText } from '../data/economy.js';
+import { crystalsForLevel, unlockText } from '../data/economy.js';
 
 /**
  * @param {Phaser.Scene} scene
@@ -21,11 +21,12 @@ export default function createEconomy(scene, saved) {
     statistics: saved ? saved.statistics : undefined,
     startCoins: START_COINS,
     onChange: () => scene.persist(),
-    onLevelUp: (level) => {
+    onLevelUp: (level, reward) => {
       const bonus = unlockText(level);
-      scene.notify(`Уровень ${level}!${bonus ? ` Открыто: ${bonus}` : ' Новые товары в магазине.'}`);
+      const crystals = reward && reward.crystals ? ` +${reward.crystals} кристалла.` : '';
+      scene.notify(`Уровень ${level}!${crystals}${bonus ? ` Открыто: ${bonus}` : ' Новые товары в магазине.'}`);
       if (scene.bus) {
-        scene.bus.emit('levelUp', { level });
+        scene.bus.emit('levelUp', { level, crystals: reward ? reward.crystals : 0 });
       }
       scene.persist();
     },
@@ -53,6 +54,7 @@ export default function createEconomy(scene, saved) {
     stats.applyReward({
       coins: 0,
       xp: rewardData ? rewardData.xp : 0,
+      crystals: rewardData ? rewardData.crystals : 0,
       reputation: rewardData ? rewardData.reputation : 0,
     });
     return economy.collectTreatment(rewardData, agent);

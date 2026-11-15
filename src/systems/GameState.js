@@ -4,7 +4,7 @@
 
 import HospitalStats from './HospitalStats.js';
 import { levelFromExperience } from '../data/progression.js';
-import { ECONOMY, SCHEMA_VERSION } from '../data/economy.js';
+import { ECONOMY, SCHEMA_VERSION, crystalsForLevel } from '../data/economy.js';
 
 function count(value, fallback = 0) {
   const n = Number(value);
@@ -52,8 +52,17 @@ export default class GameState extends HospitalStats {
     const before = this.level;
     const result = super.addExperience(amount);
     const after = this.level;
+    let crystals = 0;
     for (let level = before + 1; level <= after; level += 1) {
-      this.onLevelUp(level);
+      const bonus = crystalsForLevel(level);
+      if (bonus > 0) {
+        this.addCrystals(bonus);
+        crystals += bonus;
+      }
+      this.onLevelUp(level, { crystals: bonus });
+    }
+    if (crystals > 0) {
+      this.onChange();
     }
     return result;
   }

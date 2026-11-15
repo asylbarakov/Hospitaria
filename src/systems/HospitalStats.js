@@ -77,6 +77,14 @@ export default class HospitalStats {
     return this._crystals;
   }
 
+  /** Трата кристаллов. Не уходит ниже нуля: вызывающий сначала проверяет баланс. */
+  spendCrystals(amount) {
+    const value = Math.max(0, Math.round(Number(amount) || 0));
+    this.crystals = this._crystals - value;
+    this.onChange();
+    return this._crystals;
+  }
+
   /** Награда задания: монеты, опыт и кристаллы одним сохранением. */
   applyQuestReward(reward) {
     if (!reward) {
@@ -104,6 +112,7 @@ export default class HospitalStats {
     this.addCoins(reward.coins);
     const xp = Number.isFinite(reward.xp) ? reward.xp : reward.experience;
     this.addExperience(xp);
+    this.addCrystals(reward.crystals);
     this.reputation = this._reputation + (Number(reward.reputation) || 0);
     this.onChange();
     return this._reputation;

@@ -5,6 +5,7 @@ import ShopPanel from '../iso/ShopPanel.js';
 import TopStatus from '../iso/TopStatus.js';
 import DaySummary from '../iso/DaySummary.js';
 import BuildPanel, { PANEL_Y } from '../iso/BuildPanel.js';
+import openRoomUnlockDialog from '../iso/RoomUnlockDialog.js';
 import { staffRole, staffUnlockLevel } from '../data/staffCatalog.js';
 
 const FONT = 'Arial, "Segoe UI", sans-serif';
@@ -19,6 +20,8 @@ export default class IsoHospitalHud extends Phaser.Scene {
     this.buttons = [];
     this.resetArmedUntil = 0;
     this.rects = [];
+    this.roomDialogOpen = false;
+    this.roomDialog = null;
 
     this.status = new TopStatus(this);
     this.message = this.add
@@ -64,6 +67,10 @@ export default class IsoHospitalHud extends Phaser.Scene {
     this.questButton = this.addButton(1180, 400, 180, 'Задания', () => this.toggleQuests(), 0x8d7bb5, 0xa695cc);
     this.shopPanel = new ShopPanel(this, {
       onHire: (roleId) => this.hire(roleId),
+      onUnlockRoom: (roomId) => {
+        this.shopPanel.hide();
+        this.openRoomDialog(roomId);
+      },
       onPlace: (type) => {
         this.shopPanel.hide();
         this.world().build.setActive(true);
@@ -148,6 +155,11 @@ export default class IsoHospitalHud extends Phaser.Scene {
     this.shopPanel.show();
   }
 
+  /** Окно «Открыть кабинет»: цена, чего не хватает, кнопка покупки. */
+  openRoomDialog(roomId) {
+    return openRoomUnlockDialog(this, roomId);
+  }
+
   claimQuest(category, id) {
     const main = this.world();
     if (!main.quests) {
@@ -204,6 +216,9 @@ export default class IsoHospitalHud extends Phaser.Scene {
       return true;
     }
     if (this.daySummary && this.daySummary.visible) {
+      return true;
+    }
+    if (this.roomDialogOpen) {
       return true;
     }
     if (this.state && this.state.build.active && pointer.y >= PANEL_Y) {

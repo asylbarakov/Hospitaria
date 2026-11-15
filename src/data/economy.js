@@ -3,6 +3,13 @@
 
 export const SCHEMA_VERSION = 2;
 
+// Кристаллы за новый уровень (этап 17.5). Награда выдаётся один раз в GameState.
+export const CRYSTALS_PER_LEVEL = 2;
+
+export function crystalsForLevel(level) {
+  return Math.max(0, Math.floor(Number(level) || 0)) >= 2 ? CRYSTALS_PER_LEVEL : 0;
+}
+
 export const ECONOMY = {
   // «День» длится ровно столько реального времени; часы на HUD идут от 08:00 к 20:00.
   dayLengthMs: 180000,

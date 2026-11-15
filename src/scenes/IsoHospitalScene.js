@@ -10,6 +10,7 @@ import PatientRunner from '../iso/PatientRunner.js';
 import PlayerControl from '../iso/PlayerControl.js';
 import TapMarker from '../iso/TapMarker.js';
 import buildHudState from '../iso/hudState.js';
+import RoomUnlocks from '../systems/RoomUnlocks.js';
 import createStaff from '../iso/StaffSetup.js';
 import createQuests from '../iso/QuestSetup.js';
 import createEconomy from '../iso/EconomySetup.js';
@@ -54,11 +55,19 @@ export default class IsoHospitalScene extends Phaser.Scene {
     const questSystem = createQuests(this, saved);
     this.bus = questSystem.bus;
     this.quests = questSystem.quests;
+    this.roomLocks = new RoomUnlocks({
+      state: this.stats,
+      saved,
+      bus: this.bus,
+      onChange: () => this.persist(),
+    });
     const rawPlayer = saved && saved.player ? saved.player : { ...DEFAULT_PLAYER, name: 'Доктор' };
     this.wardrobeOpen = false;
     this.modalOpen = false;
     this.patientClickGuard = false;
-    this.world = new IsoWorld(this, layout, saved ? saved.items : null);
+    this.world = new IsoWorld(this, layout, saved ? saved.items : null, {
+      roomLocks: this.roomLocks,
+    });
     this.grid = this.world.grid;
     this.messages = [];
     this.pathfinder = new Pathfinder(this.grid);
@@ -76,6 +85,7 @@ export default class IsoHospitalScene extends Phaser.Scene {
       reward: (reward, agent) => economySystem.reward(reward, agent),
       penalty: (amount, agent, kind) => economySystem.penalty(amount, agent, kind),
       event: (type, payload) => this.bus.emit(type, payload),
+      isRoomUnlocked: (roomId) => this.roomLocks.isUnlocked(roomId),
     });
     const staff = createStaff(
       this,
@@ -143,6 +153,10 @@ export default class IsoHospitalScene extends Phaser.Scene {
     return this.stats.reputation;
   }
 
+  get crystals() {
+    return this.stats.crystals;
+  }
+
   get player() {
     return this.playerCtl ? this.playerCtl.player : null;
   }
@@ -151,9 +165,38 @@ export default class IsoHospitalScene extends Phaser.Scene {
     return this.playerCtl ? this.playerCtl.actor : null;
   }
 
-  /** Вызывается из «Гардероба»: применяет новый облик и монеты, затем сохраняет. */
-  applyPlayer(player, coins) {
+  /** Вызывается из «Гардероба»: применяет новый облик, монеты и кристаллы. */
+  applyPlayer(player, coins, crystals) {
+    if (Number.isFinite(crystals)) {
+      this.stats.crystals = crystals;
+    }
     this.playerCtl.apply(player, coins);
+  }
+
+  // ---- кабинеты (этап 17.5) -----------------------------------------------------------
+
+  isRoomUnlocked(roomId) {
+    return this.roomLocks.isUnlocked(roomId);
+  }
+
+  roomAtTile(tile) {
+    return tile ? this.world.roomForTile(tile.x, tile.y) : null;
+  }
+
+  /** Открывает кабинет: списывает валюты, снимает замок и сообщает заданиям. */
+  unlockRoom(roomId) {
+    const result = this.roomLocks.unlock(roomId, this.stats);
+    if (!result.ok) {
+      return result;
+    }
+    this.world.setRoomUnlocked(roomId);
+    this.patients.changed();
+    if (this.staff) {
+      this.staff.refreshPosts(true);
+    }
+    this.notify(`Кабинет «${result.entry.title}» открыт`);
+    this.persist();
+    return result;
   }
 
   openWardrobe() {

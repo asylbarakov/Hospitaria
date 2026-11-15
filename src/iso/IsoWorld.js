@@ -25,15 +25,20 @@ export default class IsoWorld {
    * @param {Phaser.Scene} scene
    * @param {object} layout модуль src/data/layout.js
    * @param {Array|null} savedItems мебель из сохранения (вместо планировки по умолчанию)
+   * @param {{roomLocks?:object}} options roomLocks: RoomUnlocks для закрытых кабинетов
    */
-  constructor(scene, layout, savedItems = null) {
+  constructor(scene, layout, savedItems = null, options = {}) {
     this.scene = scene;
     this.layout = layout;
+    this.roomLocks = options.roomLocks || null;
     const data = buildLayout(layout, savedItems);
     this.grid = data.grid;
     this.sorter = new IsoDepth(100);
     this.furniture = new Map(); // gridId -> { item, sprite }
     this.wallSprites = [];
+    this.floorSprites = new Map();
+    this.signs = [];
+    this.closedRooms = new Set();
     this.openTiles = data.openTiles;
     this.entrance = layout.ENTRANCE;
     this.reserved = new TileReservations();
@@ -43,6 +48,7 @@ export default class IsoWorld {
     this.buildPieces(data.pieces);
     this.buildSigns(data.signs);
     data.items.forEach((item) => this.createItemSprite(item));
+    this.applyRoomLocks();
     this.sorter.sort();
   }
 
@@ -58,11 +64,12 @@ export default class IsoWorld {
         }
         const p = tileToScreen(x, y);
         // Ромб чуть больше тайла, чтобы между плитками не было щелей.
-        this.scene.add
+        const sprite = this.scene.add
           .image(p.x, p.y, isoKey(`floor_${name}`))
           .setOrigin(0.5, 0)
           .setDisplaySize(HALF_W * 2 + 2, HALF_H * 2 + 1)
           .setDepth(0);
+        this.floorSprites.set(`${x}:${y}`, sprite);
       }
     }
   }
@@ -104,9 +111,30 @@ export default class IsoWorld {
       if (label.width > maxWidth) {
         label.setScale(maxWidth / label.width);
       }
-      const holder = this.scene.add.container(p.x, p.y - sign.lift, [board, label]).setDepth(8000);
+      const lock = this.makeLockIcon(board);
+      const holder = this.scene.add.container(p.x, p.y - sign.lift, [board, label, lock]);
+      holder.setDepth(8000);
       this.signSprites.push(holder);
+      this.signs.push({ roomId: sign.id, holder, lock });
     });
+  }
+
+  /** Маленький нарисованный замок на табличке закрытого кабинета. */
+  makeLockIcon(board) {
+    const g = this.scene.add.graphics();
+    const x = board.displayWidth * 0.34;
+    const y = -board.displayHeight * 0.05;
+    g.fillStyle(0x2b1b12, 0.35);
+    g.fillRoundedRect(x - 10, y - 7, 24, 20, 5);
+    g.fillStyle(0xf2c14e, 1);
+    g.fillRoundedRect(x - 12, y - 8, 24, 20, 5);
+    g.lineStyle(4, 0xf2c14e, 1);
+    g.beginPath();
+    g.arc(x, y - 8, 8, Math.PI, 0, false);
+    g.strokePath();
+    g.fillStyle(0x6b4a12, 1);
+    g.fillCircle(x, y + 1, 2.5);
+    return g.setVisible(false);
   }
 
   createItemSprite(item) {
@@ -152,12 +180,40 @@ export default class IsoWorld {
     if (this.placementCache.key === key) {
       return this.placementCache.issue;
     }
-    const items = [...this.furniture.values()].map(({ item }) => item);
+    const items = [...this.furniture.values()]
+      .filter(({ item }) => !this.itemInClosedRoom(item))
+      .map(({ item }) => item);
     const issue = evaluatePlacement(
-      this.grid, this.openTiles, items, type, x, y, rot, this.entrance,
+      this.grid, this.activeOpenTiles(), items, type, x, y, rot, this.entrance,
     );
     this.placementCache = { key, issue };
     return issue;
+  }
+
+  /** Двери закрытых кабинетов не участвуют в проверке связности построек. */
+  activeOpenTiles() {
+    if (!this.closedRooms || this.closedRooms.size === 0) {
+      return this.openTiles;
+    }
+    const closedDoors = new Set();
+    this.closedRooms.forEach((roomId) => {
+      const room = this.roomById(roomId);
+      if (room) {
+        this.doorTilesOf(room).forEach((tile) => closedDoors.add(tileKey(tile.x, tile.y)));
+      }
+    });
+    return new Set([...this.openTiles].filter((key) => !closedDoors.has(key)));
+  }
+
+  itemInClosedRoom(item) {
+    return (this.layout.ROOMS || []).some((room) => {
+      if (room.kind !== 'room' || !this.closedRooms.has(room.id)) {
+        return false;
+      }
+      return item.x >= room.x && item.y >= room.y
+        && item.x + item.w <= room.x + room.w
+        && item.y + item.d <= room.y + room.h;
+    });
   }
 
   /** Ближайший проходимый тайл рядом с предметом; facing — тайл, на который смотрит актёр. */
@@ -185,6 +241,130 @@ export default class IsoWorld {
 
   isDoorTile(x, y) {
     return this.openTiles.has(tileKey(x, y));
+  }
+
+  // ---- закрытые кабинеты (этап 17.5) -------------------------------------------------
+
+  roomById(roomId) {
+    return (this.layout.ROOMS || []).find((room) => room.id === roomId) || null;
+  }
+
+  roomName(roomId) {
+    const room = this.roomById(roomId);
+    return room ? room.name : 'Кабинет';
+  }
+
+  /** id комнаты по тайлу: внутренность или дверной проём. */
+  roomForTile(x, y) {
+    const rooms = this.layout.ROOMS || [];
+    for (const room of rooms) {
+      if (room.kind !== 'room') {
+        continue;
+      }
+      if (x >= room.x && x < room.x + room.w && y >= room.y && y < room.y + room.h) {
+        return room.id;
+      }
+      if (this.doorTilesOf(room).some((tile) => tile.x === x && tile.y === y)) {
+        return room.id;
+      }
+    }
+    return null;
+  }
+
+  /** Дверные тайлы комнаты в координатах сетки. */
+  doorTilesOf(room) {
+    return (room.doors || []).map((door) => {
+      if (door.side === 'N') {
+        return { x: door.at, y: room.y - 1 };
+      }
+      if (door.side === 'S') {
+        return { x: door.at, y: room.y + room.h };
+      }
+      if (door.side === 'W') {
+        return { x: room.x - 1, y: door.at };
+      }
+      return { x: room.x + room.w, y: door.at };
+    });
+  }
+
+  /** Закрытая комната, в которую попадает прямоугольник застройки. */
+  isRoomLockedAt(x, y, w = 1, d = 1) {
+    for (const room of this.layout.ROOMS || []) {
+      if (room.kind !== 'room' || !this.closedRooms.has(room.id)) {
+        continue;
+      }
+      const overlap = x < room.x + room.w && x + w > room.x
+        && y < room.y + room.h && y + d > room.y;
+      if (overlap) {
+        return room.id;
+      }
+    }
+    return null;
+  }
+
+  /** Затемняет комнату, запирает двери и показывает замок на табличке. */
+  applyRoomLocks() {
+    if (!this.roomLocks) {
+      return;
+    }
+    (this.layout.ROOMS || []).forEach((room) => {
+      if (room.kind !== 'room' || this.roomLocks.isUnlocked(room.id)) {
+        return;
+      }
+      this.closedRooms.add(room.id);
+      this.doorTilesOf(room).forEach((tile) => this.grid.setBlocked(tile.x, tile.y, 1));
+      this.tintRoom(room, true);
+      const sign = this.signs.find((entry) => entry.roomId === room.id);
+      if (sign && sign.lock) {
+        sign.lock.setVisible(true);
+      }
+    });
+  }
+
+  tintRoom(room, closed) {
+    for (let y = room.y; y < room.y + room.h; y += 1) {
+      for (let x = room.x; x < room.x + room.w; x += 1) {
+        const floor = this.floorSprites.get(`${x}:${y}`);
+        if (!floor) {
+          continue;
+        }
+        if (closed) {
+          floor.setTint(0x6f838c).setAlpha(0.8);
+        } else {
+          floor.clearTint().setAlpha(1);
+        }
+      }
+    }
+    this.furniture.forEach(({ item, sprite }) => {
+      const inside = item.x >= room.x && item.y >= room.y
+        && item.x + item.w <= room.x + room.w
+        && item.y + item.d <= room.y + room.h;
+      if (!inside) {
+        return;
+      }
+      if (closed) {
+        sprite.setTint(0x8fa0a5).setAlpha(0.7);
+      } else {
+        sprite.clearTint().setAlpha(1);
+      }
+    });
+  }
+
+  /** Открывает комнату без перезапуска сцены: двери снова проходимы, цвета возвращаются. */
+  setRoomUnlocked(roomId) {
+    const room = this.roomById(roomId);
+    if (!room || !this.closedRooms.has(roomId)) {
+      return;
+    }
+    this.closedRooms.delete(roomId);
+    this.doorTilesOf(room).forEach((tile) => this.grid.setBlocked(tile.x, tile.y, 0));
+    this.tintRoom(room, false);
+    const sign = this.signs.find((entry) => entry.roomId === roomId);
+    if (sign && sign.lock) {
+      sign.lock.setVisible(false);
+    }
+    this.placementCache = { key: '', issue: null };
+    this.sorter.sort();
   }
 
   nowMs() {

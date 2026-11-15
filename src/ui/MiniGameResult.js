@@ -63,9 +63,10 @@ export function showMiniGameResult(scene, result, onContinue) {
   }
   root.add(starsG);
 
+  const crystalPart = result.crystals > 0 ? `   •   +${result.crystals} кристалл` : '';
   const rewardLine = result.coins > 0 || result.xp > 0
-    ? `+${result.coins} монет   •   +${result.xp} опыта`
-    : 'Награды за приём нет';
+    ? `+${result.coins} монет   •   +${result.xp} опыта${crystalPart}`
+    : (result.crystals > 0 ? `+${result.crystals} кристалл` : 'Награды за приём нет');
   const reputationLine = result.reputation >= 0
     ? `Репутация +${result.reputation}`
     : `Репутация ${result.reputation}`;

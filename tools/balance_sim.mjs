@@ -9,12 +9,15 @@
 import { writeFileSync } from 'node:fs';
 import GameState from '../src/systems/GameState.js';
 import HospitalEconomy from '../src/systems/HospitalEconomy.js';
+import RoomUnlocks from '../src/systems/RoomUnlocks.js';
 import { ECONOMY } from '../src/data/economy.js';
 import { DISEASES } from '../src/data/diseases.js';
 import { CATALOG_BY_TYPE } from '../src/data/buildCatalog.js';
 import { STAFF_ROLES, staffUnlockLevel } from '../src/data/staffCatalog.js';
 import { PATIENT_CONFIG } from '../src/data/patientConfig.js';
-import { STAR_REWARD_MULTIPLIER } from '../src/data/treatmentConfig.js';
+import { STAR_REWARD_MULTIPLIER, PERFECT_TREATMENT_CRYSTAL_CHANCE, PERFECT_TREATMENT_CRYSTALS } from '../src/data/treatmentConfig.js';
+import { ROOM_UNLOCKS, STARTER_ROOMS, roomUnlockOf } from '../src/data/roomUnlocks.js';
+import { STORY_QUESTS, WEEKLY_QUESTS } from '../src/data/quests.js';
 import {
   SIM, PLAN, seeded, pick,
 } from './balancePlan.mjs';
@@ -28,6 +31,15 @@ const state = new GameState({
   startCoins: ECONOMY.startCoins,
   reputation: 50,
 });
+const roomLocks = new RoomUnlocks({ state });
+const unlockedRooms = new Set(roomLocks.serialize());
+const roomLog = [];
+const questCrystals = new Set();
+const questProgress = new Map();
+const questPool = [...WEEKLY_QUESTS, ...STORY_QUESTS];
+let firstRoomAt = null;
+let crystalsFromQuests = 0;
+let perfectCrystals = 0;
 const staff = [];
 const bought = [];
 const hireLog = [];
@@ -76,21 +88,58 @@ const economy = new HospitalEconomy({
   onDayEnd: (summary) => dayLog.push(summary),
 });
 
+// Кристаллы заданий: берём реальные недельные и сюжетные задания, но начисляем
+// только кристаллы. Монеты и опыт заданий не моделируем, чтобы оценка была строже.
+function questMatches(quest, payload) {
+  if (!quest.match) {
+    return true;
+  }
+  return Object.entries(quest.match).every(([key, value]) => (
+    payload && payload[key] === value
+  ));
+}
+
+function questEvent(type, payload = {}) {
+  questPool.forEach((quest) => {
+    if (quest.event !== type || questCrystals.has(quest.id) || !questMatches(quest, payload)) {
+      return;
+    }
+    const step = quest.amountKey ? (Number(payload[quest.amountKey]) || 0) : 1;
+    const value = Math.min(quest.target, (questProgress.get(quest.id) || 0) + step);
+    questProgress.set(quest.id, value);
+    if (value < quest.target) {
+      return;
+    }
+    questCrystals.add(quest.id);
+    const crystals = quest.reward && quest.reward.crystals ? quest.reward.crystals : 0;
+    if (crystals > 0) {
+      state.addCrystals(crystals);
+      crystalsFromQuests += crystals;
+    }
+  });
+}
+
 function roleOf(entry) {
   return entry.hire ? STAFF_ROLES.find((item) => item.id === entry.hire) : null;
 }
 
 function planCost(entry) {
   const role = roleOf(entry);
+  const room = entry.room ? roomUnlockOf(entry.room) : null;
   const hireCost = role ? role.price : 0;
+  const roomCost = room ? room.coins : 0;
   const itemsCost = (entry.items || []).reduce(
     (sum, type) => sum + (CATALOG_BY_TYPE[type] ? CATALOG_BY_TYPE[type].price : 0),
     0,
   );
-  return hireCost + itemsCost;
+  return hireCost + roomCost + itemsCost;
 }
 
 function planAvailable(entry) {
+  const room = entry.room ? roomUnlockOf(entry.room) : null;
+  if (room && !unlockedRooms.has(room.roomId) && state.level < room.minLevel) {
+    return false;
+  }
   const role = roleOf(entry);
   if (role && staff.some((item) => item.id === role.id)) {
     return false;
@@ -104,9 +153,50 @@ function planAvailable(entry) {
   });
 }
 
+function unlockRoomStep(entry, room, time) {
+  if (state.level < room.minLevel) {
+    return false;
+  }
+  if (state.coins < room.coins + SIM.reserve) {
+    return false;
+  }
+  if (state.crystals < room.crystals) {
+    return false;
+  }
+  const result = roomLocks.unlock(room.roomId, state);
+  if (!result.ok) {
+    return false;
+  }
+  unlockedRooms.add(room.roomId);
+  if (firstRoomAt === null) {
+    firstRoomAt = time;
+  }
+  roomLog.push({
+    time, title: room.title, coins: room.coins, crystals: room.crystals,
+  });
+  upgradeLog.push({
+    time, title: `Кабинет «${room.title}»`, price: room.coins, expansion: true, room: true,
+  });
+  economy.recordPurchase(room.coins);
+  questEvent('roomUnlocked', { roomId: room.roomId });
+  return true;
+}
+
 function buyNext(time) {
   while (planIndex < PLAN.length) {
     const entry = PLAN[planIndex];
+    if (entry.room) {
+      const room = roomUnlockOf(entry.room);
+      if (!room || unlockedRooms.has(room.roomId)) {
+        planIndex += 1;
+        continue;
+      }
+      if (!planAvailable(entry) || !unlockRoomStep(entry, room, time)) {
+        return;
+      }
+      planIndex += 1;
+      continue;
+    }
     if (!planAvailable(entry)) {
       // Закрыто по уровню: ждём, не перескакивая через важные покупки.
       return;
@@ -120,8 +210,12 @@ function buyNext(time) {
     const role = roleOf(entry);
     if (role) {
       staff.push(role);
+      questEvent('staffHired', { roleId: role.id });
     }
-    (entry.items || []).forEach((type) => bought.push(type));
+    (entry.items || []).forEach((type) => {
+      bought.push(type);
+      questEvent('itemBought', { type });
+    });
     if (firstHireAt === null && role) {
       firstHireAt = time;
       hireLog.push({
@@ -161,10 +255,16 @@ function servePatient() {
   const base = Math.round(agent.disease.reward.coins * mult);
   const xp = Math.round(agent.disease.reward.xp * mult);
   state.applyReward({ coins: 0, xp, reputation: stars });
+  if (stars === 3 && random() < PERFECT_TREATMENT_CRYSTAL_CHANCE) {
+    state.addCrystals(PERFECT_TREATMENT_CRYSTALS);
+    perfectCrystals += PERFECT_TREATMENT_CRYSTALS;
+  }
   economy.collectTreatment({ coins: base }, {
     patienceRatio: () => 0.75 + random() * 0.25,
   });
   treated += 1;
+  questEvent('patientTreated', { diseaseId: agent.disease.id, stars });
+  questEvent('coinsEarned', { amount: base });
   if (random() < 0.03) {
     economy.penalize('diagnosis');
     wrong += 1;
@@ -188,7 +288,9 @@ function snapshot(time) {
   minuteLog.push({
     minute: Math.floor(time / 60000),
     coins: state.coins,
+    crystals: state.crystals,
     level: state.level,
+    rooms: unlockedRooms.size - STARTER_ROOMS.length,
     staff: staff.length,
     treated,
     day: economy.day,
@@ -258,6 +360,12 @@ const firstHireMin = firstHireAt === null ? null : firstHireAt / 60000;
 const firstExpansionMin = expansionTimes.length ? expansionTimes[0] : null;
 const minCoins = Math.min(...minuteLog.map((row) => row.coins));
 const debtDays = dayLog.filter((day) => day.debt > 0).length;
+const firstRoomMin = firstRoomAt === null ? null : firstRoomAt / 60000;
+const roomsTotal = ROOM_UNLOCKS.filter((entry) => !STARTER_ROOMS.includes(entry.roomId)).length;
+const roomsOpened = unlockedRooms.size - STARTER_ROOMS.length;
+const allRoomsMin = roomsOpened >= roomsTotal && roomLog.length
+  ? Math.max(...roomLog.map((entry) => entry.time)) / 60000
+  : null;
 
 const goals = goalsOf({
   firstHireMin,
@@ -265,6 +373,10 @@ const goals = goalsOf({
   minCoins,
   debtDays,
   avgOperating,
+  firstRoomMin,
+  allRoomsMin,
+  roomsOpened,
+  roomsTotal,
 });
 
 const output = buildReport({
@@ -273,6 +385,10 @@ const output = buildReport({
   reserve: SIM.reserve,
   firstHireMin,
   firstExpansionMin,
+  firstRoomMin,
+  allRoomsMin,
+  roomsOpened,
+  roomsTotal,
   treated,
   angry,
   wrong,
@@ -281,18 +397,27 @@ const output = buildReport({
   avgOperating,
   debtDays,
   coinsEnd: state.coins,
+  crystalsEnd: state.crystals,
+  crystalsFromQuests,
+  perfectCrystals,
   minCoins,
   levelEnd: state.level,
   staffCount: staff.length,
   boughtCount: bought.length,
+  totalRoomCrystals: ROOM_UNLOCKS
+    .filter((entry) => !STARTER_ROOMS.includes(entry.roomId))
+    .reduce((sum, entry) => sum + entry.crystals, 0),
   goals,
   minuteLog,
   hireLog,
   upgradeLog,
+  roomLog,
 });
 writeFileSync(new URL('../docs/balance.md', import.meta.url), output, 'utf8');
 
-console.log(`balance sim: ${MINUTES} min, coins ${state.coins}, first hire ${firstHireMin === null ? '—' : `${firstHireMin.toFixed(1)} min`}, avg day ${avgDay}`);
+const firstRoomLabel = firstRoomMin === null ? '—' : `${firstRoomMin.toFixed(1)} min`;
+const allRoomsLabel = allRoomsMin === null ? `${roomsOpened}/${roomsTotal}` : `${allRoomsMin.toFixed(1)} min`;
+console.log(`balance sim: ${MINUTES} min, coins ${state.coins}, crystals ${state.crystals}, first hire ${firstHireMin === null ? '—' : `${firstHireMin.toFixed(1)} min`}, first room ${firstRoomLabel}, all rooms ${allRoomsLabel}, avg day ${avgDay}`);
 goals.forEach((goal) => {
   console.log(`${goal.ok ? 'OK  ' : 'WARN'} ${goal.title}: ${goal.detail}`);
 });

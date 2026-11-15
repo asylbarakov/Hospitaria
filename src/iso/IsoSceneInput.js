@@ -4,6 +4,10 @@
 /** Esc закрывает верхний открытый слой: магазин, задания, персонал, диалог, стройку. */
 export function handleSceneEscape(scene) {
   const hud = scene.hud;
+  if (hud && hud.roomDialogOpen && hud.roomDialog) {
+    hud.roomDialog.close();
+    return;
+  }
   if (hud && hud.shopPanel && hud.shopPanel.visible) {
     hud.shopPanel.hide();
     return;
@@ -40,6 +44,13 @@ export default function handleSceneTap(scene, pointer) {
   const tile = scene.pointerTile(pointer);
   if (scene.build.active) {
     scene.build.tap(tile, !!pointer.wasTouch);
+    return;
+  }
+  const roomId = scene.roomAtTile ? scene.roomAtTile(tile) : null;
+  if (roomId && scene.roomLocks && !scene.roomLocks.isUnlocked(roomId)) {
+    if (scene.hud && scene.hud.openRoomDialog) {
+      scene.hud.openRoomDialog(roomId);
+    }
     return;
   }
   if (scene.patients.tryTapTile(tile)) {
