@@ -1,4 +1,6 @@
 // Сборка подсистемы персонала (этап 15), чтобы сцена не разрасталась.
+// С этапа 17 зарплату платит общий дневной цикл HospitalEconomy, поэтому
+// собственный таймер StaffFlow в игре отключён (в тестах он остаётся рабочим).
 
 import StaffFlow from './StaffFlow.js';
 import StaffPoints from './StaffPoints.js';
@@ -17,9 +19,24 @@ export default function createStaff(scene, world, patients, savedStaff, bus = nu
     world: new StaffPoints(world),
     patients: patients.flow,
     saved: savedStaff,
+    timing: { salaryDayMs: Number.MAX_SAFE_INTEGER },
     getCoins: () => scene.stats.coins,
-    spend: (n) => scene.stats.addCoins(-n),
-    penalty: (n) => scene.stats.changeReputation(-n),
+    spend: (n) => {
+      if (typeof scene.stats.spend === 'function') {
+        scene.stats.spend(n);
+      } else {
+        scene.stats.addCoins(-n);
+      }
+      if (scene.economy) {
+        scene.economy.recordPurchase(n);
+      }
+    },
+    penalty: (n, reason) => {
+      scene.stats.changeReputation(-n);
+      if (scene.economy && reason === 'dirt') {
+        scene.economy.penalize('dirt');
+      }
+    },
     notify: (text) => scene.notify(text),
     onChange: () => scene.persist(),
     onEvent: (event) => {

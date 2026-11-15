@@ -1,10 +1,24 @@
 // Каталог предметов для режима строительства. name: ключ спрайта из assets/final,
 // w x d: основание в тайлах (при повороте меняются местами), price: цена, refund: доля при продаже.
 
-export const SELL_REFUND = 0.6;
-export const START_COINS = 5000;
+import { ECONOMY } from './economy.js';
 
-export const CATALOG = [
+export const SELL_REFUND = 0.6;
+export const START_COINS = ECONOMY.startCoins;
+
+const UNLOCK_LEVELS = {
+  cash_desk: 2,
+  microscope_table: 2,
+  sample_table: 2,
+  ultrasound_machine: 2,
+  ward_bed: 2,
+  pharmacy_counter: 2,
+  pharmacy_shelf: 2,
+  vending_machine: 2,
+  xray_machine: 3,
+};
+
+const RAW_CATALOG = [
   { type: 'reception_desk', title: 'Стойка регистратуры', w: 3, d: 1, price: 300, group: 'Холл' },
   { type: 'cash_desk', title: 'Касса', w: 2, d: 1, price: 220, group: 'Холл' },
   { type: 'hall_sofa', title: 'Диван', w: 2, d: 1, price: 150, group: 'Холл' },
@@ -28,4 +42,13 @@ export const CATALOG = [
   { type: 'vending_machine', title: 'Автомат', w: 1, d: 1, price: 200, group: 'Кафетерий' },
 ];
 
+export const CATALOG = RAW_CATALOG.map((item) => ({
+  ...item,
+  unlockLevel: UNLOCK_LEVELS[item.type] || 1,
+}));
+
 export const CATALOG_BY_TYPE = Object.fromEntries(CATALOG.map((item) => [item.type, item]));
+
+export function itemUnlockLevel(item) {
+  return Math.max(1, Math.floor(Number(item && item.unlockLevel) || 1));
+}

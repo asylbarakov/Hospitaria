@@ -1,7 +1,7 @@
 // Экран найма персонала (этап 15): карточки ролей, нанятые и увольнение.
 // Живёт внутри IsoHospitalHud отдельным слоем, чтобы HUD оставался коротким.
 
-import { STAFF_ROLES } from '../data/staffCatalog.js';
+import { STAFF_ROLES, staffUnlockLevel } from '../data/staffCatalog.js';
 import { isoKey } from './isoAssets.js';
 import { createButton } from '../ui/Button.js';
 
@@ -59,6 +59,7 @@ export default class StaffPanel {
     const row = Math.floor(index / 3);
     const card = this.scene.add.container(130 + col * 232, 226 + row * 172);
     card.role = role;
+    card.unlockLevel = staffUnlockLevel(role);
     const bg = this.scene.add.graphics();
     bg.fillStyle(0x14303f, 1);
     bg.fillRoundedRect(-CARD_W / 2, -CARD_H / 2, CARD_W, CARD_H, 14);
@@ -86,6 +87,10 @@ export default class StaffPanel {
       this.hooks.onHire(role.id);
     }, { width: 124, height: 32, fontSize: 15, color: 0x3f9b4a, hoverColor: 0x55b963 });
     card.add(card.hireButton);
+    card.lock = this.scene.add.text(CARD_W / 2 - 12, -CARD_H / 2 + 8, `Ур. ${card.unlockLevel}`, {
+      fontFamily: FONT, fontSize: '13px', fontStyle: 'bold', color: '#ffcc80',
+    }).setOrigin(1, 0);
+    card.add(card.lock);
     this.root.add(card);
     return card;
   }
@@ -137,13 +142,16 @@ export default class StaffPanel {
     }
   }
 
-  update(state, coins) {
+  update(state, coins, level = 1) {
     if (!this.root.visible || !state) {
       return;
     }
     this.hired = state.hired || [];
     this.cards.forEach((card) => {
-      card.hireButton.setAlpha(coins >= card.role.price ? 1 : 0.55);
+      const locked = card.unlockLevel > level;
+      card.setAlpha(locked ? 0.5 : 1);
+      card.lock.setVisible(locked);
+      card.hireButton.setAlpha(locked ? 0.5 : (coins >= card.role.price ? 1 : 0.55));
     });
     const count = this.hired.length;
     this.footer.setText(`Нанято ${count} из ${state.max}  •  Зарплата за день: ${state.salary}  •  Пятен: ${state.dirt}`);

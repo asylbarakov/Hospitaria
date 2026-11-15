@@ -96,12 +96,14 @@ export default class HospitalStats {
     return this._reputation;
   }
 
-  /** Награда за лечение: монеты и репутация одним сохранением. */
+  /** Награда за лечение: монеты, опыт и репутация одним сохранением. */
   applyReward(reward) {
     if (!reward) {
       return this._reputation;
     }
     this.addCoins(reward.coins);
+    const xp = Number.isFinite(reward.xp) ? reward.xp : reward.experience;
+    this.addExperience(xp);
     this.reputation = this._reputation + (Number(reward.reputation) || 0);
     this.onChange();
     return this._reputation;

@@ -137,6 +137,13 @@ export default class BuildMode {
       if (!this.target) {
         return;
       }
+      const def = CATALOG_BY_TYPE[this.type];
+      const unlock = Math.max(1, Number(def && def.unlockLevel) || 1);
+      const level = this.hooks.getLevel ? this.hooks.getLevel() : 1;
+      if (level < unlock) {
+        this.hooks.notify(`Откроется на уровне ${unlock}`);
+        return;
+      }
       if (!this.isValid()) {
         const issue = this.issue();
         this.hooks.notify(issue === 'passage'
@@ -187,6 +194,7 @@ export default class BuildMode {
       valid: this.tool === 'place' ? this.isValid() : !!sell,
       hasTarget: this.tool === 'place' ? !!this.target : !!sell,
       price: this.tool === 'sell' && sell ? this.refundOf(this.sellEntry) : this.priceOf(),
+      unlockLevel: this.type ? Math.max(1, Number(CATALOG_BY_TYPE[this.type].unlockLevel) || 1) : 1,
       sellTitle: sell ? CATALOG_BY_TYPE[this.sellEntry.item.type].title : '',
     };
   }

@@ -3,7 +3,7 @@
 
 export const STAFF_CONFIG = {
   maxStaff: 6,
-  salaryDayMs: 240000, // игровой день до появления календаря этапа 17
+  salaryDayMs: 240000, // запасной таймер для старых тестов; в игре зарплату платит HospitalEconomy
   autoDelayMs: 1600, // как часто врач/лаборант проверяет кабинет
   receptionBoost: 3, // во сколько раз быстрее регистрирует регистратор
   cleanMs: 1200,
@@ -24,6 +24,7 @@ export const STAFF_ROLES = [
     price: 350,
     salary: 35,
     speed: 3.4,
+    unlockLevel: 1,
     postTypes: ['reception_desk'],
     service: 'reception',
     hint: 'Регистрирует очередь быстрее',
@@ -37,6 +38,7 @@ export const STAFF_ROLES = [
     price: 600,
     salary: 60,
     speed: 3.2,
+    unlockLevel: 3,
     postTypes: ['doctor_desk'],
     service: 'treat',
     autoStars: 1,
@@ -51,6 +53,7 @@ export const STAFF_ROLES = [
     price: 450,
     salary: 45,
     speed: 3.4,
+    unlockLevel: 2,
     postTypes: ['iv_stand'],
     service: 'assist',
     autoStars: 1,
@@ -65,6 +68,7 @@ export const STAFF_ROLES = [
     price: 500,
     salary: 50,
     speed: 3.3,
+    unlockLevel: 3,
     postTypes: ['microscope_table', 'sample_table'],
     service: 'treat',
     autoStars: 1,
@@ -79,6 +83,7 @@ export const STAFF_ROLES = [
     price: 250,
     salary: 25,
     speed: 3.6,
+    unlockLevel: 1,
     postTypes: [],
     service: 'clean',
     hint: 'Убирает пятна в холле',
@@ -114,4 +119,8 @@ export const POST_TITLES = {
 
 export function staffRole(roleId) {
   return STAFF_ROLES.find((role) => role.id === roleId) || null;
+}
+
+export function staffUnlockLevel(role) {
+  return Math.max(1, Math.floor(Number(role && role.unlockLevel) || 1));
 }

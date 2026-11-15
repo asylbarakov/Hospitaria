@@ -1,6 +1,34 @@
 // Обработка тапа по миру изометрии (этап 16): стройка, пациент, ходьба.
 // Вынесено из сцены, чтобы IsoHospitalScene оставалась в пределах ~300 строк.
 
+/** Esc закрывает верхний открытый слой: магазин, задания, персонал, диалог, стройку. */
+export function handleSceneEscape(scene) {
+  const hud = scene.hud;
+  if (hud && hud.shopPanel && hud.shopPanel.visible) {
+    hud.shopPanel.hide();
+    return;
+  }
+  if (hud && hud.questPanel && hud.questPanel.visible) {
+    hud.questPanel.hide();
+    return;
+  }
+  if (hud && hud.staffPanel && hud.staffPanel.visible) {
+    hud.staffPanel.hide();
+    return;
+  }
+  if (scene.modalOpen && scene.patients) {
+    scene.patients.closeDialog();
+    return;
+  }
+  if (scene.build.active && scene.build.tool !== 'none') {
+    scene.build.cancel();
+  } else if (scene.build.active) {
+    scene.build.setActive(false);
+  } else {
+    scene.exitToMenu();
+  }
+}
+
 export default function handleSceneTap(scene, pointer) {
   if (scene.patientClickGuard) {
     scene.patientClickGuard = false;

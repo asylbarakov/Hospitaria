@@ -50,34 +50,40 @@ export default class PatientRunner {
       case 'spawned':
         this.views.create(event.agent, this.points.entrance());
         break;
-      case 'treated':
-        this.hooks.reward(event.reward, event.agent);
-        this.views.float(event.agent, `+${event.reward.coins}`, '#ffe082');
-        this.hooks.notify(`Пациент ${event.agent.name} вылечен: +${event.reward.coins} монет`);
+      case 'treated': {
+        const payout = this.hooks.reward(event.reward, event.agent) || {};
+        const total = Number.isFinite(payout.total) ? payout.total : event.reward.coins;
+        const tip = Number.isFinite(payout.tip) ? payout.tip : 0;
+        this.views.float(event.agent, `+${total}`, '#ffe082');
+        this.hooks.notify(`Пациент ${event.agent.name} вылечен: +${total} монет${tip ? ` (чаевые ${tip})` : ''}`);
         this.hooks.event('patientTreated', {
           diseaseId: event.agent.disease ? event.agent.disease.id : null,
           stars: event.reward.stars,
-          coins: event.reward.coins,
+          coins: total,
+          tip,
+          xp: event.reward.xp,
           auto: Number.isFinite(event.agent.autoStars),
         });
         this.hooks.event('coinsEarned', {
-          amount: event.reward.coins,
+          amount: total,
           source: 'treatment',
         });
         break;
-      case 'angry':
-        this.closeDialogFor(event.agent);
-        this.hooks.penalty(event.penalty, event.agent);
+      }
+      case 'angry': {
+        const money = this.hooks.penalty(event.penalty, event.agent, 'waiting') || 0;
         this.hooks.event('patientLeftAngry', { reason: event.reason });
         this.views.float(event.agent, `−${event.penalty}`, '#ff8a80');
         this.hooks.notify(event.reason === 'room'
           ? `${event.agent.name} ушёл: в кабинете нет нужной мебели`
-          : `${event.agent.name} ушёл недовольным: −${event.penalty} репутации`);
+          : `${event.agent.name} ушёл недовольным: −${event.penalty} репутации${money ? `, −${money} монет` : ''}`);
         break;
-      case 'wrongDiagnosis':
-        this.hooks.penalty(event.penalty, event.agent);
-        this.hooks.notify(`Неверный диагноз: −${event.penalty} репутации`);
+      }
+      case 'wrongDiagnosis': {
+        const money = this.hooks.penalty(event.penalty, event.agent, 'diagnosis') || 0;
+        this.hooks.notify(`Неверный диагноз: −${event.penalty} репутации${money ? `, −${money} монет` : ''}`);
         break;
+      }
       case 'gone':
         this.closeDialogFor(event.agent);
         this.views.destroy(event.agent);
@@ -281,6 +287,10 @@ export default class PatientRunner {
 
   count() {
     return this.flow.count();
+  }
+
+  waitingCount() {
+    return this.flow.agents.filter((agent) => agent.state === FLOW_STATES.WAITING).length;
   }
 
   destroy() {

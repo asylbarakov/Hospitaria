@@ -1,5 +1,4 @@
 import * as layout from '../data/layout.js';
-import { START_COINS } from '../data/buildCatalog.js';
 import { ACTOR_ICONS } from '../data/actorConfig.js';
 import { DEFAULT_PLAYER } from '../data/playerSkins.js';
 import IsoWorld from '../iso/IsoWorld.js';
@@ -13,13 +12,13 @@ import TapMarker from '../iso/TapMarker.js';
 import buildHudState from '../iso/hudState.js';
 import createStaff from '../iso/StaffSetup.js';
 import createQuests from '../iso/QuestSetup.js';
-import handleSceneTap from '../iso/IsoSceneInput.js';
+import createEconomy from '../iso/EconomySetup.js';
+import handleSceneTap, { handleSceneEscape } from '../iso/IsoSceneInput.js';
 import { persistScene, resetSceneSave } from '../iso/IsoPersistence.js';
 import { queueIsoAssets, queueWallAssets } from '../iso/isoAssets.js';
 import {
   screenToTileIndex, tileCenter, worldBounds,
 } from '../iso/IsoMath.js';
-import HospitalStats, { START_REPUTATION } from '../systems/HospitalStats.js';
 import { loadIsoSave } from '../systems/IsoSave.js';
 
 // Этап 13: изометрическая больница. Мир из layout.js, режим строительства,
@@ -49,14 +48,9 @@ export default class IsoHospitalScene extends Phaser.Scene {
     this.children.list.filter((o) => o.type === 'Text').forEach((o) => o.destroy());
     this.cameras.main.setBackgroundColor('#10222e');
     const saved = loadIsoSave();
-    this.stats = new HospitalStats({
-      coins: saved && saved.coins !== null ? saved.coins : START_COINS,
-      reputation: saved && Number.isFinite(saved.reputation) ? saved.reputation : START_REPUTATION,
-      experience: saved && Number.isFinite(saved.experience) ? saved.experience : 0,
-      crystals: saved && Number.isFinite(saved.crystals) ? saved.crystals : 0,
-      startCoins: START_COINS,
-      onChange: () => this.persist(),
-    });
+    const economySystem = createEconomy(this, saved);
+    this.stats = economySystem.stats;
+    this.economy = economySystem.economy;
     const questSystem = createQuests(this, saved);
     this.bus = questSystem.bus;
     this.quests = questSystem.quests;
@@ -79,8 +73,8 @@ export default class IsoHospitalScene extends Phaser.Scene {
     this.playerCtl.spawn();
     this.patients = new PatientRunner(this, this.world, this.actors, this.playerCtl.actor, {
       notify: (text) => this.notify(text),
-      reward: (reward) => this.stats.applyReward(reward),
-      penalty: (amount) => this.stats.changeReputation(-amount),
+      reward: (reward, agent) => economySystem.reward(reward, agent),
+      penalty: (amount, agent, kind) => economySystem.penalty(amount, agent, kind),
       event: (type, payload) => this.bus.emit(type, payload),
     });
     const staff = createStaff(
@@ -95,8 +89,15 @@ export default class IsoHospitalScene extends Phaser.Scene {
     this.marker = new TapMarker(this);
     this.build = new BuildMode(this, this.world, {
       getCoins: () => this.stats.coins,
-      spend: (n) => this.stats.addCoins(-n),
-      earn: (n) => this.stats.addCoins(n),
+      getLevel: () => this.stats.level,
+      spend: (n) => {
+        this.stats.spend(n);
+        this.economy.recordPurchase(n);
+      },
+      earn: (n) => {
+        this.stats.earn(n);
+        this.economy.recordSale(n);
+      },
       onChange: () => {
         this.persist();
         this.patients.changed();
@@ -121,7 +122,7 @@ export default class IsoHospitalScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-R', () => this.build.rotate());
     this.input.keyboard.on('keydown-B', () => this.toggleBuild());
     this.input.keyboard.on('keydown-G', () => this.openWardrobe());
-    this.input.keyboard.on('keydown-ESC', () => this.onEscape());
+    this.input.keyboard.on('keydown-ESC', () => handleSceneEscape(this));
 
     this.scene.launch('IsoHospitalHud');
     this.hud = this.scene.get('IsoHospitalHud');
@@ -186,28 +187,6 @@ export default class IsoHospitalScene extends Phaser.Scene {
     this.build.setActive(!this.build.active);
   }
 
-  onEscape() {
-    if (this.hud && this.hud.questPanel && this.hud.questPanel.visible) {
-      this.hud.questPanel.hide();
-      return;
-    }
-    if (this.hud && this.hud.staffPanel && this.hud.staffPanel.visible) {
-      this.hud.staffPanel.hide();
-      return;
-    }
-    if (this.modalOpen && this.patients) {
-      this.patients.closeDialog();
-      return;
-    }
-    if (this.build.active && this.build.tool !== 'none') {
-      this.build.cancel();
-    } else if (this.build.active) {
-      this.build.setActive(false);
-    } else {
-      this.exitToMenu();
-    }
-  }
-
   // ---- служебное ---------------------------------------------------------------------
 
   notify(text) {
@@ -269,6 +248,10 @@ export default class IsoHospitalScene extends Phaser.Scene {
     }
     if (this.staff) {
       this.staff.update(dt * 1000);
+    }
+    if (this.economy) {
+      this.economy.noteQueue(this.patients ? this.patients.waitingCount() : 0);
+      this.economy.update(dt * 1000);
     }
     this.actors.update(dt, time);
     if (this.staffRunner) {

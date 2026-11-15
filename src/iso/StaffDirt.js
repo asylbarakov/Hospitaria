@@ -57,7 +57,7 @@ export default class StaffDirt {
       dirt.penaltyTimer -= overdue;
       if (dirt.penaltyTimer <= 0) {
         dirt.penaltyTimer += this.timing.dirtPenaltyMs;
-        this.penalty(this.timing.dirtPenalty);
+        this.penalty(this.timing.dirtPenalty, 'dirt');
         this.notify(`Пятна в холле: −${this.timing.dirtPenalty} репутации`);
       }
     });

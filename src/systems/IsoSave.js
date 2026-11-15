@@ -1,8 +1,9 @@
-// Сохранение изометрической больницы (v2): монеты, расстановка мебели и игрок.
-// Отдельный ключ, чтобы не мешать сохранению v0.1; миграция в этапе 20.
+// Сохранение изометрической больницы (v2): единое состояние, мебель и игрок.
+// Ключ остаётся v1 для совместимости; версия схемы GameState хранится в поле schema.
 // items = null значит «планировка по умолчанию», player = null значит «ещё не создан».
 
 import { normalizePlayer } from '../data/playerSkins.js';
+import { SCHEMA_VERSION } from '../data/economy.js';
 
 const KEY = 'hospitaria.iso.layout.v1';
 
@@ -17,7 +18,9 @@ export function loadIsoSave() {
       return null;
     }
     return {
+      schema: Number.isFinite(data.schema) ? data.schema : 1,
       coins: Number.isFinite(data.coins) ? data.coins : null,
+      debt: Number.isFinite(data.debt) ? Math.max(0, data.debt) : null,
       items: Array.isArray(data.items) ? data.items : null,
       player: data.player ? normalizePlayer(data.player) : null,
       reputation: Number.isFinite(data.reputation)
@@ -25,6 +28,10 @@ export function loadIsoSave() {
         : null,
       experience: Number.isFinite(data.experience) ? Math.max(0, data.experience) : null,
       crystals: Number.isFinite(data.crystals) ? Math.max(0, data.crystals) : null,
+      statistics: data.statistics && typeof data.statistics === 'object'
+        ? data.statistics
+        : null,
+      economy: data.economy && typeof data.economy === 'object' ? data.economy : null,
       staff: Array.isArray(data.staff) ? data.staff : null,
       quests: data.quests && typeof data.quests === 'object' ? data.quests : null,
     };
@@ -33,29 +40,42 @@ export function loadIsoSave() {
   }
 }
 
+function pickNumber(stats, previous, field, sanitize = (n) => n) {
+  if (stats && Number.isFinite(stats[field])) {
+    return sanitize(stats[field]);
+  }
+  if (previous && Number.isFinite(previous[field])) {
+    return sanitize(previous[field]);
+  }
+  return null;
+}
+
 /**
  * @param {number|null} coins
  * @param {Array|null} items
  * @param {object|null} player
- * @param {{reputation?:number, experience?:number, crystals?:number,
- *   staff?:Array, quests?:object}|null} stats поля этапов v2
+ * @param {{reputation?:number, experience?:number, crystals?:number, debt?:number,
+ *   statistics?:object, economy?:object, staff?:Array, quests?:object}|null} stats
  */
 export function saveIso(coins, items, player = null, stats = null) {
   try {
     const previous = loadIsoSave();
     const data = {
       v: 1,
+      schema: SCHEMA_VERSION,
       coins: Number.isFinite(coins) ? coins : null,
       items: Array.isArray(items) ? items : null,
     };
     if (player) {
       data.player = normalizePlayer(player);
     }
-    const reputation = stats && Number.isFinite(stats.reputation)
-      ? stats.reputation
-      : (previous && Number.isFinite(previous.reputation) ? previous.reputation : null);
+    const reputation = pickNumber(stats, previous, 'reputation', (n) => Math.max(0, Math.min(100, n)));
     if (Number.isFinite(reputation)) {
-      data.reputation = Math.max(0, Math.min(100, reputation));
+      data.reputation = reputation;
+    }
+    const debt = pickNumber(stats, previous, 'debt', (n) => Math.max(0, Math.round(n)));
+    if (Number.isFinite(debt)) {
+      data.debt = debt;
     }
     const staff = stats && Array.isArray(stats.staff)
       ? stats.staff
@@ -67,17 +87,23 @@ export function saveIso(coins, items, player = null, stats = null) {
         postItemId: entry && Number.isFinite(entry.postItemId) ? entry.postItemId : null,
       }));
     }
-    const experience = stats && Number.isFinite(stats.experience)
-      ? stats.experience
-      : (previous && Number.isFinite(previous.experience) ? previous.experience : null);
+    const experience = pickNumber(stats, previous, 'experience', (n) => Math.max(0, Math.round(n)));
     if (Number.isFinite(experience)) {
-      data.experience = Math.max(0, Math.round(experience));
+      data.experience = experience;
     }
-    const crystals = stats && Number.isFinite(stats.crystals)
-      ? stats.crystals
-      : (previous && Number.isFinite(previous.crystals) ? previous.crystals : null);
+    const crystals = pickNumber(stats, previous, 'crystals', (n) => Math.max(0, Math.round(n)));
     if (Number.isFinite(crystals)) {
-      data.crystals = Math.max(0, Math.round(crystals));
+      data.crystals = crystals;
+    }
+    if (stats && stats.statistics && typeof stats.statistics === 'object') {
+      data.statistics = { ...stats.statistics };
+    } else if (previous && previous.statistics) {
+      data.statistics = previous.statistics;
+    }
+    if (stats && stats.economy && typeof stats.economy === 'object') {
+      data.economy = stats.economy;
+    } else if (previous && previous.economy) {
+      data.economy = previous.economy;
     }
     if (stats && stats.quests && typeof stats.quests === 'object') {
       data.quests = stats.quests;
