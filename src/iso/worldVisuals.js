@@ -57,6 +57,9 @@ const worldVisuals = {
    * @param {Array<{pos:{x:number,y:number}, box:object}>} actors
    */
   updateWallFade(actors) {
+    if (this.wallFadeEnabled === false) {
+      return;
+    }
     const list = Array.isArray(actors) ? actors : [];
     const walls = this.wallSprites;
     for (let w = 0; w < walls.length; w += 1) {
@@ -89,7 +92,15 @@ const worldVisuals = {
     const dx = Math.max(wall.box.minX - pos.x, 0, pos.x - wall.box.maxX);
     const dy = Math.max(wall.box.minY - pos.y, 0, pos.y - wall.box.maxY);
     return dx * dx + dy * dy > FADE_RADIUS * FADE_RADIUS;
-  }
+  },
+
+  /** Упрощённая графика: стены больше не становятся прозрачными (экономит кадры). */
+  setWallFadeEnabled(value) {
+    this.wallFadeEnabled = !!value;
+    if (!this.wallFadeEnabled) {
+      this.wallSprites.forEach((wall) => wall.sprite.setAlpha(1));
+    }
+  },
 };
 
 export default worldVisuals;

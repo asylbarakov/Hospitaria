@@ -1,4 +1,15 @@
 let audioContext = null;
+let masterVolume = 0.7;
+
+/** Громкость 0..1 из настроек (этап 19). */
+export function setVolume(value) {
+  const number = Number(value);
+  masterVolume = Number.isFinite(number) ? Math.max(0, Math.min(1, number)) : 0.7;
+}
+
+export function getVolume() {
+  return masterVolume;
+}
 
 function getContext() {
   if (typeof window === 'undefined') {
@@ -34,6 +45,10 @@ function tone(frequency, duration, options = {}) {
     slideTo = null,
   } = options;
 
+  if (masterVolume <= 0) {
+    return;
+  }
+
   try {
     const start = ctx.currentTime + delay;
     const oscillator = ctx.createOscillator();
@@ -45,8 +60,10 @@ function tone(frequency, duration, options = {}) {
       oscillator.frequency.exponentialRampToValueAtTime(slideTo, start + duration);
     }
 
+    const level = Math.max(0.0001, gain * masterVolume);
+
     volume.gain.setValueAtTime(0.0001, start);
-    volume.gain.linearRampToValueAtTime(gain, start + 0.012);
+    volume.gain.linearRampToValueAtTime(level, start + 0.012);
     volume.gain.exponentialRampToValueAtTime(0.0001, start + duration);
 
     oscillator.connect(volume);
@@ -77,6 +94,11 @@ export function playError() {
   tone(260, 0.2, { type: 'triangle', gain: 0.04, slideTo: 170 });
 }
 
+/** Тихий шаг: короткий низкий щелчок, не чаще одного раза в несколько кадров. */
+export function playStep() {
+  tone(150, 0.045, { type: 'sine', gain: 0.014, slideTo: 110 });
+}
+
 export function playLevelUp() {
   tone(523.25, 0.1, { type: 'sine', gain: 0.05 });
   tone(659.25, 0.1, { type: 'sine', gain: 0.05, delay: 0.09 });
@@ -89,5 +111,8 @@ export default {
   playCoin,
   playSuccess,
   playError,
+  playStep,
   playLevelUp,
+  setVolume,
+  getVolume,
 };

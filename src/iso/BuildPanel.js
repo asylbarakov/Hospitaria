@@ -3,6 +3,7 @@
 
 import { CATALOG, CATALOG_BY_TYPE, SELL_REFUND, itemUnlockLevel } from '../data/buildCatalog.js';
 import { isoKey } from './isoAssets.js';
+import { panel, plate } from '../ui/IsoUi.js';
 
 const FONT = 'Arial, "Segoe UI", sans-serif';
 export const PANEL_Y = 540;
@@ -23,12 +24,8 @@ export default class BuildPanel {
     this.level = 1;
     this.active = false;
 
-    this.graphics = scene.add.graphics().setDepth(5);
-    this.graphics.fillStyle(0x0d1f2b, 0.9);
-    this.graphics.fillRect(0, PANEL_Y, 1280, 720 - PANEL_Y);
-    this.graphics.lineStyle(3, 0x4fb3a5, 1);
-    this.graphics.lineBetween(0, PANEL_Y, 1280, PANEL_Y);
-    this.graphics.setVisible(false);
+    this.graphics = panel(scene, 0, PANEL_Y, 1280, 720 - PANEL_Y, { tint: 0x123240 });
+    this.graphics.setDepth(5).setVisible(false);
     this.buildCards();
   }
 
@@ -49,24 +46,23 @@ export default class BuildPanel {
     this.cards = [];
     this.pageItems().forEach((def, index) => {
       const card = this.scene.add.container(120 + index * 120, PANEL_Y + 78).setDepth(11);
-      const bg = this.scene.add.graphics();
+      const bg = plate(this.scene, 0, 0, CARD_W, CARD_H, { tint: 0x1c3a4a });
       card.bg = bg;
       card.type = def.type;
       card.lockLevel = itemUnlockLevel(def);
-      const img = this.scene.add.image(0, -14, isoKey(def.type));
-      img.setScale(Math.min(96 / img.width, 62 / img.height));
+      card.priceValue = def.price;
+      const img = this.scene.add.image(0, -30, isoKey(def.type));
+      img.setScale(Math.min(92 / img.width, 52 / img.height));
       card.img = img;
-      const title = this.scene.add.text(0, 30, def.title, {
-        fontFamily: FONT, fontSize: '14px', fontStyle: 'bold', color: '#ffffff',
+      const title = this.scene.add.text(0, -2, def.title, {
+        fontFamily: FONT, fontSize: '16px', fontStyle: 'bold', color: '#ffffff',
         align: 'center', wordWrap: { width: CARD_W - 8 },
       }).setOrigin(0.5, 0);
-      const price = this.scene.add.text(0, CARD_H / 2 - 10, `${def.price}`, {
+      // Одна подпись снизу: цена или уровень разблокировки. Так ничего не наезжает.
+      const price = this.scene.add.text(0, CARD_H / 2 - 14, `${def.price}`, {
         fontFamily: FONT, fontSize: '16px', fontStyle: 'bold', color: '#ffe082',
       }).setOrigin(0.5);
-      const lock = this.scene.add.text(CARD_W / 2 - 8, -CARD_H / 2 + 6, `Ур. ${card.lockLevel}`, {
-        fontFamily: FONT, fontSize: '12px', fontStyle: 'bold', color: '#ffcc80',
-      }).setOrigin(1, 0);
-      card.lock = lock;
+      card.price = price;
       const zone = this.scene.add.zone(0, 0, CARD_W, CARD_H).setInteractive({ useHandCursor: true });
       zone.on('pointerup', () => {
         if (card.lockLevel > this.level) {
@@ -77,7 +73,7 @@ export default class BuildPanel {
           this.hooks.onSelect(def.type, 0);
         }
       });
-      card.add([bg, img, title, price, lock, zone]);
+      card.add([bg, img, title, price, zone]);
       card.setVisible(this.active);
       this.cards.push(card);
     });
@@ -89,13 +85,12 @@ export default class BuildPanel {
     this.cards.forEach((card) => {
       const locked = card.lockLevel > this.level;
       const on = card.type === selected && !locked;
-      card.setAlpha(locked ? 0.45 : 1);
-      card.lock.setVisible(locked);
-      card.bg.clear();
-      card.bg.fillStyle(on ? 0x2f6f5f : 0x1c3a4a, 1);
-      card.bg.fillRoundedRect(-CARD_W / 2, -CARD_H / 2, CARD_W, CARD_H, 12);
-      card.bg.lineStyle(on ? 4 : 2, on ? 0xffe082 : 0x4fb3a5, 1);
-      card.bg.strokeRoundedRect(-CARD_W / 2, -CARD_H / 2, CARD_W, CARD_H, 12);
+      // Замок показываем подписью вместо цены, а не бейджем поверх картинки.
+      card.price.setText(locked ? `Ур. ${card.lockLevel}` : `${card.priceValue}`);
+      card.price.setColor(locked ? '#ffcc80' : '#ffe082');
+      card.setAlpha(locked ? 0.92 : 1);
+      card.bg.setTint(on ? 0x2f6f5f : 0x1c3a4a);
+      card.bg.setAlpha(on ? 1 : 0.92);
     });
   }
 

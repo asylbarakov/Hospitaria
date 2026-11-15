@@ -3,11 +3,11 @@
 
 import { STAFF_ROLES, staffUnlockLevel } from '../data/staffCatalog.js';
 import { isoKey } from './isoAssets.js';
-import { createButton } from '../ui/Button.js';
+import { button as uiButton, plate, windowFrame } from '../ui/IsoUi.js';
 
 const FONT = 'Arial, "Segoe UI", sans-serif';
 const CARD_W = 220;
-const CARD_H = 150;
+const CARD_H = 196;
 const ROWS = 6;
 
 export default class StaffPanel {
@@ -21,21 +21,19 @@ export default class StaffPanel {
     this.hired = [];
     this.root = scene.add.container(0, 0).setDepth(20).setVisible(false);
 
-    const bg = scene.add.graphics();
-    bg.fillStyle(0x0b1a24, 0.97);
-    bg.fillRect(0, 0, 1280, 720);
-    bg.lineStyle(4, 0x4fb3a5, 1);
-    bg.strokeRect(8, 8, 1264, 704);
-    this.root.add(bg);
+    const shade = scene.add.rectangle(640, 360, 1280, 720, 0x06141d, 0.78).setInteractive();
+    this.root.add(shade);
+    this.root.add(windowFrame(scene, 640, 360, 1216, 664));
 
-    this.root.add(scene.add.text(40, 28, 'Персонал', {
-      fontFamily: FONT, fontSize: '34px', fontStyle: 'bold', color: '#ffffff',
+    this.root.add(plate(scene, 208, 100, 250, 56, { tint: 0x123240 }));
+    this.root.add(scene.add.text(104, 100, 'Персонал', {
+      fontFamily: FONT, fontSize: '32px', fontStyle: 'bold', color: '#ffffff',
+    }).setOrigin(0, 0.5));
+    this.root.add(scene.add.text(76, 204, 'Нанятые сотрудники работают сами: лечат, регистрируют и убирают.', {
+      fontFamily: FONT, fontSize: '17px', color: '#4d7b8a',
     }));
-    this.root.add(scene.add.text(40, 72, 'Нанятые сотрудники работают сами: лечат, регистрируют и убирают.', {
-      fontFamily: FONT, fontSize: '17px', color: '#b9e6df',
-    }));
-    this.root.add(scene.add.text(830, 96, 'Наняты', {
-      fontFamily: FONT, fontSize: '24px', fontStyle: 'bold', color: '#ffe082',
+    this.root.add(scene.add.text(772, 204, 'Наняты', {
+      fontFamily: FONT, fontSize: '24px', fontStyle: 'bold', color: '#1b4b5a',
     }));
 
     this.cards = STAFF_ROLES.map((role, index) => this.makeCard(role, index));
@@ -43,13 +41,17 @@ export default class StaffPanel {
     for (let i = 0; i < ROWS; i += 1) {
       this.root.add(this.makeRow(i));
     }
-    this.footer = scene.add.text(40, 646, '', {
-      fontFamily: FONT, fontSize: '17px', color: '#dff3ff',
-    });
+    this.footer = scene.add.text(72, 655, '', {
+      fontFamily: FONT, fontSize: '17px', color: '#1b4b5a',
+    }).setOrigin(0, 0.5);
     this.root.add(this.footer);
+    this.empty = scene.add.text(1000, 262, 'Пока никого не наняли', {
+      fontFamily: FONT, fontSize: '17px', color: '#4d7b8a',
+    }).setOrigin(0.5, 0);
+    this.root.add(this.empty);
 
-    const close = createButton(scene, 1180, 44, 'Закрыть', () => this.hide(), {
-      width: 160, height: 44, fontSize: 18, color: 0x5b7f8c, hoverColor: 0x729aa8,
+    const close = uiButton(scene, 1150, 100, 'Закрыть', () => this.hide(), {
+      width: 160, height: 56, fontSize: 18, variant: 'gray',
     });
     this.root.add(close);
   }
@@ -57,64 +59,57 @@ export default class StaffPanel {
   makeCard(role, index) {
     const col = index % 3;
     const row = Math.floor(index / 3);
-    const card = this.scene.add.container(130 + col * 232, 226 + row * 172);
+    const card = this.scene.add.container(158 + col * 240, 330 + row * 210);
     card.role = role;
     card.unlockLevel = staffUnlockLevel(role);
-    const bg = this.scene.add.graphics();
-    bg.fillStyle(0x14303f, 1);
-    bg.fillRoundedRect(-CARD_W / 2, -CARD_H / 2, CARD_W, CARD_H, 14);
-    bg.lineStyle(2, 0x4fb3a5, 1);
-    bg.strokeRoundedRect(-CARD_W / 2, -CARD_H / 2, CARD_W, CARD_H, 14);
-    card.add(bg);
+    card.add(plate(this.scene, 0, 0, CARD_W, CARD_H, { tint: 0x14303f }));
 
-    const img = this.scene.add.image(-68, -20, isoKey(role.sprite));
-    img.setScale(Math.min(64 / img.width, 92 / img.height));
+    const img = this.scene.add.image(-82, -30, isoKey(role.sprite));
+    img.setScale(Math.min(52 / img.width, 70 / img.height));
     card.add(img);
-    card.add(this.scene.add.text(4, -58, role.title, {
+    card.add(this.scene.add.text(-48, -84, role.title, {
       fontFamily: FONT, fontSize: '17px', fontStyle: 'bold', color: '#ffffff',
     }));
-    card.add(this.scene.add.text(4, -30, `Найм ${role.price}`, {
-      fontFamily: FONT, fontSize: '15px', fontStyle: 'bold', color: '#ffe082',
+    card.add(this.scene.add.text(-48, -60, `Найм ${role.price}`, {
+      fontFamily: FONT, fontSize: '16px', fontStyle: 'bold', color: '#ffe082',
     }));
-    card.add(this.scene.add.text(4, -8, `Зарплата ${role.salary}/день`, {
-      fontFamily: FONT, fontSize: '12px', color: '#b9e6df',
+    card.add(this.scene.add.text(-48, -38, `Зарплата ${role.salary}/день`, {
+      fontFamily: FONT, fontSize: '16px', color: '#b9e6df',
     }));
-    card.add(this.scene.add.text(-CARD_W / 2 + 8, 18, role.hint, {
-      fontFamily: FONT, fontSize: '12px', color: '#dff3ff', wordWrap: { width: CARD_W - 16 },
+    card.add(this.scene.add.text(-CARD_W / 2 + 10, 8, role.hint, {
+      fontFamily: FONT, fontSize: '16px', color: '#dff3ff', wordWrap: { width: CARD_W - 20 },
     }));
 
-    card.hireButton = createButton(this.scene, 0, CARD_H / 2 - 18, 'Нанять', () => {
+    card.hireButton = uiButton(this.scene, 0, CARD_H / 2 - 25, 'Нанять', () => {
       this.hooks.onHire(role.id);
-    }, { width: 124, height: 32, fontSize: 15, color: 0x3f9b4a, hoverColor: 0x55b963 });
+    }, { width: 150, height: 44, fontSize: 16, variant: 'green' });
     card.add(card.hireButton);
-    card.lock = this.scene.add.text(CARD_W / 2 - 12, -CARD_H / 2 + 8, `Ур. ${card.unlockLevel}`, {
-      fontFamily: FONT, fontSize: '13px', fontStyle: 'bold', color: '#ffcc80',
-    }).setOrigin(1, 0);
+    // Бейдж уровня слева сверху: справа он наезжает на длинные названия ролей.
+    card.lock = this.scene.add.text(-CARD_W / 2 + 10, -CARD_H / 2 + 8, `Ур. ${card.unlockLevel}`, {
+      fontFamily: FONT, fontSize: '16px', fontStyle: 'bold', color: '#ffcc80',
+    });
     card.add(card.lock);
     this.root.add(card);
     return card;
   }
 
   makeRow(index) {
-    const row = this.scene.add.container(1020, 145 + index * 70);
-    const bg = this.scene.add.graphics();
-    bg.fillStyle(0x14303f, 1);
-    bg.fillRoundedRect(-210, -29, 420, 58, 12);
-    row.add(bg);
-    row.name = this.scene.add.text(-194, -12, '', {
+    const row = this.scene.add.container(1000, 240 + index * 70);
+    row.add(plate(this.scene, 0, 0, 450, 62, { tint: 0x14303f }));
+    row.name = this.scene.add.text(-212, -14, '', {
       fontFamily: FONT, fontSize: '17px', fontStyle: 'bold', color: '#ffffff',
     });
-    row.status = this.scene.add.text(-194, 12, '', {
-      fontFamily: FONT, fontSize: '13px', color: '#b9e6df',
+    row.status = this.scene.add.text(-212, 8, '', {
+      fontFamily: FONT, fontSize: '16px', color: '#b9e6df',
     });
     row.add(row.name);
     row.add(row.status);
-    row.fire = createButton(this.scene, 158, 0, 'Уволить', () => {
+    row.fire = uiButton(this.scene, 168, 0, 'Уволить', () => {
       const hired = this.hired[index];
       if (hired) {
         this.hooks.onFire(hired.id);
       }
-    }, { width: 90, height: 34, fontSize: 14, color: 0x8a4a4a, hoverColor: 0xa96060 });
+    }, { width: 96, height: 44, fontSize: 16, variant: 'red' });
     row.add(row.fire);
     row.setVisible(false);
     this.rows.push(row);
@@ -149,11 +144,13 @@ export default class StaffPanel {
     this.hired = state.hired || [];
     this.cards.forEach((card) => {
       const locked = card.unlockLevel > level;
-      card.setAlpha(locked ? 0.5 : 1);
+      // Не гасим всю карточку: текст должен оставаться контрастным.
+      card.setAlpha(locked ? 0.9 : 1);
       card.lock.setVisible(locked);
-      card.hireButton.setAlpha(locked ? 0.5 : (coins >= card.role.price ? 1 : 0.55));
+      card.hireButton.setAlpha(locked ? 0.8 : (coins >= card.role.price ? 1 : 0.84));
     });
     const count = this.hired.length;
+    this.empty.setVisible(count === 0);
     this.footer.setText(`Нанято ${count} из ${state.max}  •  Зарплата за день: ${state.salary}  •  Пятен: ${state.dirt}`);
     this.rows.forEach((row, index) => {
       const hired = this.hired[index];

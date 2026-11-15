@@ -38,6 +38,7 @@ export function loadIsoSave() {
       economy: data.economy && typeof data.economy === 'object' ? data.economy : null,
       staff: Array.isArray(data.staff) ? data.staff : null,
       quests: data.quests && typeof data.quests === 'object' ? data.quests : null,
+      settings: data.settings && typeof data.settings === 'object' ? data.settings : null,
     };
   } catch (err) {
     return null;
@@ -120,6 +121,11 @@ export function saveIso(coins, items, player = null, stats = null) {
       : (previous && Array.isArray(previous.rooms) ? previous.rooms : null);
     if (Array.isArray(rooms)) {
       data.rooms = rooms.filter((id) => typeof id === 'string');
+    }
+    if (stats && stats.settings && typeof stats.settings === 'object') {
+      data.settings = { ...stats.settings };
+    } else if (previous && previous.settings) {
+      data.settings = previous.settings;
     }
     window.localStorage.setItem(KEY, JSON.stringify(data));
   } catch (err) {

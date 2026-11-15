@@ -1,9 +1,24 @@
 // Кабинеты, гардероб и очистка сцены IsoHospitalScene. Подмешивается в класс
 // (Object.assign в сцене), this = сцена.
 
+import { normalizeSettings } from '../systems/Settings.js';
+import { setVolume } from '../systems/Sound.js';
+
 const sceneMethods = {
   isRoomUnlocked(roomId) {
     return this.roomLocks.isUnlocked(roomId);
+  },
+
+  /** Настройки из окна HUD: звук, сетка и упрощённая графика применяются сразу. */
+  applySettings(next) {
+    this.settings = normalizeSettings(next);
+    setVolume(this.settings.volume);
+    if (this.world) {
+      this.world.setGridVisible(this.settings.grid);
+      this.world.setWallFadeEnabled(!this.settings.simpleGraphics);
+    }
+    this.persist();
+    return this.settings;
   },
 
   roomAtTile(tile) {

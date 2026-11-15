@@ -63,6 +63,8 @@ export default function handleSceneTap(scene, pointer) {
   scene.playerCtl.walkTo(tile).then((ok) => {
     if (!ok) {
       scene.marker.flash(tile.x, tile.y, scene.time.now);
+    } else if (scene.bus) {
+      scene.bus.emit('playerWalked', { x: tile.x, y: tile.y });
     }
   });
 }

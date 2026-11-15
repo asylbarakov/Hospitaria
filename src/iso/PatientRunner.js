@@ -3,11 +3,12 @@ import PatientFlow from './PatientFlow.js';
 import PatientDialog from './PatientDialog.js';
 import PatientPoints from './PatientPoints.js';
 import PatientViews from './PatientViews.js';
+import patientRunnerTap from './patientRunnerTap.js';
 import { PATIENT_SKINS } from '../data/actorConfig.js';
 import { FLOW_STATES } from '../data/patientFlow.js';
+import { spawnRewardBurst } from '../ui/particles.js';
 
 const TALK_DISTANCE = 2.4;
-const TAP_RADIUS = 1.4;
 export default class PatientRunner {
   /**
    * @param {Phaser.Scene} scene
@@ -55,6 +56,10 @@ export default class PatientRunner {
         const total = Number.isFinite(payout.total) ? payout.total : event.reward.coins;
         const tip = Number.isFinite(payout.tip) ? payout.tip : 0;
         this.views.float(event.agent, `+${total}`, '#ffe082');
+        const view = this.views.get(event.agent);
+        if (view && view.actor && !(this.scene.settings && this.scene.settings.simpleGraphics)) {
+          spawnRewardBurst(this.scene, view.actor.screen.x, view.actor.screen.y - 60, 14);
+        }
         this.hooks.notify(`Пациент ${event.agent.name} вылечен: +${total} монет${tip ? ` (чаевые ${tip})` : ''}`);
         this.hooks.event('patientTreated', {
           diseaseId: event.agent.disease ? event.agent.disease.id : null,
@@ -206,7 +211,14 @@ export default class PatientRunner {
   }
 
   chooseDiagnosis(agent, disease) {
-    const result = this.flow.diagnoseForPlayer(agent, disease.id === agent.disease.id);
+    const correct = disease.id === agent.disease.id;
+    const result = this.flow.diagnoseForPlayer(agent, correct);
+    if (correct) {
+      this.hooks.event('diagnosisMade', {
+        correct,
+        diseaseId: agent.disease ? agent.disease.id : null,
+      });
+    }
     if (result.ok && result.needsGame) {
       const started = this.hooks.playTreatment(agent);
       if (started && !started.ok) {
@@ -223,65 +235,6 @@ export default class PatientRunner {
     this.dialog.close();
   }
 
-  // ---- ввод --------------------------------------------------------------------------
-
-  /** Тап по тайлу: если рядом пациент, начинаем приём вместо ходьбы. */
-  tryTapTile(tile) {
-    const agent = this.agentNear(tile.x + 0.5, tile.y + 0.5, TAP_RADIUS);
-    return agent ? this.tapAgent(agent) : false;
-  }
-
-  agentNear(x, y, radius) {
-    let best = null;
-    let bestDist = radius;
-    this.flow.agents.forEach((agent) => {
-      if (agent.state === FLOW_STATES.LEAVING || agent.state === FLOW_STATES.LEFT_ANGRY) {
-        return;
-      }
-      const view = this.views.get(agent);
-      if (!view) {
-        return;
-      }
-      const dist = Math.hypot(x - view.actor.pos.x, y - view.actor.pos.y);
-      if (dist < bestDist) {
-        best = agent;
-        bestDist = dist;
-      }
-    });
-    return best;
-  }
-
-  tapAgent(agent) {
-    if (agent.state === FLOW_STATES.WAITING) {
-      const result = this.flow.call(agent);
-      if (!result.ok) {
-        this.hooks.notify(result.hint || 'Пациент пока не готов');
-        return true;
-      }
-      this.walkPlayerNear(result.slot);
-      return true;
-    }
-    if (agent.state === FLOW_STATES.TO_ROOM || agent.state === FLOW_STATES.IN_TREATMENT) {
-      this.walkPlayerNear(agent.spot);
-      return true;
-    }
-    if (agent.state === FLOW_STATES.TO_RECEPTION || agent.state === FLOW_STATES.REGISTERING) {
-      this.hooks.notify('Пациент идёт к регистратуре');
-      return true;
-    }
-    return false;
-  }
-
-  walkPlayerNear(point) {
-    if (!point) {
-      return;
-    }
-    const tile = this.points.standNear(point.x, point.y);
-    if (tile) {
-      this.actors.moveTo(this.player, tile.x, tile.y);
-    }
-  }
-
   // ---- служебное ---------------------------------------------------------------------
 
   now() { return this.scene.time && Number.isFinite(this.scene.time.now) ? this.scene.time.now : 0; }
@@ -295,3 +248,6 @@ export default class PatientRunner {
     this.flow.destroy();
   }
 }
+
+// Тапы по пациентам вынесены в отдельный файл (лимит 300 строк).
+Object.assign(PatientRunner.prototype, patientRunnerTap);

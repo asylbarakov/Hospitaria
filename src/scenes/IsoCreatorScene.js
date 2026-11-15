@@ -1,4 +1,5 @@
-import { createButton } from '../ui/Button.js';
+import { button as uiButton } from '../ui/IsoUi.js';
+import { UI_FILES } from '../ui/IsoUi.js';
 import { queueIsoAssets, isoKey } from '../iso/isoAssets.js';
 import { loadIsoSave, saveIso } from '../systems/IsoSave.js';
 import {
@@ -22,7 +23,7 @@ export default class IsoCreatorScene extends Phaser.Scene {
   }
 
   preload() {
-    queueIsoAssets(this);
+    queueIsoAssets(this, UI_FILES);
   }
 
   create() {
@@ -81,7 +82,7 @@ export default class IsoCreatorScene extends Phaser.Scene {
         fontFamily: FONT, fontSize: '20px', color: '#4d7b8a',
       })
       .setOrigin(0.5);
-    createButton(this, 108, 56, 'Назад', () => this.goBack(), {
+    uiButton(this, 108, 56, 'Назад', () => this.goBack(), {
       width: 150, height: 50, fontSize: 20, color: 0x5b7f8c, hoverColor: 0x729aa8, depth: 20,
     });
   }
@@ -117,7 +118,7 @@ export default class IsoCreatorScene extends Phaser.Scene {
     // Телефон без клавиатуры: тап по полю открывает системное окно ввода.
     this.add.zone(640, 155, 460, 62).setInteractive({ useHandCursor: true })
       .on('pointerup', () => askName(this));
-    createButton(this, 985, 155, 'Случайное', () => randomName(this), {
+    uiButton(this, 985, 155, 'Случайное', () => randomName(this), {
       width: 170, height: 52, fontSize: 20, color: 0x2f80c9, hoverColor: 0x4a9be0, depth: 20,
     });
     this.time.addEvent({
@@ -136,7 +137,7 @@ export default class IsoCreatorScene extends Phaser.Scene {
       .setOrigin(0.5);
     PLAYER_ROLES.forEach((role, index) => {
       const y = 310 + index * 62;
-      createButton(this, 235, y, role.title, () => {
+      uiButton(this, 235, y, role.title, () => {
         this.player.role = role.id;
         this.player.skin = role.sprite;
         this.refresh();
@@ -151,7 +152,7 @@ export default class IsoCreatorScene extends Phaser.Scene {
     });
     this.add
       .text(235, 440, 'Роль задаёт иконку над головой', {
-        fontFamily: FONT, fontSize: '15px', color: '#4d7b8a', align: 'center', wordWrap: { width: 220 },
+        fontFamily: FONT, fontSize: '16px', color: '#4d7b8a', align: 'center', wordWrap: { width: 220 },
       })
       .setOrigin(0.5);
   }
@@ -170,7 +171,7 @@ export default class IsoCreatorScene extends Phaser.Scene {
       img.setScale(fit);
       const title = this.add
         .text(0, 46, skin.title, {
-          fontFamily: FONT, fontSize: '15px', fontStyle: 'bold', color: '#24444f', align: 'center', wordWrap: { width: 140 },
+          fontFamily: FONT, fontSize: '16px', fontStyle: 'bold', color: '#24444f', align: 'center', wordWrap: { width: 140 },
         })
         .setOrigin(0.5, 0);
       const zone = this.add.zone(0, 0, 150, 190).setInteractive({ useHandCursor: true });
@@ -209,7 +210,7 @@ export default class IsoCreatorScene extends Phaser.Scene {
       this.accentDots.push({ id: accent.id, dot });
     });
     this.add
-      .text(980, 568, 'Цвет плашки и имени', { fontFamily: FONT, fontSize: '15px', color: '#4d7b8a' })
+      .text(980, 568, 'Цвет плашки и имени', { fontFamily: FONT, fontSize: '16px', color: '#4d7b8a' })
       .setOrigin(0.5);
   }
 
@@ -221,7 +222,7 @@ export default class IsoCreatorScene extends Phaser.Scene {
   }
 
   createFooter() {
-    createButton(this, W / 2, 675, 'Готово', () => this.finish(), {
+    uiButton(this, W / 2, 675, 'Готово', () => this.finish(), {
       width: 280, height: 56, fontSize: 26, color: 0x3f9b4a, hoverColor: 0x55b963, depth: 20,
     });
   }

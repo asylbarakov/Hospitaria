@@ -1,4 +1,4 @@
-import { createButton } from '../ui/Button.js';
+import { button as uiButton } from '../ui/IsoUi.js';
 import { iconKey, isoKey } from '../iso/isoAssets.js';
 import {
   ACCENTS, PLAYER_SKINS, accentCost, buyAccent, buySkin, isAccentOwned, isSkinOwned,
@@ -39,7 +39,7 @@ export default class IsoWardrobeScene extends Phaser.Scene {
     this.drawHeader();
     this.drawAccents();
     this.drawCards();
-    createButton(this, 640, 674, 'Закрыть', () => this.close(), {
+    uiButton(this, 640, 674, 'Закрыть', () => this.close(), {
       width: 240, height: 52, fontSize: 24, color: 0x3f9b4a, hoverColor: 0x55b963,
     });
 
@@ -92,7 +92,7 @@ export default class IsoWardrobeScene extends Phaser.Scene {
       dot.on('pointerup', () => this.onAccent(accent));
       const price = this.add
         .text(390 + index * 58, 226, accentCost(accent) ? `${accentCost(accent)}✦` : '', {
-          fontFamily: FONT, fontSize: '13px', fontStyle: 'bold', color: '#7a8f97',
+          fontFamily: FONT, fontSize: '16px', fontStyle: 'bold', color: '#7a8f97',
         })
         .setOrigin(0.5);
       this.accentDots.push({ id: accent.id, dot, price });

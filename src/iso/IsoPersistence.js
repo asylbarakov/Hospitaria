@@ -15,6 +15,7 @@ export function persistScene(scene) {
     economy: scene.economy ? scene.economy.serialize() : undefined,
     staff: scene.staff ? scene.staff.exportStaff() : undefined,
     quests: scene.quests ? scene.quests.serialize() : undefined,
+    settings: scene.settings || undefined,
   });
 }
 
@@ -40,5 +41,6 @@ export function resetSceneSave(scene) {
     staff: [],
     quests: scene.quests ? scene.quests.serialize() : null,
     rooms: scene.roomLocks ? scene.roomLocks.serialize() : undefined,
+    settings: scene.settings ? { ...scene.settings, onboardingDone: false, onboardingStep: 0 } : undefined,
   });
 }

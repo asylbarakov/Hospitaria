@@ -22,15 +22,16 @@ import {
   screenToTileIndex, tileCenter, worldBounds,
 } from '../iso/IsoMath.js';
 import { loadIsoSave } from '../systems/IsoSave.js';
+import { normalizeSettings } from '../systems/Settings.js';
+import { playStep, setVolume } from '../systems/Sound.js';
+import { UI_FILES } from '../ui/IsoUi.js';
+import { spawnRewardBurst } from '../ui/particles.js';
 import sceneMethods from '../iso/sceneMethods.js';
 
 // Этап 13: изометрическая больница. Мир из layout.js, режим строительства,
 // игрок и пациенты через IsoActor/ActorLayer, поиск пути Pathfinder (EasyStar/BFS).
 
 const ICON_FILES = ACTOR_ICONS.map((name) => `icons/${name}.png`);
-const UI_FILES = [
-  'ui/ui_bar.png', 'ui/ui_bar_fill.png', 'ui/ui_window.png', 'ui/ui_panel.png',
-];
 
 export default class IsoHospitalScene extends Phaser.Scene {
   constructor() {
@@ -51,6 +52,9 @@ export default class IsoHospitalScene extends Phaser.Scene {
     this.children.list.filter((o) => o.type === 'Text').forEach((o) => o.destroy());
     this.cameras.main.setBackgroundColor('#10222e');
     const saved = loadIsoSave();
+    this.settings = normalizeSettings(saved ? saved.settings : null);
+    setVolume(this.settings.volume);
+    this.stepSoundAt = 0;
     const economySystem = createEconomy(this, saved);
     this.stats = economySystem.stats;
     this.economy = economySystem.economy;
@@ -70,6 +74,8 @@ export default class IsoHospitalScene extends Phaser.Scene {
     this.world = new IsoWorld(this, layout, saved ? saved.items : null, {
       roomLocks: this.roomLocks,
     });
+    this.world.setGridVisible(this.settings.grid);
+    this.world.setWallFadeEnabled(!this.settings.simpleGraphics);
     this.grid = this.world.grid;
     this.messages = [];
     this.pathfinder = new Pathfinder(this.grid);
@@ -82,6 +88,11 @@ export default class IsoHospitalScene extends Phaser.Scene {
       onChange: () => this.persist(),
     });
     this.playerCtl.spawn();
+    this.bus.on('levelUp', () => {
+      if (!this.settings.simpleGraphics && this.playerActor) {
+        spawnRewardBurst(this, this.playerActor.screen.x, this.playerActor.screen.y - 80, 24);
+      }
+    });
     this.patients = new PatientRunner(this, this.world, this.actors, this.playerCtl.actor, {
       notify: (text) => this.notify(text),
       reward: (reward, agent) => economySystem.reward(reward, agent),
@@ -248,8 +259,14 @@ export default class IsoHospitalScene extends Phaser.Scene {
     this.build.update();
     this.marker.update(time);
 
+    if (this.playerActor && this.playerActor.moving && time > this.stepSoundAt + 380) {
+      this.stepSoundAt = time;
+      playStep();
+    }
     this.world.sorter.sort();
-    this.world.updateWallFade(this.actors.fadeTargets());
+    if (!this.settings.simpleGraphics) {
+      this.world.updateWallFade(this.actors.fadeTargets());
+    }
     if (this.messages.length && this.messages[0].until <= time) {
       this.messages = this.messages.filter((m) => m.until > time);
     }

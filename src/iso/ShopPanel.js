@@ -6,17 +6,17 @@ import { CATALOG, itemUnlockLevel } from '../data/buildCatalog.js';
 import { STAFF_ROLES, staffUnlockLevel } from '../data/staffCatalog.js';
 import { ROOM_UNLOCKS, STARTER_ROOMS } from '../data/roomUnlocks.js';
 import { isoKey } from './isoAssets.js';
-import { createButton } from '../ui/Button.js';
+import { button as uiButton, plate, windowFrame } from '../ui/IsoUi.js';
 
 const FONT = 'Arial, "Segoe UI", sans-serif';
 const CARD_W = 250;
-const CARD_H = 150;
+const CARD_H = 190;
 const PER_PAGE = 8;
 const TABS = [
-  { id: 'furniture', title: 'Мебель', color: 0x2f80c9 },
-  { id: 'staff', title: 'Персонал', color: 0x3f9b4a },
-  { id: 'decor', title: 'Украшения', color: 0x8d7bb5 },
-  { id: 'rooms', title: 'Кабинеты', color: 0xc9622f },
+  { id: 'furniture', title: 'Мебель', variant: 'blue' },
+  { id: 'staff', title: 'Персонал', variant: 'green' },
+  { id: 'decor', title: 'Украшения', variant: 'purple' },
+  { id: 'rooms', title: 'Кабинеты', variant: 'orange' },
 ];
 const CLOSED_ROOMS = ROOM_UNLOCKS.filter((entry) => !STARTER_ROOMS.includes(entry.roomId));
 const DECOR_TYPES = new Set([
@@ -47,35 +47,37 @@ export default class ShopPanel {
     overlay.fillStyle(0x06141d, 0.92);
     overlay.fillRect(0, 0, 1280, 720);
     this.root.add(overlay);
-    this.root.add(scene.add.nineslice(640, 360, isoKey('ui_ui_window'), undefined, 1216, 664, 48, 48, 48, 48));
+    this.root.add(windowFrame(scene, 640, 360, 1216, 664));
 
-    this.root.add(scene.add.text(40, 34, 'Магазин', {
-      fontFamily: FONT, fontSize: '34px', fontStyle: 'bold', color: '#ffffff',
-      stroke: '#0d3b3a', strokeThickness: 4,
-    }));
-    this.root.add(scene.add.text(40, 76, 'Мебель, персонал и украшения. Новые позиции открываются с уровнем.', {
-      fontFamily: FONT, fontSize: '15px', color: '#bfe9e2',
+    // Шапка окна зелёная: заголовок белый, подпись уже на белом теле.
+    // Заголовок — тёмная табличка поверх зелёной шапки, подпись на белом теле.
+    this.root.add(plate(scene, 200, 100, 230, 56, { tint: 0x123240 }));
+    this.root.add(scene.add.text(112, 100, 'Магазин', {
+      fontFamily: FONT, fontSize: '32px', fontStyle: 'bold', color: '#ffffff',
+    }).setOrigin(0, 0.5));
+    this.root.add(scene.add.text(76, 210, 'Мебель, персонал и украшения. Новые позиции открываются с уровнем.', {
+      fontFamily: FONT, fontSize: '16px', color: '#4d7b8a',
     }));
 
     this.tabsRoot = scene.add.container(0, 0);
     this.content = scene.add.container(0, 0);
     this.root.add([this.tabsRoot, this.content]);
 
-    this.footer = scene.add.text(40, 660, '', {
-      fontFamily: FONT, fontSize: '15px', color: '#b9e6df',
-    });
+    this.footer = scene.add.text(72, 652, '', {
+      fontFamily: FONT, fontSize: '16px', color: '#1b4b5a',
+    }).setOrigin(0, 0.5);
     this.root.add(this.footer);
 
-    this.prev = createButton(scene, 1040, 660, '◀', () => this.turnPage(-1), {
-      width: 60, height: 36, fontSize: 20, color: 0x5b7f8c, hoverColor: 0x729aa8,
+    this.prev = uiButton(scene, 1100, 652, '◀', () => this.turnPage(-1), {
+      width: 64, height: 56, fontSize: 20, variant: 'gray',
     });
-    this.next = createButton(scene, 1120, 660, '▶', () => this.turnPage(1), {
-      width: 60, height: 36, fontSize: 20, color: 0x5b7f8c, hoverColor: 0x729aa8,
+    this.next = uiButton(scene, 1180, 652, '▶', () => this.turnPage(1), {
+      width: 64, height: 56, fontSize: 20, variant: 'gray',
     });
     this.root.add([this.prev, this.next]);
 
-    const close = createButton(scene, 1180, 50, 'Закрыть', () => this.hide(), {
-      width: 160, height: 42, fontSize: 17, color: 0x5b7f8c, hoverColor: 0x729aa8,
+    const close = uiButton(scene, 1150, 100, 'Закрыть', () => this.hide(), {
+      width: 160, height: 56, fontSize: 18, variant: 'gray',
     });
     this.root.add(close);
   }
@@ -182,10 +184,10 @@ export default class ShopPanel {
     this.tabsRoot.removeAll(true);
     TABS.forEach((tab, index) => {
       const active = tab.id === this.tab;
-      const button = createButton(this.scene, 300 + index * 210, 122, tab.title, () => this.setTab(tab.id), {
-        width: 194, height: 40, fontSize: 17,
-        color: active ? tab.color : 0x9fb8c3,
-        hoverColor: active ? tab.color : 0xb9cbd3,
+      const button = uiButton(this.scene, 380 + index * 196, 100, tab.title, () => this.setTab(tab.id), {
+        width: 186, height: 56, fontSize: 17,
+        variant: active ? tab.variant : 'gray',
+        active,
       });
       this.tabsRoot.add(button);
     });
@@ -198,38 +200,34 @@ export default class ShopPanel {
     const locked = kind === 'room' ? (!open && this.level < unlock) : this.level < unlock;
     const col = index % 4;
     const row = Math.floor(index / 4);
-    const card = this.scene.add.container(190 + col * 260, 238 + row * 180);
-    card.setAlpha(locked ? 0.62 : 1);
+    const card = this.scene.add.container(210 + col * 260, 330 + row * 200);
+    card.setAlpha(locked ? 0.85 : 1);
 
-    const bg = this.scene.add.graphics();
-    bg.fillStyle(0x14303f, 1);
-    bg.fillRoundedRect(-CARD_W / 2, -CARD_H / 2, CARD_W, CARD_H, 14);
-    bg.lineStyle(2, locked ? 0x4a5b63 : (open ? 0x8d7bb5 : 0x4fb3a5), 1);
-    bg.strokeRoundedRect(-CARD_W / 2, -CARD_H / 2, CARD_W, CARD_H, 14);
-    card.add(bg);
+    card.add(plate(this.scene, 0, 0, CARD_W, CARD_H, { tint: locked ? 0x33474f : 0x14303f }));
 
     const key = kind === 'staff' ? item.sprite : (kind === 'room' ? 'sign_blank' : item.type);
-    const img = this.scene.add.image(-82, -10, isoKey(key));
-    img.setScale(Math.min(62 / img.width, 78 / img.height));
+    const img = this.scene.add.image(-84, -14, isoKey(key));
+    img.setScale(Math.min(60 / img.width, 74 / img.height));
     card.add(img);
 
-    card.add(this.scene.add.text(-38, -64, item.title, {
-      fontFamily: FONT, fontSize: kind === 'room' ? '15px' : '16px', fontStyle: 'bold', color: '#ffffff',
-      wordWrap: { width: kind === 'room' ? 150 : 180 },
+    card.add(this.scene.add.text(-40, -76, item.title, {
+      fontFamily: FONT, fontSize: '16px', fontStyle: 'bold', color: '#ffffff',
+      lineSpacing: 2,
+      wordWrap: { width: 152 },
     }));
     const priceLabel = kind === 'staff'
       ? `Найм ${item.price}`
       : (kind === 'room' ? `${item.coins} монет · ${item.crystals} крист.` : `Цена ${item.price}`);
-    card.add(this.scene.add.text(-38, -38, priceLabel, {
-      fontFamily: FONT, fontSize: '14px', fontStyle: 'bold', color: '#ffe082',
+    card.add(this.scene.add.text(-40, -32, priceLabel, {
+      fontFamily: FONT, fontSize: '16px', fontStyle: 'bold', color: '#ffe082',
     }));
     const second = kind === 'staff'
       ? `Зарплата ${item.salary}/день`
       : (kind === 'room' ? `Мин. уровень ${item.minLevel}` : (item.group || ''));
-    card.add(this.scene.add.text(-38, -16, second, {
-      fontFamily: FONT, fontSize: '12px', color: '#b9e6df',
+    card.add(this.scene.add.text(-40, -10, second, {
+      fontFamily: FONT, fontSize: '16px', color: '#b9e6df',
     }));
-    let hint = 'Купить и поставить в больнице';
+    let hint = '';
     if (kind === 'staff') {
       hint = item.hint;
     } else if (kind === 'room') {
@@ -237,8 +235,9 @@ export default class ShopPanel {
     } else if (locked) {
       hint = `Откроется на уровне ${unlock}`;
     }
-    card.add(this.scene.add.text(-CARD_W / 2 + 10, 14, hint, {
-      fontFamily: FONT, fontSize: '12px', color: '#dff3ff',
+    card.add(this.scene.add.text(-CARD_W / 2 + 10, 18, hint, {
+      fontFamily: FONT, fontSize: '16px', color: '#dff3ff',
+      lineSpacing: 2,
       wordWrap: { width: CARD_W - 20 },
     }));
 
@@ -249,23 +248,23 @@ export default class ShopPanel {
     const label = locked && kind !== 'room' ? `С ур. ${unlock}` : action;
     const baseColor = kind === 'staff' ? 0x3f9b4a : (kind === 'room' ? 0xc9622f : 0x2f80c9);
     const hover = kind === 'staff' ? 0x55b963 : (kind === 'room' ? 0xe07a45 : 0x4a9be0);
-    const button = createButton(this.scene, 0, CARD_H / 2 - 18, label, () => {
+    const button = uiButton(this.scene, 0, CARD_H / 2 - 21, label, () => {
       this.choose(item, kind, locked, unlock);
     }, {
-      width: 150, height: 32, fontSize: 15,
+      width: 170, height: 40, fontSize: 16,
       color: open ? 0x6b7f86 : baseColor,
       hoverColor: open ? 0x6b7f86 : hover,
+      disabled: locked && kind !== 'room',
     });
     card.add(button);
 
     if (locked || open) {
       const badge = open ? 'Открыт' : `Ур. ${unlock}`;
-      const badgeX = kind === 'room' ? -CARD_W / 2 + 10 : CARD_W / 2 - 12;
+      const badgeX = kind === 'room' ? -CARD_W / 2 + 10 : CARD_W / 2 - 10;
       const badgeOrigin = kind === 'room' ? 0 : 1;
-      card.add(this.scene.add.text(badgeX, -CARD_H / 2 + 8, badge, {
-        fontFamily: FONT, fontSize: '12px', fontStyle: 'bold',
+      card.add(this.scene.add.text(badgeX, -CARD_H / 2 + 6, badge, {
+        fontFamily: FONT, fontSize: '16px', fontStyle: 'bold',
         color: open ? '#b9f6ca' : '#ffcc80',
-        stroke: '#10222e', strokeThickness: 3,
       }).setOrigin(badgeOrigin, 0));
     }
     this.cards.push(card);

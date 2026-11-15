@@ -9,6 +9,7 @@ import TileReservations from './TileReservations.js';
 import { anchorOf, isoKey, wallKey, wallMeta } from './isoAssets.js';
 import worldRooms from './worldRooms.js';
 import worldVisuals from './worldVisuals.js';
+import worldGrid from './worldGrid.js';
 import {
   HALF_H, HALF_W, SPRITE_SCALE, footprintScreen, tileToScreen,
 } from './IsoMath.js';
@@ -45,6 +46,7 @@ export default class IsoWorld {
     this.buildSigns(data.signs);
     data.items.forEach((item) => this.createItemSprite(item));
     this.applyRoomLocks();
+    this.buildGridOverlay();
     this.sorter.sort();
   }
 
@@ -239,5 +241,5 @@ export default class IsoWorld {
 
 }
 
-// Методы кабинетов и визуала вынесены в отдельные файлы (лимит 300 строк на файл).
-Object.assign(IsoWorld.prototype, worldRooms, worldVisuals);
+// Методы кабинетов, визуала и сетки вынесены в отдельные файлы (лимит 300 строк на файл).
+Object.assign(IsoWorld.prototype, worldRooms, worldVisuals, worldGrid);

@@ -1,4 +1,4 @@
-import { createButton } from '../ui/Button.js';
+import { button as uiButton } from '../ui/IsoUi.js';
 import StaffPanel from '../iso/StaffPanel.js';
 import QuestPanel from '../iso/QuestPanel.js';
 import ShopPanel from '../iso/ShopPanel.js';
@@ -6,6 +6,10 @@ import TopStatus from '../iso/TopStatus.js';
 import DaySummary from '../iso/DaySummary.js';
 import BuildPanel, { PANEL_Y } from '../iso/BuildPanel.js';
 import openRoomUnlockDialog from '../iso/RoomUnlockDialog.js';
+import SettingsPanel from '../iso/SettingsPanel.js';
+import OnboardingOverlay from '../iso/OnboardingOverlay.js';
+import Onboarding from '../systems/Onboarding.js';
+import hudOverlays from '../iso/hudOverlays.js';
 import { staffRole, staffUnlockLevel } from '../data/staffCatalog.js';
 
 const FONT = 'Arial, "Segoe UI", sans-serif';
@@ -25,7 +29,7 @@ export default class IsoHospitalHud extends Phaser.Scene {
 
     this.status = new TopStatus(this);
     this.message = this.add
-      .text(640, 72, '', { fontFamily: FONT, fontSize: '24px', fontStyle: 'bold', color: '#ffffff', stroke: '#b3261e', strokeThickness: 6 })
+      .text(640, 108, '', { fontFamily: FONT, fontSize: '24px', fontStyle: 'bold', color: '#ffffff', stroke: '#b3261e', strokeThickness: 6 })
       .setOrigin(0.5).setDepth(12);
     this.hint = this.add
       .text(640, PANEL_Y - 22, '', { fontFamily: FONT, fontSize: '22px', fontStyle: 'bold', color: '#ffffff', stroke: '#10222e', strokeThickness: 5 })
@@ -42,11 +46,9 @@ export default class IsoHospitalHud extends Phaser.Scene {
         }
       },
     });
-    this.addButton(1180, 40, 180, 'Меню', () => this.world().exitToMenu(), 0x5b7f8c, 0x729aa8);
-    this.buildToggle = this.addButton(1180, 100, 180, 'Строить (B)', () => this.world().toggleBuild(), 0xe08a1e, 0xf2a43f);
-    this.addButton(1180, 160, 180, 'Зум 100%', () => this.world().iso.setZoom(1), 0x3f9b4a, 0x55b963);
-    this.addButton(1180, 220, 180, 'Гардероб', () => this.world().openWardrobe(), 0x7b5bb8, 0x9273cf);
-    this.resetButton = this.addButton(1180, 280, 180, 'Сброс', () => this.onReset(), 0x8a4a4a, 0xa96060);
+    this.addButton(1180, 48, 176, 'Меню', () => this.world().exitToMenu(), 0x5b7f8c, 0x729aa8);
+    this.pauseButton = this.addButton(1180, 110, 176, 'Пауза', () => this.togglePause(), 0x536b8a, 0x6c86a6);
+    this.buildToggle = this.addButton(1180, 172, 176, 'Строить (B)', () => this.world().toggleBuild(), 0xe08a1e, 0xf2a43f);
     this.staffPanel = new StaffPanel(this, {
       onHire: (roleId) => this.hire(roleId),
       onFire: (id) => {
@@ -57,14 +59,14 @@ export default class IsoHospitalHud extends Phaser.Scene {
       },
       onClose: () => this.staffPanel.hide(),
     });
-    this.addButton(1180, 340, 180, 'Персонал', () => this.toggleStaff(), 0x2f80c9, 0x4a9be0);
+    this.staffButton = this.addButton(1180, 234, 176, 'Персонал', () => this.toggleStaff(), 0x2f80c9, 0x4a9be0);
     this.questPanel = new QuestPanel(this, {
       onClaim: (category, id) => this.claimQuest(category, id),
       onClose: () => this.questPanel.hide(),
       onShow: () => this.status.setVisible(false),
       onHide: () => this.status.setVisible(true),
     });
-    this.questButton = this.addButton(1180, 400, 180, 'Задания', () => this.toggleQuests(), 0x8d7bb5, 0xa695cc);
+    this.questButton = this.addButton(1180, 296, 176, 'Задания', () => this.toggleQuests(), 0x8d7bb5, 0xa695cc);
     this.shopPanel = new ShopPanel(this, {
       onHire: (roleId) => this.hire(roleId),
       onUnlockRoom: (roomId) => {
@@ -81,12 +83,32 @@ export default class IsoHospitalHud extends Phaser.Scene {
       onHide: () => this.status.setVisible(true),
       notify: (text) => this.world().notify(text),
     });
-    this.addButton(1180, 460, 180, 'Магазин', () => this.toggleShop(), 0xc9622f, 0xe07a45);
+    this.addButton(1180, 358, 176, 'Магазин', () => this.toggleShop(), 0xc9622f, 0xe07a45);
+    this.addButton(1180, 420, 176, 'Гардероб', () => this.world().openWardrobe(), 0x7b5bb8, 0x9273cf);
+    this.settingsButton = this.addButton(1180, 482, 176, 'Настройки', () => this.toggleSettings(), 0x5b7f8c, 0x729aa8);
     this.daySummary = new DaySummary(this, {
       onClose: () => {
         this.daySummary.hide();
         this.status.setVisible(true);
       },
+    });
+
+    this.settingsPanel = new SettingsPanel(this, {
+      getSettings: () => this.world().settings,
+      onChange: (next) => this.applySettings(next),
+      onRestartTutorial: () => this.restartOnboarding(),
+      onReset: () => this.world().resetHospital(),
+      onClose: () => {},
+    });
+    this.onboarding = new Onboarding({
+      bus: this.world().bus,
+      settings: this.world().settings,
+      onChange: (state) => this.saveOnboarding(state),
+    });
+    this.onboardingOverlay = new OnboardingOverlay(this, {
+      onboarding: this.onboarding,
+      getTarget: (step) => this.onboardingTarget(step),
+      onSkip: () => this.onboarding.skip(),
     });
 
     const inBuild = () => this.state && this.state.build.active;
@@ -123,6 +145,9 @@ export default class IsoHospitalHud extends Phaser.Scene {
     this.staffPanel.hide();
     this.questPanel.hide();
     this.shopPanel.hide();
+    if (this.settingsPanel) {
+      this.settingsPanel.hide();
+    }
     if (this.state && this.state.build.active) {
       this.world().build.setActive(false);
     }
@@ -178,30 +203,22 @@ export default class IsoHospitalHud extends Phaser.Scene {
   }
 
   /** @param {boolean} [panelOnly] кнопка живёт только когда открыта панель. */
-  addButton(x, y, width, label, onClick, color, hoverColor, shown = null, inPanel = false, fontSize = 20) {
-    const height = 46;
+  addButton(x, y, width, label, onClick, color, hoverColor, shown = null, inPanel = false, fontSize = 18) {
+    const height = 56;
     const guard = () => {
       if (!shown || shown()) {
         onClick();
       }
     };
-    const container = createButton(this, x, y, label, guard, { width, height, fontSize, color, hoverColor, depth: 11 });
-    const entry = { container, shown, inPanel, label: container.list[1] };
+    const container = uiButton(this, x, y, label, guard, {
+      width, height, fontSize, color, hoverColor, depth: 11,
+    });
+    const entry = { container, shown, inPanel, label: container.label };
     this.buttons.push(entry);
     if (!inPanel) {
       this.rects.push({ x: x - width / 2 - 6, y: y - height / 2 - 6, w: width + 12, h: height + 14 });
     }
     return entry;
-  }
-
-  onReset() {
-    const now = this.time.now;
-    if (this.resetArmedUntil > now) {
-      this.world().resetHospital();
-      return;
-    }
-    this.resetArmedUntil = now + 3000;
-    this.world().notify('Нажмите «Сброс» ещё раз: вернуть больницу в исходный вид');
   }
 
   /** Лежит ли указатель на элементе HUD (тогда он не двигает камеру и персонажа). */
@@ -216,6 +233,9 @@ export default class IsoHospitalHud extends Phaser.Scene {
       return true;
     }
     if (this.daySummary && this.daySummary.visible) {
+      return true;
+    }
+    if (this.settingsPanel && this.settingsPanel.visible) {
       return true;
     }
     if (this.roomDialogOpen) {
@@ -252,18 +272,28 @@ export default class IsoHospitalHud extends Phaser.Scene {
 
     this.status.update(state);
     this.message.setText(state.message);
+    // Под карточкой обучения сообщение уезжает ниже, чтобы строки не накладывались.
+    this.message.setY(this.onboardingOverlay.root.visible ? 226 : 108);
     this.buildPanel.update(b, state.level || 1);
     this.hint.setVisible(b.active).setText(b.active ? this.buildPanel.hintFor(b) : '');
 
     this.buildToggle.label.setText(b.active ? 'Готово (B)' : 'Строить (B)');
     this.sellButton.label.setText(b.tool === 'sell' ? 'Продажа' : 'Продать');
-    this.resetButton.label.setText(this.resetArmedUntil > time ? 'Точно?' : 'Сброс');
+    const paused = typeof this.scene.isPaused === 'function' && this.scene.isPaused('IsoHospitalScene');
+    this.pauseButton.label.setText(paused ? 'Продолжить' : 'Пауза');
     this.staffPanel.update(state.staff, state.coins, state.level || 1);
     this.questButton.label.setText(state.quests && state.quests.claimable ? 'Задания!' : 'Задания');
     this.questPanel.update(state.quests, state.coins, state.crystals || 0);
     this.shopPanel.update(state, state.coins, state.level || 1);
+    if (this.settingsPanel.visible) {
+      this.settingsPanel.refresh();
+    }
+    this.onboardingOverlay.update();
     this.buttons.forEach((entry) => {
       entry.container.setVisible(!entry.shown || entry.shown());
     });
   }
 }
+
+// Настройки, пауза и обучение вынесены в отдельный файл (лимит 300 строк).
+Object.assign(IsoHospitalHud.prototype, hudOverlays);

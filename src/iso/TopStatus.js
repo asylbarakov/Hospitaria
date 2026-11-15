@@ -1,63 +1,36 @@
-// Верхняя строка HUD изометрии (этап 17): монеты, кристаллы, долг, уровень,
-// полоска опыта, часы игрового дня, репутация и техническая строка.
-// Вынесено из IsoHospitalHud, чтобы сцена HUD оставалась короткой.
+// Верхняя строка HUD изометрии (этап 19): PNG-плашка ui_panel, монеты,
+// кристаллы, долг, уровень, опыт, часы дня и репутация. Без код-рисованных рамок.
 
 import { isoKey } from './isoAssets.js';
-
-const FONT = 'Arial, "Segoe UI", sans-serif';
-const STROKE = '#10222e';
-
-function label(scene, x, y, size, color, bold = false) {
-  return scene.add.text(x, y, '', {
-    fontFamily: FONT,
-    fontSize: `${size}px`,
-    fontStyle: bold ? 'bold' : 'normal',
-    color,
-    stroke: STROKE,
-    strokeThickness: 4,
-  }).setDepth(10);
-}
+import { panel, progressBar, text } from '../ui/IsoUi.js';
 
 export default class TopStatus {
   constructor(scene) {
     this.scene = scene;
     this.root = scene.add.container(0, 0).setDepth(10);
 
-    this.coinIcon = scene.add.image(40, 34, isoKey('icons_icon_coin')).setScale(0.26);
-    this.coinText = label(scene, 70, 34, 28, '#fff3b0', true).setOrigin(0, 0.5);
-    this.crystalIcon = scene.add.image(200, 34, isoKey('icons_icon_crystal')).setScale(0.2);
-    this.crystalText = label(scene, 222, 34, 22, '#9fe7ff', true).setOrigin(0, 0.5);
-    this.debtText = label(scene, 330, 34, 18, '#ff8a80', true);
-    this.levelText = label(scene, 16, 64, 18, '#ffffff', true);
-    this.xpText = label(scene, 146, 86, 13, '#dff3ff');
-    this.clockText = label(scene, 16, 102, 17, '#ffe082', true);
-    this.reputationText = label(scene, 16, 126, 15, '#b9f6ca', true);
-    this.info = label(scene, 16, 148, 13, '#dff3ff');
+    const bg = panel(scene, 8, 8, 1064, 74);
+    // Плашка ui_panel декоративна по краям: содержимое живёт в 110..970.
+    this.coinIcon = scene.add.image(120, 45, isoKey('icons_icon_coin')).setScale(0.18);
+    this.coinText = text(scene, 144, 45, '0', { size: 24, bold: true, origin: [0, 0.5] });
+    this.crystalIcon = scene.add.image(238, 45, isoKey('icons_icon_crystal')).setScale(0.15);
+    this.crystalText = text(scene, 260, 45, '0', { size: 20, bold: true, origin: [0, 0.5] });
+    this.debtText = text(scene, 318, 45, '', { size: 16, bold: true, color: '#b5423c', origin: [0, 0.5] });
+    this.levelText = text(scene, 380, 45, 'Ур. 1', { size: 18, bold: true, origin: [0, 0.5] });
+    this.xpText = text(scene, 574, 45, '', { size: 16, origin: [0, 0.5] });
+    this.clockText = text(scene, 660, 45, '', { size: 19, bold: true, color: '#9a5b12', origin: [0, 0.5] });
+    this.reputationText = text(scene, 810, 45, '', { size: 17, bold: true, color: '#276d4d', origin: [0, 0.5] });
+    this.info = text(scene, 905, 45, '', { size: 16, color: '#4d7b8a', origin: [0, 0.5] });
 
-    this.bar = scene.add.graphics().setDepth(10);
+    this.xp = progressBar(scene, 436, 35, 130, 20);
     this.root.add([
-      this.coinIcon, this.coinText, this.crystalIcon, this.crystalText, this.debtText,
-      this.levelText, this.bar, this.xpText, this.clockText, this.reputationText, this.info,
+      bg, this.coinIcon, this.coinText, this.crystalIcon, this.crystalText, this.debtText,
+      this.levelText, this.xp.root, this.xpText, this.clockText, this.reputationText, this.info,
     ]);
   }
 
   setVisible(visible) {
     this.root.setVisible(visible);
-  }
-
-  paintBar(progress) {
-    const g = this.bar;
-    g.clear();
-    g.fillStyle(0x0b2833, 0.9);
-    g.fillRoundedRect(16, 86, 120, 9, 4);
-    if (!progress || !progress.need) {
-      return;
-    }
-    const ratio = Math.max(0, Math.min(1, progress.into / progress.need));
-    if (ratio > 0) {
-      g.fillStyle(0x4fb3a5, 1);
-      g.fillRoundedRect(16, 86, Math.max(9, 120 * ratio), 9, 4);
-    }
   }
 
   update(state) {
@@ -70,10 +43,10 @@ export default class TopStatus {
     const progress = state.levelProgress;
     this.levelText.setText(`Ур. ${level}`);
     this.xpText.setText(progress ? `${progress.into}/${progress.need} XP` : '');
-    this.paintBar(progress);
+    this.xp.setProgress(progress && progress.need ? progress.into / progress.need : 0);
 
     this.clockText.setText(state.economy ? state.economy.label : '');
-    this.reputationText.setText(`Репутация ${state.reputation} · Пациентов ${state.patients}`);
-    this.info.setText(`Зум ${state.zoom.toFixed(2)}  FPS ${state.fps}  Тайл ${state.tile.x}, ${state.tile.y}`);
+    this.reputationText.setText(`Реп. ${state.reputation}`);
+    this.info.setText(`FPS ${state.fps}`);
   }
 }

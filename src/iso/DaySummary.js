@@ -1,8 +1,7 @@
 // «Итоги дня» (этап 17): доходы, расходы, штрафы и кредит доверия.
 // Окно поверх игры, открывается из HUD по событию HospitalEconomy.onDayEnd.
 
-import { createButton } from '../ui/Button.js';
-import { isoKey } from './isoAssets.js';
+import { button as uiButton, plate, text as uiText, windowFrame } from '../ui/IsoUi.js';
 
 const FONT = 'Arial, "Segoe UI", sans-serif';
 
@@ -23,40 +22,40 @@ export default class DaySummary {
     overlay.fillRect(0, 0, 1280, 720);
     this.root.add(overlay);
 
-    const win = scene.add.nineslice(640, 360, isoKey('ui_ui_window'), undefined, 900, 500, 48, 48, 48, 48);
-    this.root.add(win);
+    this.root.add(windowFrame(scene, 640, 360, 900, 500));
 
-    this.title = scene.add.text(640, 160, 'Итоги дня', {
-      fontFamily: FONT, fontSize: '34px', fontStyle: 'bold', color: '#ffffff',
-      stroke: '#0d3b3a', strokeThickness: 4,
-    }).setOrigin(0.5);
+    // Заголовок — тёмная табличка слева в шапке: по центру её перекрывает крест.
+    this.root.add(plate(scene, 380, 168, 320, 56, { tint: 0x123240 }));
+    this.title = uiText(scene, 246, 168, 'Итоги дня', {
+      size: 32, bold: true, color: '#ffffff', origin: [0, 0.5],
+    });
     this.root.add(this.title);
 
-    this.income = this.makeLine(226, '#b9f6ca');
-    this.expenses = this.makeLine(286, '#ffd180');
-    this.penalties = this.makeLine(346, '#ff8a80');
-    this.net = this.makeLine(414, '#ffe082', 30);
-    this.debt = scene.add.text(640, 462, '', {
-      fontFamily: FONT, fontSize: '17px', fontStyle: 'bold', color: '#ff8a80',
-    }).setOrigin(0.5);
+    // Строки начинаются ниже шапки окна, а не на её границе.
+    this.income = this.makeLine(272, '#1d7a4f');
+    this.expenses = this.makeLine(322, '#9a5b12');
+    this.penalties = this.makeLine(372, '#b5423c');
+    this.net = this.makeLine(428, '#1b4b5a', 30);
+    this.debt = uiText(scene, 640, 472, '', {
+      size: 17, bold: true, color: '#b5423c', origin: [0.5, 0.5],
+    });
     this.root.add(this.debt);
 
-    this.footer = scene.add.text(640, 504, '', {
-      fontFamily: FONT, fontSize: '15px', color: '#b9e6df', align: 'center',
-    }).setOrigin(0.5);
+    this.footer = uiText(scene, 640, 512, '', {
+      size: 16, color: '#4d7b8a', origin: [0.5, 0.5], align: 'center',
+    });
     this.root.add(this.footer);
 
-    const button = createButton(scene, 640, 565, 'Продолжить', () => this.close(), {
-      width: 230, height: 48, fontSize: 20, color: 0x3f9b4a, hoverColor: 0x55b963,
+    const button = uiButton(scene, 640, 566, 'Продолжить', () => this.close(), {
+      width: 230, height: 56, fontSize: 20, variant: 'green',
     });
     this.root.add(button);
   }
 
   makeLine(y, color, size = 22) {
-    const text = this.scene.add.text(640, y, '', {
-      fontFamily: FONT, fontSize: `${size}px`, fontStyle: 'bold', color,
-      stroke: '#10222e', strokeThickness: 4,
-    }).setOrigin(0.5);
+    const text = uiText(this.scene, 640, y, '', {
+      size, bold: true, color, origin: [0.5, 0.5],
+    });
     this.root.add(text);
     return text;
   }
