@@ -8,6 +8,7 @@ import { UI_FONT, UI_INK, colorCss } from './uiTheme.js';
 const PLATE_CROP = { x: 100, y: 24, w: 860, h: 114 };
 const PLATE_SIZE = 96;
 const PLATE_RADIUS = 18;
+const PANEL_SOURCE_H = 162;
 
 /** Окно с PNG-шапкой. options: { tint, depth, interactive } */
 export function windowFrame(scene, x, y, width, height, options = {}) {
@@ -22,9 +23,11 @@ export function windowFrame(scene, x, y, width, height, options = {}) {
     fallback.strokeRoundedRect(x - width / 2, y - height / 2, width, height, 26);
     return fallback;
   }
+  // Окно ниже 242 px или уже 200 px уменьшаем равномерно, чтобы углы не наезжали друг на друга.
+  const scale = Math.min(1, height / 242, width / 200);
   const frame = scene.add.nineslice(
-    x, y, uiKey('ui_window'), undefined, width, height, 70, 70, 100, 42,
-  ).setDepth(depth);
+    x, y, uiKey('ui_window'), undefined, width / scale, height / scale, 70, 70, 100, 42,
+  ).setScale(scale).setDepth(depth);
   if (Number.isFinite(tint)) {
     frame.setTint(tint);
   }
@@ -45,13 +48,12 @@ export function panel(scene, x, y, width, height, options = {}) {
     fallback.strokeRoundedRect(x, y, width, height, 24);
     return fallback;
   }
-  // У ui_panel декоративные листья по краям (~95 px). Для маленьких карточек
-  // рамку уменьшаем, иначе nineslice сплющивает центр в минус.
-  const side = Math.min(96, Math.floor(width / 3));
-  const cap = Math.min(28, Math.floor(height / 3));
+  // У ui_panel (1061x162) декоративные листья по краям (~95 px). Рамка масштабируется
+  // равномерно по высоте, растягивается только середина: иначе листья сплющиваются.
+  const scale = Math.min(1, height / PANEL_SOURCE_H);
   const slice = scene.add.nineslice(
-    x, y, uiKey('ui_panel'), undefined, width, height, side, side, cap, cap,
-  ).setOrigin(0, 0).setDepth(depth);
+    x, y, uiKey('ui_panel'), undefined, width / scale, height / scale, 96, 96, 28, 28,
+  ).setOrigin(0, 0).setScale(scale).setDepth(depth);
   if (Number.isFinite(tint)) {
     slice.setTint(tint);
   }

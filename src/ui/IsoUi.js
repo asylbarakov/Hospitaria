@@ -10,6 +10,8 @@ import {
   panel, windowFrame, progressBar, plate, text,
 } from './IsoUiParts.js';
 
+const BUTTON_SOURCE_H = 104;
+
 export const UI_FILES = [
   'ui/ui_window.png', 'ui/ui_panel.png', 'ui/ui_bar.png', 'ui/ui_bar_fill.png',
   'ui/ui_button.png', 'ui/ui_button_hover.png', 'ui/ui_button_down.png',
@@ -105,10 +107,13 @@ export function button(scene, x, y, label, onClick, options = {}) {
 
   ensureUiTextures(scene);
   const container = scene.add.container(x, y).setDepth(depth);
+  // Рамка кнопки масштабируется равномерно по высоте (104 px в PNG), растягивается
+  // только середина по ширине: иначе углы и блики сплющиваются.
+  const sliceScale = height / BUTTON_SOURCE_H;
   const bg = scene.add.nineslice(
     0, 0, stateTexture(scene, active ? 'hover' : 'normal', variant), undefined,
-    width, height, 54, 54, 30, 30,
-  );
+    width / sliceScale, BUTTON_SOURCE_H, 54, 54, 30, 30,
+  ).setScale(sliceScale);
   const caption = scene.add
     .text(0, -1, label, {
       fontFamily: UI_FONT,
