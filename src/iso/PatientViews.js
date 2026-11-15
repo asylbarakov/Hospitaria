@@ -59,7 +59,7 @@ export default class PatientViews {
     const patience = this.scene.add
       .image(-68, BAR_Y, iconKey('icon_patience'))
       .setScale(ICON_SCALE);
-    actor.root.add([frame, fill, patience]);
+    actor.tag.add([frame, fill, patience]);
     this.map.set(agent, {
       actor, frame, fill, patience, low: false,
     });

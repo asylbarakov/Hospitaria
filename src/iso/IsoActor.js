@@ -69,12 +69,15 @@ export default class IsoActor {
       .setOrigin(0.5)
       .setVisible(!!this.name);
 
-    const children = [this.sprite, this.plate];
+    // Спрайт сортируется с миром, а значок и имя живут в отдельном контейнере поверх
+    // табличек над дверями (depth 8000), иначе «Вход» и «Холл» закрывают подписи.
+    const tagChildren = [this.plate];
     if (this.icon) {
-      children.push(this.icon);
+      tagChildren.push(this.icon);
     }
-    children.push(this.label);
-    this.root = this.scene.add.container(0, 0, children);
+    tagChildren.push(this.label);
+    this.root = this.scene.add.container(0, 0, [this.sprite]);
+    this.tag = this.scene.add.container(0, 0, tagChildren).setDepth(ACTOR_VIEW.tagDepth);
     this.drawPlate();
   }
 
@@ -145,12 +148,12 @@ export default class IsoActor {
     }
     if (!this.icon) {
       this.icon = this.scene.add.image(0, ACTOR_VIEW.iconOffsetY, iconKey(this.iconName)).setScale(ACTOR_VIEW.iconScale);
-      this.root.add(this.icon);
+      this.tag.add(this.icon);
     } else {
       this.icon.setTexture(iconKey(this.iconName)).setVisible(true);
     }
-    this.root.bringToTop(this.icon);
-    this.root.bringToTop(this.label);
+    this.tag.bringToTop(this.icon);
+    this.tag.bringToTop(this.label);
     this.drawPlate();
   }
 
@@ -206,6 +209,7 @@ export default class IsoActor {
     this.screen.x = point.x;
     this.screen.y = point.y;
     this.root.setPosition(point.x, point.y - this.bob);
+    this.tag.setPosition(point.x, point.y - this.bob);
     this.shadow.setPosition(point.x, point.y);
 
     this.sprite.setFlipX(this.facing < 0);
@@ -220,6 +224,10 @@ export default class IsoActor {
     if (this.root) {
       this.root.destroy();
       this.root = null;
+    }
+    if (this.tag) {
+      this.tag.destroy();
+      this.tag = null;
     }
     if (this.shadow) {
       this.shadow.destroy();
