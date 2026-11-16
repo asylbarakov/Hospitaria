@@ -23,15 +23,22 @@ export function askName(scene) {
   }
 }
 
-function closeDomInput(scene) {
+function removeDomInput(scene) {
   const input = scene.domInput;
   scene.domInput = null;
   scene.domInputOpen = false;
   if (input && input.parentNode) {
     input.parentNode.removeChild(input);
   }
-  scene.nameText.setVisible(true);
-  updateNameField(scene);
+}
+
+function closeDomInput(scene) {
+  removeDomInput(scene);
+  // Сцена могла уже закрываться (тап «Готово» снимает фокус): тексты тогда уничтожены.
+  if (scene.nameText && scene.nameText.active) {
+    scene.nameText.setVisible(true);
+    updateNameField(scene);
+  }
 }
 
 /** Поле <input> точно поверх нарисованного поля имени (410..870 x 124..186 в координатах игры). */
@@ -82,7 +89,7 @@ function openDomInput(scene) {
     scene.domInputOpen = true;
     scene.nameText.setVisible(false);
     scene.caret.setVisible(false);
-    scene.events.once('shutdown', () => closeDomInput(scene));
+    scene.events.once('shutdown', () => removeDomInput(scene));
     input.focus();
     return true;
   } catch (err) {
