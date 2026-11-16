@@ -69,6 +69,16 @@ export default class OnboardingOverlay {
       return;
     }
     g.setVisible(true);
+    if (target.rect) {
+      // Кнопка HUD: рамка вокруг неё и стрелка слева, чтобы не накрывать соседние кнопки.
+      const { w, h } = target.rect;
+      g.lineStyle(4, 0xffd54f, 0.95);
+      g.strokeRoundedRect(target.x - w / 2 - 4, target.y - h / 2 - 4, w + 8, h + 8, 22);
+      g.fillStyle(0xffd54f, 1);
+      const tip = target.x - w / 2 - 8;
+      g.fillTriangle(tip, target.y, tip - 26, target.y - 15, tip - 26, target.y + 15);
+      return;
+    }
     g.lineStyle(4, 0xffd54f, 0.9);
     g.strokeCircle(target.x, target.y, 34);
     g.lineStyle(2, 0xffffff, 0.6);

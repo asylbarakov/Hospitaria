@@ -18,8 +18,8 @@ export const ACTOR_VIEW = {
   shadowAlpha: 0.28,
   shadowDepth: 1,
   tagDepth: 8500, // значок и имя поверх табличек комнат (8000)
-  nameOffsetY: -124,
-  iconOffsetY: -164,
+  nameOffsetY: -130,
+  iconOffsetY: -174,
   iconScale: 0.3, // иконки 192x192 -> ~58 px
   plateSize: 62,
   plateAlpha: 0.92,

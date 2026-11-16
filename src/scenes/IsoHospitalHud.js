@@ -31,7 +31,7 @@ export default class IsoHospitalHud extends Phaser.Scene {
     this.status = new TopStatus(this);
     this.toast = new Toast(this);
     this.hint = this.add
-      .text(640, PANEL_Y - 22, '', { fontFamily: FONT, fontSize: '22px', fontStyle: 'bold', color: '#ffffff', stroke: '#10222e', strokeThickness: 5 })
+      .text(640, PANEL_Y - 38, '', { fontFamily: FONT, fontSize: '22px', fontStyle: 'bold', color: '#ffffff', stroke: '#10222e', strokeThickness: 5 })
       .setOrigin(0.5).setDepth(10);
 
     this.buildPanel = new BuildPanel(this, {
@@ -45,9 +45,9 @@ export default class IsoHospitalHud extends Phaser.Scene {
         }
       },
     });
-    this.addButton(1180, 48, 176, 'Меню', () => this.world().exitToMenu(), 0x5b7f8c, 0x729aa8);
-    this.pauseButton = this.addButton(1180, 110, 176, 'Пауза', () => this.togglePause(), 0x536b8a, 0x6c86a6);
-    this.buildToggle = this.addButton(1180, 172, 176, 'Строить (B)', () => this.world().toggleBuild(), 0xe08a1e, 0xf2a43f);
+    this.addButton(1180, 44, 180, 'Меню', () => this.world().exitToMenu(), 0x5b7f8c, 0x729aa8);
+    this.pauseButton = this.addButton(1180, 110, 180, 'Пауза', () => this.togglePause(), 0x536b8a, 0x6c86a6);
+    this.buildToggle = this.addButton(1180, 176, 180, 'Строить (B)', () => this.world().toggleBuild(), 0xe08a1e, 0xf2a43f);
     this.staffPanel = new StaffPanel(this, {
       onHire: (roleId) => this.hire(roleId),
       onFire: (id) => {
@@ -58,14 +58,14 @@ export default class IsoHospitalHud extends Phaser.Scene {
       },
       onClose: () => this.staffPanel.hide(),
     });
-    this.staffButton = this.addButton(1180, 234, 176, 'Персонал', () => this.toggleStaff(), 0x2f80c9, 0x4a9be0);
+    this.staffButton = this.addButton(1180, 242, 180, 'Персонал', () => this.toggleStaff(), 0x2f80c9, 0x4a9be0);
     this.questPanel = new QuestPanel(this, {
       onClaim: (category, id) => this.claimQuest(category, id),
       onClose: () => this.questPanel.hide(),
       onShow: () => this.status.setVisible(false),
       onHide: () => this.status.setVisible(true),
     });
-    this.questButton = this.addButton(1180, 296, 176, 'Задания', () => this.toggleQuests(), 0x8d7bb5, 0xa695cc);
+    this.questButton = this.addButton(1180, 308, 180, 'Задания', () => this.toggleQuests(), 0x8d7bb5, 0xa695cc);
     this.shopPanel = new ShopPanel(this, {
       onHire: (roleId) => this.hire(roleId),
       onUnlockRoom: (roomId) => {
@@ -82,9 +82,9 @@ export default class IsoHospitalHud extends Phaser.Scene {
       onHide: () => this.status.setVisible(true),
       notify: (text) => this.world().notify(text),
     });
-    this.addButton(1180, 358, 176, 'Магазин', () => this.toggleShop(), 0xc9622f, 0xe07a45);
-    this.addButton(1180, 420, 176, 'Гардероб', () => this.world().openWardrobe(), 0x7b5bb8, 0x9273cf);
-    this.settingsButton = this.addButton(1180, 482, 176, 'Настройки', () => this.toggleSettings(), 0x5b7f8c, 0x729aa8);
+    this.addButton(1180, 374, 180, 'Магазин', () => this.toggleShop(), 0xc9622f, 0xe07a45);
+    this.addButton(1180, 440, 180, 'Гардероб', () => this.world().openWardrobe(), 0x7b5bb8, 0x9273cf);
+    this.settingsButton = this.addButton(1180, 506, 180, 'Настройки', () => this.toggleSettings(), 0x5b7f8c, 0x729aa8);
     this.daySummary = new DaySummary(this, {
       onClose: () => {
         this.daySummary.hide();
@@ -116,8 +116,8 @@ export default class IsoHospitalHud extends Phaser.Scene {
     this.okButton = this.addButton(1020, PANEL_Y + 115, 150, 'Готово', () => this.world().build.confirm(), 0x3f9b4a, 0x55b963, () => inBuild() && this.state.build.hasTarget, true);
     this.cancelButton = this.addButton(1180, PANEL_Y + 115, 150, 'Отмена', () => this.world().build.cancel(), 0x5b7f8c, 0x729aa8, () => inBuild() && this.state.build.tool !== 'none', true);
 
-    this.addButton(44, PANEL_Y + 90, 56, '◀', () => this.buildPanel.turnPage(-1), 0x5b7f8c, 0x729aa8, inBuild, true, 24);
-    this.addButton(916, PANEL_Y + 90, 56, '▶', () => this.buildPanel.turnPage(1), 0x5b7f8c, 0x729aa8, inBuild, true, 24);
+    this.addButton(62, PANEL_Y + 90, 52, '◀', () => this.buildPanel.turnPage(-1), 0x5b7f8c, 0x729aa8, inBuild, true, 24);
+    this.addButton(936, PANEL_Y + 90, 52, '▶', () => this.buildPanel.turnPage(1), 0x5b7f8c, 0x729aa8, inBuild, true, 24);
   }
 
   world() {
@@ -203,7 +203,7 @@ export default class IsoHospitalHud extends Phaser.Scene {
 
   /** @param {boolean} [panelOnly] кнопка живёт только когда открыта панель. */
   addButton(x, y, width, label, onClick, color, hoverColor, shown = null, inPanel = false, fontSize = 18) {
-    const height = 56;
+    const height = inPanel ? 56 : 64; // вне панели выше: на телефоне экран 1280x720 уменьшается в 1.5-2 раза
     const guard = () => {
       if (!shown || shown()) {
         onClick();

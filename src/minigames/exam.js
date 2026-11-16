@@ -34,17 +34,19 @@ export function createExam(scene, root, ctx) {
   root.add(avatar.container);
 
   const title = scene.add
-    .text(640, 150, 'Осмотр: нажмите на все подсвеченные точки', {
+    .text(900, 300, 'Осмотр: нажмите на все подсвеченные точки', {
       fontFamily: MG_FONT,
       fontSize: '27px',
       fontStyle: 'bold',
       color: '#2f5d6b',
+      align: 'center',
+      wordWrap: { width: 480 },
     })
     .setOrigin(0.5);
   root.add(title);
 
   const counter = scene.add
-    .text(640, 195, `Найдено: 0 из ${POINTS.length}`, {
+    .text(900, 380, `Найдено: 0 из ${POINTS.length}`, {
       fontFamily: MG_FONT,
       fontSize: '20px',
       color: '#5b7f8c',

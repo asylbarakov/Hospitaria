@@ -34,7 +34,7 @@ export default class QuestPanel {
     this.root.add(scene.add.text(96, 100, 'Задания', {
       fontFamily: FONT, fontSize: '32px', fontStyle: 'bold', color: '#ffffff',
     }).setOrigin(0, 0.5));
-    this.root.add(scene.add.text(76, 210, 'Ежедневные, недельные и сюжетные задания', {
+    this.root.add(scene.add.text(76, 214, 'Ежедневные, недельные и сюжетные задания', {
       fontFamily: FONT, fontSize: '16px', color: '#4d7b8a',
     }));
 
@@ -48,8 +48,8 @@ export default class QuestPanel {
     }).setOrigin(0, 0.5);
     this.root.add([this.coinIcon, this.coinText, this.crystalIcon, this.crystalText]);
 
-    const close = uiButton(scene, 1150, 100, 'Закрыть', () => this.hide(), {
-      width: 150, height: 56, fontSize: 18, variant: 'gray',
+    const close = uiButton(scene, 1160, 176, 'Закрыть', () => this.hide(), {
+      width: 130, height: 56, fontSize: 18, variant: 'gray',
     });
     this.root.add(close);
 
@@ -151,7 +151,7 @@ export default class QuestPanel {
     tabs.forEach((tab, index) => {
       const category = this.state[tab.id];
       const active = tab.id === this.tab;
-      const button = uiButton(this.scene, 350 + index * 190, 100, tab.label, () => this.setTab(tab.id), {
+      const button = uiButton(this.scene, 350 + index * 190, 176, tab.label, () => this.setTab(tab.id), {
         width: 174, height: 56, fontSize: 17,
         color: active ? category.color : 0x9fb8c3,
         hoverColor: active ? category.color : 0xb9cbd3,

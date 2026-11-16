@@ -39,7 +39,7 @@ export default class IsoWardrobeScene extends Phaser.Scene {
     this.drawHeader();
     this.drawAccents();
     this.drawCards();
-    uiButton(this, 640, 674, 'Закрыть', () => this.close(), {
+    uiButton(this, 640, 678, 'Закрыть', () => this.close(), {
       width: 240, height: 52, fontSize: 24, color: 0x3f9b4a, hoverColor: 0x55b963,
     });
 
@@ -54,29 +54,29 @@ export default class IsoWardrobeScene extends Phaser.Scene {
     g.fillStyle(0x07161f, 0.74);
     g.fillRect(0, 0, W, H);
     g.fillStyle(0xf4fbfd, 1);
-    g.fillRoundedRect(120, 92, 1040, 548, 26);
+    g.fillRoundedRect(120, 80, 1040, 560, 26);
     g.lineStyle(4, 0x4fb3a5, 1);
-    g.strokeRoundedRect(120, 92, 1040, 548, 26);
+    g.strokeRoundedRect(120, 80, 1040, 560, 26);
   }
 
   drawHeader() {
     this.add
       .text(640, 136, `Гардероб · ${this.player.name || 'Доктор'}`, {
-        fontFamily: FONT, fontSize: '34px', fontStyle: 'bold', color: '#24444f',
+        fontFamily: FONT, fontSize: '32px', fontStyle: 'bold', color: '#24444f',
       })
       .setOrigin(0.5);
-    this.add.image(960, 56, iconKey('icon_coin')).setScale(0.24).setDepth(10);
+    this.add.image(940, 136, iconKey('icon_coin')).setScale(0.24).setDepth(10);
     this.coinText = this.add
-      .text(986, 56, '', { fontFamily: FONT, fontSize: '26px', fontStyle: 'bold', color: '#fff3b0', stroke: '#10222e', strokeThickness: 5 })
+      .text(966, 136, '', { fontFamily: FONT, fontSize: '26px', fontStyle: 'bold', color: '#b07a00' })
       .setOrigin(0, 0.5)
       .setDepth(10);
-    this.add.image(1062, 56, iconKey('icon_crystal')).setScale(0.22).setDepth(10);
+    this.add.image(1050, 136, iconKey('icon_crystal')).setScale(0.22).setDepth(10);
     this.crystalText = this.add
-      .text(1086, 56, '', { fontFamily: FONT, fontSize: '26px', fontStyle: 'bold', color: '#9fe7ff', stroke: '#10222e', strokeThickness: 5 })
+      .text(1074, 136, '', { fontFamily: FONT, fontSize: '26px', fontStyle: 'bold', color: '#1a7aa8' })
       .setOrigin(0, 0.5)
       .setDepth(10);
     this.hintText = this.add
-      .text(640, 626, 'Бесплатные облики и акценты доступны сразу. Платные: нажмите дважды', {
+      .text(640, 620, 'Бесплатные облики и акценты доступны сразу. Платные: нажмите дважды', {
         fontFamily: FONT, fontSize: '17px', color: '#4d7b8a', align: 'center', wordWrap: { width: 940 },
       })
       .setOrigin(0.5);

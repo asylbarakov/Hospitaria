@@ -50,7 +50,7 @@ export default class StaffPanel {
     }).setOrigin(0.5, 0);
     this.root.add(this.empty);
 
-    const close = uiButton(scene, 1150, 100, 'Закрыть', () => this.hide(), {
+    const close = uiButton(scene, 1010, 100, 'Закрыть', () => this.hide(), {
       width: 160, height: 56, fontSize: 18, variant: 'gray',
     });
     this.root.add(close);

@@ -57,6 +57,7 @@ const worldVisuals = {
    * @param {Array<{pos:{x:number,y:number}, box:object}>} actors
    */
   updateWallFade(actors) {
+    this.updateSignFade(actors);
     if (this.wallFadeEnabled === false) {
       return;
     }
@@ -85,6 +86,22 @@ const worldVisuals = {
       const alpha = wall.sprite.alpha + (target - wall.sprite.alpha) * 0.25;
       wall.sprite.setAlpha(Math.abs(alpha - target) < 0.01 ? target : alpha);
     }
+  },
+
+  /** Табличка над дверью бледнеет, когда значок или имя актёра проходят под ней. */
+  updateSignFade(actors) {
+    const list = Array.isArray(actors) ? actors : [];
+    this.signs.forEach(({ holder }) => {
+      let near = false;
+      for (let i = 0; i < list.length && !near; i += 1) {
+        const a = list[i].screen || tileToScreen(list[i].pos.x, list[i].pos.y);
+        // Подпись актёра занимает примерно x±60 и от 70 до 215 px над ногами.
+        near = Math.abs(a.x - holder.x) < 110 && holder.y > a.y - 215 - 40 && holder.y < a.y - 70 + 40;
+      }
+      const target = near ? 0.25 : 1;
+      const alpha = holder.alpha + (target - holder.alpha) * 0.3;
+      holder.setAlpha(Math.abs(alpha - target) < 0.02 ? target : alpha);
+    });
   },
 
   /** Стена слишком далеко от точки в тайлах, чтобы закрывать актёра. */

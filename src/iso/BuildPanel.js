@@ -8,7 +8,7 @@ import { panel, plate } from '../ui/IsoUi.js';
 const FONT = 'Arial, "Segoe UI", sans-serif';
 export const PANEL_Y = 540;
 const PER_PAGE = 7;
-const CARD_W = 112;
+const CARD_W = 104;
 const CARD_H = 128;
 
 export default class BuildPanel {
@@ -45,7 +45,7 @@ export default class BuildPanel {
     this.cards.forEach((card) => card.destroy());
     this.cards = [];
     this.pageItems().forEach((def, index) => {
-      const card = this.scene.add.container(120 + index * 120, PANEL_Y + 78).setDepth(11);
+      const card = this.scene.add.container(160 + index * 112, PANEL_Y + 78).setDepth(11);
       const bg = plate(this.scene, 0, 0, CARD_W, CARD_H, { tint: 0x1c3a4a });
       card.bg = bg;
       card.type = def.type;

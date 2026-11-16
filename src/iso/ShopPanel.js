@@ -55,7 +55,7 @@ export default class ShopPanel {
     this.root.add(scene.add.text(112, 100, 'Магазин', {
       fontFamily: FONT, fontSize: '32px', fontStyle: 'bold', color: '#ffffff',
     }).setOrigin(0, 0.5));
-    this.root.add(scene.add.text(76, 210, 'Мебель, персонал и украшения. Новые позиции открываются с уровнем.', {
+    this.root.add(scene.add.text(76, 214, 'Мебель, персонал и украшения. Новые позиции открываются с уровнем.', {
       fontFamily: FONT, fontSize: '16px', color: '#4d7b8a',
     }));
 
@@ -76,8 +76,8 @@ export default class ShopPanel {
     });
     this.root.add([this.prev, this.next]);
 
-    const close = uiButton(scene, 1150, 100, 'Закрыть', () => this.hide(), {
-      width: 160, height: 56, fontSize: 18, variant: 'gray',
+    const close = uiButton(scene, 1160, 176, 'Закрыть', () => this.hide(), {
+      width: 130, height: 56, fontSize: 18, variant: 'gray',
     });
     this.root.add(close);
   }
@@ -184,7 +184,7 @@ export default class ShopPanel {
     this.tabsRoot.removeAll(true);
     TABS.forEach((tab, index) => {
       const active = tab.id === this.tab;
-      const button = uiButton(this.scene, 380 + index * 196, 100, tab.title, () => this.setTab(tab.id), {
+      const button = uiButton(this.scene, 380 + index * 196, 176, tab.title, () => this.setTab(tab.id), {
         width: 186, height: 56, fontSize: 17,
         variant: active ? tab.variant : 'gray',
         active,

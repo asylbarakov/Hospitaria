@@ -75,7 +75,10 @@ const hudOverlays = {
     }
     if (step.target.kind === 'hud') {
       const entry = step.id === 'staff' ? this.staffButton : this.buildToggle;
-      return { x: entry.container.x, y: entry.container.y };
+      return { x: entry.container.x, y: entry.container.y, rect: { w: 180, h: 64 } };
+    }
+    if (step.target.kind === 'screen') {
+      return null; // окно диагноза само привлекает внимание, кольцо в пустоте не нужно
     }
     return { x: step.target.x || 640, y: step.target.y || 360 };
   },
