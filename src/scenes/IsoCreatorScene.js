@@ -7,13 +7,15 @@ import {
 } from './creatorName.js';
 import {
   ACCENTS, DEFAULT_PLAYER, PLAYER_ROLES, PLAYER_SKINS,
-  accentById, normalizePlayer, skinById,
+  accentById, accentCost, normalizePlayer, skinById, skinCost,
 } from '../data/playerSkins.js';
 
 const W = 1280;
 const H = 720;
 const FONT = 'Arial, "Segoe UI", sans-serif';
-const FREE_SKINS = PLAYER_SKINS.filter((skin) => skin.price === 0);
+// Бесплатные: без цены в монетах и в кристаллах (остальные покупаются в гардеробе).
+const FREE_SKINS = PLAYER_SKINS.filter((skin) => skinCost(skin) === 0);
+const FREE_ACCENTS = ACCENTS.filter((accent) => accentCost(accent) === 0);
 
 // Этап 12: создание персонажа для изометрии. Отдельная сцена, чтобы не менять
 // создание персонажа v0.1 (CreatorScene). Облик выбирается из готовых PNG.
@@ -162,7 +164,7 @@ export default class IsoCreatorScene extends Phaser.Scene {
       .text(980, 232, 'Облик (бесплатно)', { fontFamily: FONT, fontSize: '24px', fontStyle: 'bold', color: '#2f5d6b' })
       .setOrigin(0.5);
     FREE_SKINS.forEach((skin, index) => {
-      const x = 900 + index * 160;
+      const x = 980 + (index - (FREE_SKINS.length - 1) / 2) * 160;
       const y = 352;
       const card = this.add.container(x, y).setDepth(10);
       const bg = this.add.graphics();
@@ -199,8 +201,8 @@ export default class IsoCreatorScene extends Phaser.Scene {
     this.add
       .text(980, 492, 'Акцент роли', { fontFamily: FONT, fontSize: '22px', fontStyle: 'bold', color: '#2f5d6b' })
       .setOrigin(0.5);
-    ACCENTS.forEach((accent, index) => {
-      const x = 860 + index * 60;
+    FREE_ACCENTS.forEach((accent, index) => {
+      const x = 980 + (index - (FREE_ACCENTS.length - 1) / 2) * 60;
       const dot = this.add.circle(x, 532, 20, accent.color).setDepth(10);
       dot.setInteractive({ useHandCursor: true });
       dot.on('pointerup', () => {

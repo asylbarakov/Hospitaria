@@ -7,6 +7,7 @@ import DaySummary from '../iso/DaySummary.js';
 import BuildPanel, { PANEL_Y } from '../iso/BuildPanel.js';
 import openRoomUnlockDialog from '../iso/RoomUnlockDialog.js';
 import SettingsPanel from '../iso/SettingsPanel.js';
+import Toast from '../iso/Toast.js';
 import OnboardingOverlay from '../iso/OnboardingOverlay.js';
 import Onboarding from '../systems/Onboarding.js';
 import hudOverlays from '../iso/hudOverlays.js';
@@ -28,9 +29,7 @@ export default class IsoHospitalHud extends Phaser.Scene {
     this.roomDialog = null;
 
     this.status = new TopStatus(this);
-    this.message = this.add
-      .text(640, 108, '', { fontFamily: FONT, fontSize: '24px', fontStyle: 'bold', color: '#ffffff', stroke: '#b3261e', strokeThickness: 6 })
-      .setOrigin(0.5).setDepth(12);
+    this.toast = new Toast(this);
     this.hint = this.add
       .text(640, PANEL_Y - 22, '', { fontFamily: FONT, fontSize: '22px', fontStyle: 'bold', color: '#ffffff', stroke: '#10222e', strokeThickness: 5 })
       .setOrigin(0.5).setDepth(10);
@@ -271,9 +270,8 @@ export default class IsoHospitalHud extends Phaser.Scene {
     const b = state.build;
 
     this.status.update(state);
-    this.message.setText(state.message);
+    this.toast.set(state.message, this.onboardingOverlay.root.visible ? 226 : 108);
     // Под карточкой обучения сообщение уезжает ниже, чтобы строки не накладывались.
-    this.message.setY(this.onboardingOverlay.root.visible ? 226 : 108);
     this.buildPanel.update(b, state.level || 1);
     this.hint.setVisible(b.active).setText(b.active ? this.buildPanel.hintFor(b) : '');
 

@@ -76,13 +76,13 @@ export default class StaffPanel {
     card.add(this.scene.add.text(-48, -38, `Зарплата ${role.salary}/день`, {
       fontFamily: FONT, fontSize: '16px', color: '#b9e6df',
     }));
-    card.add(this.scene.add.text(-CARD_W / 2 + 10, 8, role.hint, {
+    card.add(this.scene.add.text(-CARD_W / 2 + 10, 4, role.hint, {
       fontFamily: FONT, fontSize: '16px', color: '#dff3ff', wordWrap: { width: CARD_W - 20 },
     }));
 
-    card.hireButton = uiButton(this.scene, 0, CARD_H / 2 - 25, 'Нанять', () => {
+    card.hireButton = uiButton(this.scene, 0, CARD_H / 2 - 22, 'Нанять', () => {
       this.hooks.onHire(role.id);
-    }, { width: 150, height: 44, fontSize: 16, variant: 'green' });
+    }, { width: 150, height: 40, fontSize: 16, variant: 'green' });
     card.add(card.hireButton);
     // Бейдж уровня слева сверху: справа он наезжает на длинные названия ролей.
     card.lock = this.scene.add.text(-CARD_W / 2 + 10, -CARD_H / 2 + 8, `Ур. ${card.unlockLevel}`, {

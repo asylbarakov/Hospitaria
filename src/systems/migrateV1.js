@@ -24,6 +24,17 @@ export function totalExperience(level, xp) {
   return total;
 }
 
+/** Роль v0.1 (doctor/nurse) переходит в роль и облик v0.2; акцент по умолчанию «Мята». */
+function legacyPlayer(player) {
+  const nurse = player.role === 'nurse';
+  return normalizePlayer({
+    name: player.name,
+    role: nurse ? 'nurse' : 'doctor',
+    skin: nurse ? 'staff_nurse' : 'staff_doctor',
+    accent: 'mint',
+  });
+}
+
 /**
  * @param {object} legacy сохранение v0.1 (любой версии формы)
  * @returns {{coins:number, player:object, stats:object}|null} null, если игрока ещё нет
@@ -46,7 +57,7 @@ export function migrateV1(legacy) {
     : 50;
   return {
     coins: count(legacy.coins) + refunded,
-    player: normalizePlayer({ name: legacy.player.name }),
+    player: legacyPlayer(legacy.player),
     stats: {
       reputation,
       experience: totalExperience(level, legacy.xp),

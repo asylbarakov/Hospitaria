@@ -231,11 +231,11 @@ export default class ShopPanel {
     if (kind === 'staff') {
       hint = item.hint;
     } else if (kind === 'room') {
-      hint = open ? 'Уже открыт и принимает пациентов' : 'Открыть вход и пустить пациентов';
+      hint = open ? 'Уже открыт и принимает пациентов' : 'Откроет вход пациентам';
     } else if (locked) {
       hint = `Откроется на уровне ${unlock}`;
     }
-    card.add(this.scene.add.text(-CARD_W / 2 + 10, 18, hint, {
+    card.add(this.scene.add.text(-CARD_W / 2 + 10, 12, hint, {
       fontFamily: FONT, fontSize: '16px', color: '#dff3ff',
       lineSpacing: 2,
       wordWrap: { width: CARD_W - 20 },
@@ -248,10 +248,10 @@ export default class ShopPanel {
     const label = locked && kind !== 'room' ? `С ур. ${unlock}` : action;
     const baseColor = kind === 'staff' ? 0x3f9b4a : (kind === 'room' ? 0xc9622f : 0x2f80c9);
     const hover = kind === 'staff' ? 0x55b963 : (kind === 'room' ? 0xe07a45 : 0x4a9be0);
-    const button = uiButton(this.scene, 0, CARD_H / 2 - 21, label, () => {
+    const button = uiButton(this.scene, 0, CARD_H / 2 - 20, label, () => {
       this.choose(item, kind, locked, unlock);
     }, {
-      width: 170, height: 40, fontSize: 16,
+      width: 170, height: 36, fontSize: 16,
       color: open ? 0x6b7f86 : baseColor,
       hoverColor: open ? 0x6b7f86 : hover,
       disabled: locked && kind !== 'room',

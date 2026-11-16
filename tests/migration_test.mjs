@@ -46,6 +46,11 @@ const forms = {
   },
 };
 
+const nurse = migrateV1({ ...forms.fresh, player: { name: 'Аня', role: 'nurse' } });
+assert.equal(nurse.player.role, 'nurse');
+assert.equal(nurse.player.skin, 'staff_nurse');
+assert.equal(migrateV1({ ...forms.fresh, player: { name: 'Б', role: 'doctor' } }).player.skin, 'staff_doctor');
+
 const fresh = migrateV1(forms.fresh);
 assert.equal(fresh.coins, 0);
 assert.equal(fresh.stats.experience, 0);

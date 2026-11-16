@@ -48,7 +48,10 @@ export default class PatientDialog {
 
     this.scene.modalOpen = true;
     this.agent = agent;
-    this.root = openDialog(this.scene, {
+    // Окно рисуется в HUD-сцене: у мировой сцены камера прокручена и увеличена,
+    // и модалка 1280x720 уезжает за экран.
+    const uiScene = this.scene.hud && this.scene.hud.add ? this.scene.hud : this.scene;
+    this.root = openDialog(uiScene, {
       title: `Пациент ${agent.name}`,
       subtitle: 'Выберите диагноз',
       text,
