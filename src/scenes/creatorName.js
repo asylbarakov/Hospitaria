@@ -104,19 +104,44 @@ export function randomName(scene) {
   updateNameField(scene);
 }
 
+/** Позиция и видимость каретки. Текст имени при этом не перерисовывается. */
+function updateCaret(scene) {
+  const caret = scene.caret;
+  if (!caret || caret.active === false) {
+    return;
+  }
+  if (scene.domInputOpen || scene.nameValue.length === 0) {
+    caret.setVisible(false);
+    return;
+  }
+  caret.setPosition(W / 2 + scene.nameText.width / 2 + 4, 155);
+  caret.setVisible(scene.caretOn);
+}
+
+/** Мигание каретки по таймеру: переключаем только видимость. */
+export function blinkCaret(scene) {
+  scene.caretOn = !scene.caretOn;
+  updateCaret(scene);
+}
+
 export function updateNameField(scene) {
-  if (scene.domInputOpen) {
+  const label = scene.nameText;
+  if (scene.domInputOpen || !label || label.active === false) {
     return;
   }
   const hasName = scene.nameValue.length > 0;
-  scene.nameText.setText(hasName ? scene.nameValue : 'Имя персонажа');
-  scene.nameText.setColor(hasName ? '#24444f' : '#8aa6b0');
-  if (hasName) {
-    scene.caret.setPosition(W / 2 + scene.nameText.width / 2 + 4, 155);
-    scene.caret.setVisible(scene.caretOn);
-  } else {
-    scene.caret.setVisible(false);
+  const nextText = hasName ? scene.nameValue : 'Имя персонажа';
+  const nextColor = hasName ? '#24444f' : '#8aa6b0';
+  // Каждый setText/setColor заново рисует canvas текста и заливает его в WebGL.
+  // Делаем это только при реальном изменении: иначе мигание каретки по таймеру
+  // перезагружало текстуру имени дважды в секунду.
+  if (label.text !== nextText) {
+    label.setText(nextText);
   }
+  if (!label.style || label.style.color !== nextColor) {
+    label.setColor(nextColor);
+  }
+  updateCaret(scene);
 }
 
 export function bindKeyboard(scene) {

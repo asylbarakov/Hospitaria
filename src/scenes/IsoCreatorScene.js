@@ -3,7 +3,7 @@ import { UI_FILES } from '../ui/IsoUi.js';
 import { queueIsoAssets, isoKey } from '../iso/isoAssets.js';
 import { loadIsoSave, saveIso } from '../systems/IsoSave.js';
 import {
-  askName, bindKeyboard, randomName, updateNameField,
+  askName, bindKeyboard, blinkCaret, randomName,
 } from './creatorName.js';
 import {
   ACCENTS, DEFAULT_PLAYER, PLAYER_ROLES, PLAYER_SKINS,
@@ -13,6 +13,8 @@ import {
 const W = 1280;
 const H = 720;
 const FONT = 'Arial, "Segoe UI", sans-serif';
+// Период мигания каретки в поле имени (мс).
+const CARET_BLINK_MS = 520;
 // Бесплатные: без цены в монетах и в кристаллах (остальные покупаются в гардеробе).
 const FREE_SKINS = PLAYER_SKINS.filter((skin) => skinCost(skin) === 0);
 const FREE_ACCENTS = ACCENTS.filter((accent) => accentCost(accent) === 0);
@@ -124,12 +126,11 @@ export default class IsoCreatorScene extends Phaser.Scene {
       width: 170, height: 52, fontSize: 20, color: 0x2f80c9, hoverColor: 0x4a9be0, depth: 20,
     });
     this.time.addEvent({
-      delay: 520,
+      delay: CARET_BLINK_MS,
       loop: true,
-      callback: () => {
-        this.caretOn = !this.caretOn;
-        updateNameField(this);
-      },
+      // Переключаем только видимость каретки: перерисовка текста имени на каждом
+      // тике заново заливала его текстуру в WebGL.
+      callback: () => blinkCaret(this),
     });
   }
 
