@@ -35,6 +35,7 @@ function makeConfig(extra) {
   backgroundColor: '#10222e',
   banner: false,
   disableContextMenu: true,
+  loader: { maxParallelDownloads: 6, timeout: 30000 }, // телефон: меньше обрывов при первой загрузке
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,

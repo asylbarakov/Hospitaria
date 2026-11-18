@@ -18,9 +18,49 @@ export function uiKey(name) {
   return isoKey(`ui_${name}`);
 }
 
+const MAX_RETRIES = 3;
+
+/**
+ * Телефон при первом запуске качает ~60 PNG с нуля, и часть запросов может оборваться
+ * (на второй запуск всё берётся из кэша, поэтому «после обновления работает»).
+ * Упавший файл ставим в очередь заново до MAX_RETRIES раз.
+ */
+function retryFailedLoads(scene) {
+  const { load } = scene;
+  if (load.retryInstalled) {
+    return;
+  }
+  load.retryInstalled = true;
+  const attempts = {};
+  load.on('loaderror', (file) => {
+    const id = `${file.type}:${file.key}`;
+    attempts[id] = (attempts[id] || 0) + 1;
+    if (attempts[id] > MAX_RETRIES || !file.url || (file.type !== 'image' && file.type !== 'json')) {
+      return;
+    }
+    const url = typeof file.url === 'string' ? file.url : file.src;
+    const add = () => {
+      if (!scene.sys || !scene.sys.isActive() || load.keyExists(file)) {
+        return;
+      }
+      if (file.type === 'image') {
+        load.image(file.key, url);
+      } else {
+        load.json(file.key, url);
+      }
+      if (!load.isLoading()) {
+        load.start();
+      }
+    };
+    // Файл добавляем сразу, пока загрузчик ещё работает: иначе сцена стартует без него.
+    add();
+  });
+}
+
 /** Вызывать в preload() сцены: ставит в очередь anchors.json, затем все спрайты из него. */
 export function queueIsoAssets(scene, extraFiles = []) {
   const { load } = scene;
+  retryFailedLoads(scene);
   if (!scene.cache.json.exists(ANCHORS_KEY)) {
     load.json(ANCHORS_KEY, `${BASE}anchors.json`);
   }
@@ -65,6 +105,7 @@ export function wallKey(name) {
 
 /** Вызывать в preload(): PNG стен и walls.json (размеры и якоря). */
 export function queueWallAssets(scene) {
+  retryFailedLoads(scene);
   if (!scene.cache.json.exists(WALLS_KEY)) {
     scene.load.json(WALLS_KEY, `${BASE}walls/walls.json`);
   }
