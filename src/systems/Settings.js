@@ -7,6 +7,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   onboardingStep: 0,
   grid: false,
   simpleGraphics: false,
+  hudCollapsed: false, // боковые кнопки свёрнуты
 });
 
 function bool(value, fallback = false) {
@@ -33,6 +34,7 @@ export function normalizeSettings(raw) {
     onboardingStep: Math.floor(clamp(data.onboardingStep, 0, 20, 0)),
     grid: bool(data.grid, DEFAULT_SETTINGS.grid),
     simpleGraphics: bool(data.simpleGraphics, DEFAULT_SETTINGS.simpleGraphics),
+    hudCollapsed: bool(data.hudCollapsed, DEFAULT_SETTINGS.hudCollapsed),
   };
 }
 

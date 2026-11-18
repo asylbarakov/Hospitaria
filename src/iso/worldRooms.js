@@ -87,7 +87,7 @@ const worldRooms = {
     return null;
   },
 
-  /** Затемняет комнату, запирает двери и показывает замок на табличке. */
+  /** Затемняет комнату, запирает двери и показывает замок в центре комнаты. */
   applyRoomLocks() {
     if (!this.roomLocks) {
       return;
@@ -99,9 +99,9 @@ const worldRooms = {
       this.closedRooms.add(room.id);
       this.doorTilesOf(room).forEach((tile) => this.grid.setBlocked(tile.x, tile.y, 1));
       this.tintRoom(room, true);
-      const sign = this.signs.find((entry) => entry.roomId === room.id);
-      if (sign && sign.lock) {
-        sign.lock.setVisible(true);
+      const badge = this.lockBadges.get(room.id);
+      if (badge) {
+        badge.setVisible(true);
       }
     });
   },
@@ -144,9 +144,9 @@ const worldRooms = {
     this.closedRooms.delete(roomId);
     this.doorTilesOf(room).forEach((tile) => this.grid.setBlocked(tile.x, tile.y, 0));
     this.tintRoom(room, false);
-    const sign = this.signs.find((entry) => entry.roomId === roomId);
-    if (sign && sign.lock) {
-      sign.lock.setVisible(false);
+    const badge = this.lockBadges.get(roomId);
+    if (badge) {
+      badge.setVisible(false);
     }
     this.placementCache = { key: '', issue: null };
     this.sorter.sort();

@@ -1,55 +1,46 @@
 import { isBehind } from './IsoDepth.js';
-import { anchorOf, isoKey } from './isoAssets.js';
 import { tileToScreen } from './IsoMath.js';
 
-// Таблички над дверями и прозрачность стен перед актёрами. Методы подмешиваются в IsoWorld.
+// Замки закрытых кабинетов и прозрачность стен перед актёрами. Методы подмешиваются в IsoWorld.
 
-const FONT = 'Arial, "Segoe UI", sans-serif';
 const FADE_ALPHA = 0.32;
 const FADE_RADIUS = 3; // тайлов: дальше стены не проверяем
 const BODY_OFFSET = 70; // px выше ног: примерная середина тела
-const SIGN_SCALE = 0.7;
+const LOCK_LIFT = 70; // px над полом: замок парит в центре закрытого кабинета
 
+// Табличек над дверями больше нет: название кабинета показывает верхняя панель,
+// а закрытый кабинет помечен замком в центре комнаты.
 const worldVisuals = {
-  buildSigns(signs) {
-    this.signSprites = [];
-    signs.forEach((sign) => {
-      const p = tileToScreen(sign.x, sign.y);
-      const board = this.scene.add.image(0, 0, isoKey('sign_blank')).setOrigin(0.5, anchorOf(this.scene, 'sign_blank'));
-      board.setScale(SIGN_SCALE);
-      const label = this.scene.add
-        .text(0, -board.displayHeight * 0.33, sign.text, {
-          fontFamily: FONT, fontSize: '20px', fontStyle: 'bold', color: '#ffffff', stroke: '#0f6b57', strokeThickness: 3,
-        })
-        .setOrigin(0.5);
-      const maxWidth = board.displayWidth * 0.66;
-      if (label.width > maxWidth) {
-        label.setScale(maxWidth / label.width);
+  /** По одному скрытому замку на кабинет; applyRoomLocks показывает замки закрытых. */
+  buildLockBadges() {
+    (this.layout.ROOMS || []).forEach((room) => {
+      if (room.kind !== 'room') {
+        return;
       }
-      const lock = this.makeLockIcon(board);
-      const holder = this.scene.add.container(p.x, p.y - sign.lift, [board, label, lock]);
-      holder.setDepth(8000);
-      this.signSprites.push(holder);
-      this.signs.push({ roomId: sign.id, holder, lock });
+      const p = tileToScreen(room.x + room.w / 2, room.y + room.h / 2);
+      const badge = this.makeLockBadge();
+      badge.setPosition(p.x, p.y - LOCK_LIFT).setDepth(8000).setVisible(false);
+      this.lockBadges.set(room.id, badge);
     });
   },
 
-  /** Маленький нарисованный замок на табличке закрытого кабинета. */
-  makeLockIcon(board) {
+  /** Золотой замок на тёмной круглой плашке (рисуется кодом, без картинок). */
+  makeLockBadge() {
     const g = this.scene.add.graphics();
-    const x = board.displayWidth * 0.34;
-    const y = -board.displayHeight * 0.05;
-    g.fillStyle(0x2b1b12, 0.35);
-    g.fillRoundedRect(x - 10, y - 7, 24, 20, 5);
-    g.fillStyle(0xf2c14e, 1);
-    g.fillRoundedRect(x - 12, y - 8, 24, 20, 5);
-    g.lineStyle(4, 0xf2c14e, 1);
+    g.fillStyle(0x10222e, 0.55);
+    g.fillCircle(0, 0, 34);
+    g.lineStyle(3, 0xf2c14e, 0.9);
+    g.strokeCircle(0, 0, 34);
+    g.lineStyle(6, 0xf2c14e, 1);
     g.beginPath();
-    g.arc(x, y - 8, 8, Math.PI, 0, false);
+    g.arc(0, -8, 11, Math.PI, 0, false);
     g.strokePath();
+    g.fillStyle(0xf2c14e, 1);
+    g.fillRoundedRect(-16, -8, 32, 26, 6);
     g.fillStyle(0x6b4a12, 1);
-    g.fillCircle(x, y + 1, 2.5);
-    return g.setVisible(false);
+    g.fillCircle(0, 3, 4);
+    g.fillRect(-1.5, 3, 3, 8);
+    return g;
   },
 
   /**
@@ -57,7 +48,6 @@ const worldVisuals = {
    * @param {Array<{pos:{x:number,y:number}, box:object}>} actors
    */
   updateWallFade(actors) {
-    this.updateSignFade(actors);
     if (this.wallFadeEnabled === false) {
       return;
     }
@@ -86,22 +76,6 @@ const worldVisuals = {
       const alpha = wall.sprite.alpha + (target - wall.sprite.alpha) * 0.25;
       wall.sprite.setAlpha(Math.abs(alpha - target) < 0.01 ? target : alpha);
     }
-  },
-
-  /** Табличка над дверью бледнеет, когда значок или имя актёра проходят под ней. */
-  updateSignFade(actors) {
-    const list = Array.isArray(actors) ? actors : [];
-    this.signs.forEach(({ holder }) => {
-      let near = false;
-      for (let i = 0; i < list.length && !near; i += 1) {
-        const a = list[i].screen || tileToScreen(list[i].pos.x, list[i].pos.y);
-        // Подпись актёра занимает примерно x±60 и от 70 до 215 px над ногами.
-        near = Math.abs(a.x - holder.x) < 110 && holder.y > a.y - 215 - 40 && holder.y < a.y - 70 + 40;
-      }
-      const target = near ? 0.25 : 1;
-      const alpha = holder.alpha + (target - holder.alpha) * 0.3;
-      holder.setAlpha(Math.abs(alpha - target) < 0.02 ? target : alpha);
-    });
   },
 
   /** Стена слишком далеко от точки в тайлах, чтобы закрывать актёра. */

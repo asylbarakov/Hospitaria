@@ -118,6 +118,7 @@ export default class IsoHospitalHud extends Phaser.Scene {
 
     this.addButton(62, PANEL_Y + 90, 52, '◀', () => this.buildPanel.turnPage(-1), 0x5b7f8c, 0x729aa8, inBuild, true, 24);
     this.addButton(936, PANEL_Y + 90, 52, '▶', () => this.buildPanel.turnPage(1), 0x5b7f8c, 0x729aa8, inBuild, true, 24);
+    this.buildDock();
   }
 
   world() {
@@ -243,7 +244,7 @@ export default class IsoHospitalHud extends Phaser.Scene {
     if (this.state && this.state.build.active && pointer.y >= PANEL_Y) {
       return true;
     }
-    return this.rects.some((r) => pointer.x >= r.x && pointer.x <= r.x + r.w && pointer.y >= r.y && pointer.y <= r.y + r.h);
+    return this.dock.isOver(pointer, this.rects);
   }
 
   hintFor(b) {
@@ -288,7 +289,7 @@ export default class IsoHospitalHud extends Phaser.Scene {
     }
     this.onboardingOverlay.update();
     this.buttons.forEach((entry) => {
-      entry.container.setVisible(!entry.shown || entry.shown());
+      entry.container.setVisible((!entry.shown || entry.shown()) && (!entry.side || this.dock.buttonsShown()));
     });
   }
 }

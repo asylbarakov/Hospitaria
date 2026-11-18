@@ -25,9 +25,9 @@ const sceneMethods = {
     return tile ? this.world.roomForTile(tile.x, tile.y) : null;
   },
 
-  /** Открывает кабинет: списывает валюты, снимает замок и сообщает заданиям. */
-  unlockRoom(roomId) {
-    const result = this.roomLocks.unlock(roomId, this.stats);
+  /** Открывает кабинет: списывает выбранную валюту, снимает замок и сообщает заданиям. */
+  unlockRoom(roomId, currency = null) {
+    const result = this.roomLocks.unlock(roomId, this.stats, currency);
     if (!result.ok) {
       return result;
     }

@@ -217,13 +217,13 @@ export default class ShopPanel {
     }));
     const priceLabel = kind === 'staff'
       ? `Найм ${item.price}`
-      : (kind === 'room' ? `${item.coins} монет · ${item.crystals} крист.` : `Цена ${item.price}`);
+      : (kind === 'room' ? `${item.coins} монет` : `Цена ${item.price}`);
     card.add(this.scene.add.text(-40, -32, priceLabel, {
       fontFamily: FONT, fontSize: '16px', fontStyle: 'bold', color: '#ffe082',
     }));
     const second = kind === 'staff'
       ? `Зарплата ${item.salary}/день`
-      : (kind === 'room' ? `Мин. уровень ${item.minLevel}` : (item.group || ''));
+      : (kind === 'room' ? `или ${item.crystals} кристаллов` : (item.group || ''));
     card.add(this.scene.add.text(-40, -10, second, {
       fontFamily: FONT, fontSize: '16px', color: '#b9e6df',
     }));
@@ -231,7 +231,7 @@ export default class ShopPanel {
     if (kind === 'staff') {
       hint = item.hint;
     } else if (kind === 'room') {
-      hint = open ? 'Уже открыт и принимает пациентов' : 'Откроет вход пациентам';
+      hint = open ? 'Уже открыт и принимает пациентов' : `Нужен уровень ${item.minLevel}. Откроет вход пациентам`;
     } else if (locked) {
       hint = `Откроется на уровне ${unlock}`;
     }

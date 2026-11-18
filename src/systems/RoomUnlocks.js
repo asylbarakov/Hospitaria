@@ -58,9 +58,16 @@ export default class RoomUnlocks {
     return isStarterRoom(roomId) || this.rooms.has(roomId);
   }
 
-  /** @returns {{ok:boolean, reason?:string, hint?:string, entry?:object,
-   *   missing?:{coins:number,crystals:number,levels:number}}} */
-  canUnlock(roomId, state = this.state) {
+  /**
+   * Цена кабинета: монеты ИЛИ кристаллы (на выбор игрока), плюс минимальный уровень.
+   * @param {string} roomId
+   * @param {object} [state]
+   * @param {'coins'|'crystals'|null} [currency] null: хватает любой из двух валют
+   * @returns {{ok:boolean, reason?:string, hint?:string, entry?:object,
+   *   options?:{coins:boolean,crystals:boolean},
+   *   missing?:{coins:number,crystals:number,levels:number}}}
+   */
+  canUnlock(roomId, state = this.state, currency = null) {
     const entry = roomUnlockOf(roomId);
     if (!entry) {
       return { ok: false, reason: 'unknown', hint: 'Неизвестный кабинет' };
@@ -76,70 +83,71 @@ export default class RoomUnlocks {
       crystals: Math.max(0, entry.crystals - crystals),
       levels: Math.max(0, entry.minLevel - level),
     };
+    const options = { coins: missing.coins === 0, crystals: missing.crystals === 0 };
     if (missing.levels > 0) {
       return {
-        ok: false,
-        reason: 'level',
-        hint: `Нужен уровень ${entry.minLevel}`,
-        entry,
-        missing,
+        ok: false, reason: 'level', hint: `Нужен уровень ${entry.minLevel}`, entry, missing, options,
       };
     }
-    if (missing.coins > 0) {
+    if (currency === 'coins' && !options.coins) {
+      return {
+        ok: false, reason: 'coins', hint: `Не хватает ${missing.coins} монет`, entry, missing, options,
+      };
+    }
+    if (currency === 'crystals' && !options.crystals) {
+      return {
+        ok: false, reason: 'crystals', hint: `Не хватает ${missing.crystals} кристаллов`, entry, missing, options,
+      };
+    }
+    if (!currency && !options.coins && !options.crystals) {
       return {
         ok: false,
-        reason: 'coins',
-        hint: `Не хватает ${missing.coins} монет`,
+        reason: 'funds',
+        hint: `Нужно ${entry.coins} монет или ${entry.crystals} кристаллов`,
         entry,
         missing,
+        options,
       };
     }
-    if (missing.crystals > 0) {
-      return {
-        ok: false,
-        reason: 'crystals',
-        hint: `Не хватает ${missing.crystals} кристаллов`,
-        entry,
-        missing,
-      };
-    }
-    return { ok: true, entry, missing };
+    return { ok: true, entry, missing, options };
   }
 
   /**
-   * Покупка. Сначала проверяются обе валюты и уровень, потом списание:
-   * при нехватке не меняется ничего.
+   * Покупка за одну валюту. Без `currency` платит монетами, а если их не хватает, кристаллами.
+   * Сначала проверка, потом списание: при отказе не меняется ничего.
    */
-  unlock(roomId, state = this.state) {
-    const check = this.canUnlock(roomId, state);
+  unlock(roomId, state = this.state, currency = null) {
+    const check = this.canUnlock(roomId, state, currency);
     if (!check.ok) {
       return check;
     }
     const entry = check.entry;
-    if (entry.coins > 0) {
-      if (state && typeof state.spend === 'function') {
-        state.spend(entry.coins);
+    const pay = currency || (check.options.coins ? 'coins' : 'crystals');
+    const price = pay === 'coins' ? entry.coins : entry.crystals;
+    if (price > 0) {
+      if (pay === 'coins') {
+        if (state && typeof state.spend === 'function') {
+          state.spend(price);
+        } else if (state) {
+          state.coins = Math.max(0, stateValue(state, 'coins') - price);
+        }
+      } else if (state && typeof state.spendCrystals === 'function') {
+        state.spendCrystals(price);
       } else if (state) {
-        state.coins = Math.max(0, stateValue(state, 'coins') - entry.coins);
-      }
-    }
-    if (entry.crystals > 0) {
-      if (state && typeof state.spendCrystals === 'function') {
-        state.spendCrystals(entry.crystals);
-      } else if (state) {
-        state.crystals = Math.max(0, stateValue(state, 'crystals') - entry.crystals);
+        state.crystals = Math.max(0, stateValue(state, 'crystals') - price);
       }
     }
     this.rooms.add(roomId);
     this.onChange(roomId);
     if (this.bus && typeof this.bus.emit === 'function') {
-      this.bus.emit('roomUnlocked', { roomId, title: entry.title });
+      this.bus.emit('roomUnlocked', { roomId, title: entry.title, currency: pay });
     }
     return {
       ok: true,
       roomId,
       entry,
-      spent: { coins: entry.coins, crystals: entry.crystals },
+      currency: pay,
+      spent: { coins: pay === 'coins' ? price : 0, crystals: pay === 'crystals' ? price : 0 },
     };
   }
 

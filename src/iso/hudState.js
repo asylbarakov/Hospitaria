@@ -1,8 +1,11 @@
 // Данные для HUD изометрии (этапы 15–17), вынесены из сцены.
 
+import { locationName } from './locator.js';
+
 export default function buildHudState(scene) {
   const pointer = scene.input.activePointer;
   const stats = scene.stats || null;
+  const actor = scene.playerActor;
   return {
     coins: scene.coins,
     reputation: scene.reputation,
@@ -22,7 +25,7 @@ export default function buildHudState(scene) {
     quests: scene.quests ? scene.quests.state() : null,
     message: scene.messages.length ? scene.messages[scene.messages.length - 1].text : '',
     zoom: scene.cameras.main.zoom,
-    fps: Math.round(scene.game.loop.actualFps),
+    location: actor && actor.pos && scene.world ? locationName(scene.world.layout, actor.pos.x, actor.pos.y) : '',
     tile: scene.pointerTile(pointer),
   };
 }

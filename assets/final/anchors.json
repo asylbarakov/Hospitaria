@@ -20,8 +20,8 @@
   "w": 170
  },
  "doctor_desk": {
-  "anchorY": 0.984,
-  "h": 368,
+  "anchorY": 0.995,
+  "h": 386,
   "w": 384
  },
  "doctor_table": {
@@ -30,9 +30,9 @@
   "w": 512
  },
  "exam_couch": {
-  "anchorY": 0.976,
-  "h": 369,
-  "w": 384
+  "anchorY": 0.993,
+  "h": 281,
+  "w": 450
  },
  "floor_clinic": {
   "anchorY": 1.0,
@@ -126,8 +126,8 @@
  },
  "reception_desk": {
   "anchorY": 0.963,
-  "h": 349,
-  "w": 512
+  "h": 272,
+  "w": 399
  },
  "sample_table": {
   "anchorY": 0.983,
@@ -225,9 +225,9 @@
   "w": 332
  },
  "ward_bed": {
-  "anchorY": 0.992,
-  "h": 360,
-  "w": 384
+  "anchorY": 0.993,
+  "h": 304,
+  "w": 404
  },
  "water_cooler": {
   "anchorY": 0.979,

@@ -4,6 +4,7 @@
 
 import { normalizePlayer } from '../data/playerSkins.js';
 import { SCHEMA_VERSION } from '../data/economy.js';
+import { STARTER_ROOMS } from '../data/roomUnlocks.js';
 
 const KEY = 'hospitaria.iso.layout.v1';
 
@@ -117,9 +118,14 @@ export function saveIso(coins, items, player = null, stats = null) {
     } else if (previous && previous.quests) {
       data.quests = previous.quests;
     }
-    const rooms = stats && Array.isArray(stats.rooms)
+    // Первое сохранение (нет предыдущего) это новая игра: только стартовые кабинеты.
+    // Сохранение без rooms, но уже существующее, это старый прогресс: его не блокируем.
+    let rooms = stats && Array.isArray(stats.rooms)
       ? stats.rooms
       : (previous && Array.isArray(previous.rooms) ? previous.rooms : null);
+    if (!rooms && !previous) {
+      rooms = [...STARTER_ROOMS];
+    }
     if (Array.isArray(rooms)) {
       data.rooms = rooms.filter((id) => typeof id === 'string');
     }

@@ -34,7 +34,7 @@ export default class IsoWorld {
     this.furniture = new Map(); // gridId -> { item, sprite }
     this.wallSprites = [];
     this.floorSprites = new Map();
-    this.signs = [];
+    this.lockBadges = new Map(); // roomId -> замок закрытого кабинета
     this.closedRooms = new Set();
     this.openTiles = data.openTiles;
     this.entrance = layout.ENTRANCE;
@@ -43,7 +43,7 @@ export default class IsoWorld {
 
     this.buildFloors(data.floors);
     this.buildPieces(data.pieces);
-    this.buildSigns(data.signs);
+    this.buildLockBadges();
     data.items.forEach((item) => this.createItemSprite(item));
     this.applyRoomLocks();
     this.buildGridOverlay();

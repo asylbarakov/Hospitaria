@@ -40,34 +40,37 @@ ROOM_UNLOCKS.forEach((entry) => {
 const partial = new RoomUnlocks({ state, saved: { rooms: ['hall', 'reception', 'therapist', 'lab'] } });
 assert(partial.isUnlocked('lab') && !partial.isUnlocked('xray'), 'список открытых комнат читается');
 
-// ---- 3. Проверка причин и атомарность -------------------------------------------
-const poorCoins = new GameState({ coins: 50, crystals: 10, experience: 250 }); // уровень 3
-const locksPoor = new RoomUnlocks({ state: poorCoins });
-let check = locksPoor.canUnlock('cafeteria', poorCoins);
+// ---- 3. Проверка причин и атомарность (цена: монеты ИЛИ кристаллы) ---------------
+const cafe = roomUnlockOf('cafeteria');
+const broke = new GameState({ coins: cafe.coins - 1, crystals: cafe.crystals - 1, experience: 250 }); // уровень 3
+const locksBroke = new RoomUnlocks({ state: broke });
+let check = locksBroke.canUnlock('cafeteria', broke);
 assert.equal(check.ok, false);
-assert.equal(check.reason, 'coins');
-assert.equal(locksPoor.unlock('cafeteria', poorCoins).ok, false);
-assert.equal(poorCoins.coins, 50, 'при нехватке монет ничего не списано');
-assert.equal(poorCoins.crystals, 10, 'кристаллы тоже не тронуты');
-assert(!locksPoor.isUnlocked('cafeteria'));
+assert.equal(check.reason, 'funds', 'нет ни монет, ни кристаллов: причина funds');
+assert.deepEqual(check.options, { coins: false, crystals: false });
+assert.equal(locksBroke.unlock('cafeteria', broke).ok, false);
+assert.equal(broke.coins, cafe.coins - 1, 'при нехватке обеих валют монеты не тронуты');
+assert.equal(broke.crystals, cafe.crystals - 1, 'кристаллы тоже не тронуты');
+assert(!locksBroke.isUnlocked('cafeteria'));
+assert.equal(locksBroke.canUnlock('cafeteria', broke, 'coins').reason, 'coins');
+assert.equal(locksBroke.canUnlock('cafeteria', broke, 'crystals').reason, 'crystals');
 
-const poorCrystals = new GameState({ coins: 500, crystals: 4, experience: 250 });
-const locksCrystals = new RoomUnlocks({ state: poorCrystals });
-check = locksCrystals.canUnlock('cafeteria', poorCrystals);
-assert.equal(check.reason, 'crystals');
-assert.equal(locksCrystals.unlock('cafeteria', poorCrystals).ok, false);
-assert.equal(poorCrystals.coins, 500);
-assert.equal(poorCrystals.crystals, 4, 'при нехватке кристаллов ничего не списано');
+const onlyCrystals = new GameState({ coins: 10, crystals: cafe.crystals, experience: 250 });
+const locksOnlyCrystals = new RoomUnlocks({ state: onlyCrystals });
+check = locksOnlyCrystals.canUnlock('cafeteria', onlyCrystals);
+assert.equal(check.ok, true, 'хватает кристаллов: покупка возможна без монет');
+assert.deepEqual(check.options, { coins: false, crystals: true });
+assert.equal(locksOnlyCrystals.canUnlock('cafeteria', onlyCrystals, 'coins').ok, false);
 
 const lowLevel = new GameState({ coins: 500, crystals: 10, experience: 0 });
 const locksLevel = new RoomUnlocks({ state: lowLevel });
 check = locksLevel.canUnlock('cafeteria', lowLevel);
-assert.equal(check.reason, 'level');
+assert.equal(check.reason, 'level', 'уровень проверяется раньше денег');
 assert.equal(locksLevel.unlock('cafeteria', lowLevel).ok, false);
 assert.equal(lowLevel.coins, 500);
 assert.equal(lowLevel.crystals, 10);
 
-// ---- 4. Покупка списывает обе валюты ровно один раз и шлёт roomUnlocked ---------
+// ---- 4. Покупка списывает ОДНУ валюту ровно один раз и шлёт roomUnlocked -----------
 const buyer = new GameState({ coins: 500, crystals: 10, experience: 250 });
 const bus = new EventBus();
 const events = [];
@@ -76,8 +79,9 @@ const lockShop = new RoomUnlocks({ state: buyer, bus });
 const entry = roomUnlockOf('procedure');
 const bought = lockShop.unlock('procedure', buyer);
 assert.equal(bought.ok, true);
+assert.equal(bought.currency, 'coins', 'без выбора валюты первыми списываются монеты');
 assert.equal(buyer.coins, 500 - entry.coins, 'монеты списаны по цене');
-assert.equal(buyer.crystals, 10 - entry.crystals, 'кристаллы списаны по цене');
+assert.equal(buyer.crystals, 10, 'кристаллы при оплате монетами не тронуты');
 assert(lockShop.isUnlocked('procedure'));
 assert.equal(events.length, 1, 'событие roomUnlocked отправлено');
 assert.equal(events[0].roomId, 'procedure');
@@ -85,8 +89,23 @@ const again = lockShop.unlock('procedure', buyer);
 assert.equal(again.ok, false);
 assert.equal(again.reason, 'unlocked');
 assert.equal(buyer.coins, 500 - entry.coins, 'повторно монеты не списаны');
-assert.equal(buyer.crystals, 10 - entry.crystals, 'повторно кристаллы не списаны');
 assert.equal(events.length, 1, 'повторного события нет');
+
+const crystalBuy = lockShop.unlock('cafeteria', buyer, 'crystals');
+assert.equal(crystalBuy.ok, true);
+assert.equal(crystalBuy.currency, 'crystals');
+assert.equal(buyer.crystals, 10 - cafe.crystals, 'кристаллы списаны по цене');
+assert.equal(buyer.coins, 500 - entry.coins, 'при оплате кристаллами монеты не тронуты');
+assert.equal(events.length, 2);
+
+const fallback = new GameState({ coins: 5, crystals: 10, experience: 450 }); // уровень 4
+const locksFallback = new RoomUnlocks({ state: fallback });
+const pharm = roomUnlockOf('pharmacy');
+const viaCrystals = locksFallback.unlock('pharmacy', fallback);
+assert.equal(viaCrystals.ok, true, 'монет нет: без выбора платит кристаллами');
+assert.equal(viaCrystals.currency, 'crystals');
+assert.equal(fallback.coins, 5);
+assert.equal(fallback.crystals, 10 - pharm.crystals);
 
 // ---- 5. Сохранение и загрузка списка комнат -------------------------------------
 clearIsoSave();
@@ -101,6 +120,28 @@ loaded = loadIsoSave();
 assert.equal(loaded.rooms, null, 'старое сохранение помечено отсутствием rooms');
 const migrated = new RoomUnlocks({ saved: loaded });
 assert(migrated.isUnlocked('xray'), 'старый прогресс не блокирует комнаты');
+
+// Новая игра из сцены создания персонажа: saveIso без прогресса должен записать стартовые комнаты,
+// иначе сохранение выглядит «старым» и открывает все кабинеты.
+clearIsoSave();
+saveIso(null, null, normalizePlayer({ ...DEFAULT_PLAYER, name: 'Новичок' }));
+loaded = loadIsoSave();
+assert.deepEqual(loaded.rooms.sort(), [...STARTER_ROOMS].sort(), 'новая игра сохраняет только стартовые комнаты');
+const fresh = new RoomUnlocks({ saved: loaded });
+['lab', 'xray', 'procedure', 'ward', 'pharmacy', 'cafeteria'].forEach((id) => {
+  assert(!fresh.isUnlocked(id), `новая игра из создания персонажа: ${id} закрыта`);
+});
+assert(fresh.isUnlocked('therapist'), 'терапевт открыт со старта');
+
+// Повторное сохранение не затирает купленные комнаты.
+saveIso(50, null, null, { rooms: ['hall', 'reception', 'therapist', 'lab'] });
+saveIso(60, null, null);
+assert(loadIsoSave().rooms.includes('lab'), 'купленная комната переживает следующее сохранение');
+
+// Настоящее старое сохранение (без rooms) по-прежнему ничего не блокирует.
+store['hospitaria.iso.layout.v1'] = JSON.stringify({ v: 1, coins: 20, crystals: 3 });
+saveIso(25, null, null);
+assert.equal(loadIsoSave().rooms, null, 'пересохранение старого прогресса не навязывает блокировку');
 clearIsoSave();
 
 // ---- 6. Пациенты не идут в закрытые комнаты -------------------------------------
