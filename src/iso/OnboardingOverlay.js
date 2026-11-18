@@ -22,7 +22,7 @@ export default class OnboardingOverlay {
     this.root.add(panel(scene, CARD_X, CARD_Y, CARD_W, CARD_H));
     // Текст сдвинут от левого декора ui_panel, иначе орнамент бьётся с буквами.
     this.title = text(scene, CARD_X + 118, CARD_Y + 14, '', {
-      size: 16, bold: true, color: '#2f8f7b',
+      size: 20, bold: true, color: '#2f8f7b',
     });
     this.body = text(scene, CARD_X + 118, CARD_Y + 44, '', {
       size: 20, bold: true, wrap: 460,
@@ -32,7 +32,7 @@ export default class OnboardingOverlay {
       if (options.onSkip) {
         options.onSkip();
       }
-    }, { width: 170, height: 56, fontSize: 16, variant: 'gray' }));
+    }, { width: 170, height: 56, fontSize: 21, variant: 'gray' }));
 
     this.pointer = scene.add.graphics().setDepth(17);
     this.step = -1;

@@ -11,23 +11,23 @@ export default class TopStatus {
 
     const bg = panel(scene, 8, 8, 1064, 74);
     // Плашка ui_panel декоративна по краям: содержимое живёт в 110..970.
-    this.coinIcon = scene.add.image(120, 45, isoKey('icons_icon_coin')).setScale(0.18);
-    this.coinText = text(scene, 144, 45, '0', { size: 24, bold: true, origin: [0, 0.5] });
-    this.crystalIcon = scene.add.image(238, 45, isoKey('icons_icon_crystal')).setScale(0.15);
-    this.crystalText = text(scene, 260, 45, '0', { size: 20, bold: true, origin: [0, 0.5] });
-    this.debtText = text(scene, 318, 45, '', { size: 16, bold: true, color: '#b5423c', origin: [0, 0.5] });
-    this.levelText = text(scene, 380, 45, 'Ур. 1', { size: 18, bold: true, origin: [0, 0.5] });
-    this.xpText = text(scene, 574, 45, '', { size: 16, origin: [0, 0.5] });
-    this.clockText = text(scene, 678, 45, '', { size: 19, bold: true, color: '#9a5b12', origin: [0, 0.5] });
-    this.reputationText = text(scene, 822, 45, '', { size: 17, bold: true, color: '#276d4d', origin: [0, 0.5] });
+    this.coinIcon = scene.add.image(118, 45, isoKey('icons_icon_coin')).setScale(0.2);
+    this.coinText = text(scene, 142, 45, '0', { size: 28, bold: true, origin: [0, 0.5] });
+    this.crystalIcon = scene.add.image(246, 45, isoKey('icons_icon_crystal')).setScale(0.17);
+    this.crystalText = text(scene, 268, 45, '0', { size: 24, bold: true, origin: [0, 0.5] });
+    this.debtText = text(scene, 326, 45, '', { size: 19, bold: true, color: '#b5423c', origin: [0, 0.5] });
+    this.levelText = text(scene, 410, 45, 'Ур. 1', { size: 22, bold: true, origin: [0, 0.5] });
+    this.xpText = text(scene, 600, 45, '', { size: 17, origin: [0, 0.5] });
+    this.clockText = text(scene, 696, 45, '', { size: 21, bold: true, color: '#9a5b12', origin: [0, 0.5] });
+    this.reputationText = text(scene, 808, 45, '', { size: 20, bold: true, color: '#276d4d', origin: [0, 0.5] });
     // Где сейчас игрок: кабинет, зона, коридор или улица (FPS в панели больше нет).
     this.pin = scene.add.graphics();
     this.pin.fillStyle(0x2f8f7b, 1).fillCircle(0, 0, 7);
     this.pin.fillStyle(0xffffff, 1).fillCircle(0, 0, 2.5);
-    this.pin.setPosition(902, 45);
-    this.locationText = text(scene, 916, 45, '', { size: 18, bold: true, color: '#1f6f8b', origin: [0, 0.5] });
+    this.pin.setPosition(912, 45);
+    this.locationText = text(scene, 926, 45, '', { size: 20, bold: true, color: '#1f6f8b', origin: [0, 0.5] });
 
-    this.xp = progressBar(scene, 436, 35, 130, 20);
+    this.xp = progressBar(scene, 486, 34, 104, 22);
     this.root.add([
       bg, this.coinIcon, this.coinText, this.crystalIcon, this.crystalText, this.debtText,
       this.levelText, this.xp.root, this.xpText, this.clockText, this.reputationText, this.pin, this.locationText,
@@ -59,7 +59,7 @@ export default class TopStatus {
   setLocation(name) {
     if (this.locationText.text !== name) {
       this.locationText.setText(name).setScale(1);
-      const max = 108;
+      const max = 104;
       if (this.locationText.width > max) {
         this.locationText.setScale(max / this.locationText.width);
       }

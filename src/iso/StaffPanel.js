@@ -6,9 +6,14 @@ import { isoKey } from './isoAssets.js';
 import { button as uiButton, plate, windowFrame } from '../ui/IsoUi.js';
 
 const FONT = 'Arial, "Segoe UI", sans-serif';
-const CARD_W = 220;
+const CARD_W = 270;
 const CARD_H = 196;
 const ROWS = 6;
+
+function clip(value, max) {
+  const str = String(value || '');
+  return str.length > max ? `${str.slice(0, max - 1)}…` : str;
+}
 
 export default class StaffPanel {
   /**
@@ -27,13 +32,10 @@ export default class StaffPanel {
 
     this.root.add(plate(scene, 208, 100, 250, 56, { tint: 0x123240 }));
     this.root.add(scene.add.text(104, 100, 'Персонал', {
-      fontFamily: FONT, fontSize: '32px', fontStyle: 'bold', color: '#ffffff',
+      fontFamily: FONT, fontSize: '34px', fontStyle: 'bold', color: '#ffffff',
     }).setOrigin(0, 0.5));
-    this.root.add(scene.add.text(76, 204, 'Нанятые сотрудники работают сами: лечат, регистрируют и убирают.', {
-      fontFamily: FONT, fontSize: '17px', color: '#4d7b8a',
-    }));
-    this.root.add(scene.add.text(772, 204, 'Наняты', {
-      fontFamily: FONT, fontSize: '24px', fontStyle: 'bold', color: '#1b4b5a',
+    this.root.add(scene.add.text(930, 222, 'Наняты', {
+      fontFamily: FONT, fontSize: '26px', fontStyle: 'bold', color: '#1b4b5a',
     }));
 
     this.cards = STAFF_ROLES.map((role, index) => this.makeCard(role, index));
@@ -41,17 +43,17 @@ export default class StaffPanel {
     for (let i = 0; i < ROWS; i += 1) {
       this.root.add(this.makeRow(i));
     }
-    this.footer = scene.add.text(72, 655, '', {
-      fontFamily: FONT, fontSize: '17px', color: '#1b4b5a',
+    this.footer = scene.add.text(76, 664, '', {
+      fontFamily: FONT, fontSize: '20px', fontStyle: 'bold', color: '#1b4b5a',
     }).setOrigin(0, 0.5);
     this.root.add(this.footer);
-    this.empty = scene.add.text(1000, 262, 'Пока никого не наняли', {
-      fontFamily: FONT, fontSize: '17px', color: '#4d7b8a',
+    this.empty = scene.add.text(1067, 300, 'Пока никого\nне наняли', {
+      fontFamily: FONT, fontSize: '22px', color: '#4d7b8a', align: 'center',
     }).setOrigin(0.5, 0);
     this.root.add(this.empty);
 
-    const close = uiButton(scene, 1010, 100, 'Закрыть', () => this.hide(), {
-      width: 160, height: 56, fontSize: 18, variant: 'gray',
+    const close = uiButton(scene, 1000, 100, 'Закрыть', () => this.hide(), {
+      width: 170, height: 60, fontSize: 22, variant: 'gray',
     });
     this.root.add(close);
   }
@@ -59,34 +61,34 @@ export default class StaffPanel {
   makeCard(role, index) {
     const col = index % 3;
     const row = Math.floor(index / 3);
-    const card = this.scene.add.container(158 + col * 240, 330 + row * 210);
+    const card = this.scene.add.container(211 + col * 282, 345 + row * 212);
     card.role = role;
     card.unlockLevel = staffUnlockLevel(role);
     card.add(plate(this.scene, 0, 0, CARD_W, CARD_H, { tint: 0x14303f }));
 
-    const img = this.scene.add.image(-82, -30, isoKey(role.sprite));
-    img.setScale(Math.min(52 / img.width, 70 / img.height));
+    const img = this.scene.add.image(-98, -34, isoKey(role.sprite));
+    img.setScale(Math.min(60 / img.width, 78 / img.height));
     card.add(img);
-    card.add(this.scene.add.text(-48, -84, role.title, {
-      fontFamily: FONT, fontSize: '17px', fontStyle: 'bold', color: '#ffffff',
+    card.add(this.scene.add.text(-58, -90, role.title, {
+      fontFamily: FONT, fontSize: '22px', fontStyle: 'bold', color: '#ffffff',
     }));
-    card.add(this.scene.add.text(-48, -60, `Найм ${role.price}`, {
-      fontFamily: FONT, fontSize: '16px', fontStyle: 'bold', color: '#ffe082',
+    card.add(this.scene.add.text(-58, -58, `Найм ${role.price}`, {
+      fontFamily: FONT, fontSize: '20px', fontStyle: 'bold', color: '#ffe082',
     }));
-    card.add(this.scene.add.text(-48, -38, `Зарплата ${role.salary}/день`, {
-      fontFamily: FONT, fontSize: '16px', color: '#b9e6df',
+    card.add(this.scene.add.text(-58, -32, `Зарплата ${role.salary}/день`, {
+      fontFamily: FONT, fontSize: '19px', color: '#b9e6df',
     }));
-    card.add(this.scene.add.text(-CARD_W / 2 + 10, 4, role.hint, {
-      fontFamily: FONT, fontSize: '16px', color: '#dff3ff', wordWrap: { width: CARD_W - 20 },
+    card.add(this.scene.add.text(-CARD_W / 2 + 12, -4, role.hint, {
+      fontFamily: FONT, fontSize: '18px', color: '#dff3ff', wordWrap: { width: CARD_W - 24 },
     }));
 
-    card.hireButton = uiButton(this.scene, 0, CARD_H / 2 - 22, 'Нанять', () => {
+    card.hireButton = uiButton(this.scene, 0, CARD_H / 2 - 26, 'Нанять', () => {
       this.hooks.onHire(role.id);
-    }, { width: 150, height: 40, fontSize: 16, variant: 'green' });
+    }, { width: 200, height: 46, fontSize: 22, variant: 'green' });
     card.add(card.hireButton);
     // Бейдж уровня слева сверху: справа он наезжает на длинные названия ролей.
     card.lock = this.scene.add.text(-CARD_W / 2 + 10, -CARD_H / 2 + 8, `Ур. ${card.unlockLevel}`, {
-      fontFamily: FONT, fontSize: '16px', fontStyle: 'bold', color: '#ffcc80',
+      fontFamily: FONT, fontSize: '20px', fontStyle: 'bold', color: '#ffcc80',
     });
     card.add(card.lock);
     this.root.add(card);
@@ -94,22 +96,22 @@ export default class StaffPanel {
   }
 
   makeRow(index) {
-    const row = this.scene.add.container(1000, 240 + index * 70);
-    row.add(plate(this.scene, 0, 0, 450, 62, { tint: 0x14303f }));
-    row.name = this.scene.add.text(-212, -14, '', {
-      fontFamily: FONT, fontSize: '17px', fontStyle: 'bold', color: '#ffffff',
+    const row = this.scene.add.container(1067, 280 + index * 68);
+    row.add(plate(this.scene, 0, 0, 270, 62, { tint: 0x14303f }));
+    row.name = this.scene.add.text(-125, -26, '', {
+      fontFamily: FONT, fontSize: '20px', fontStyle: 'bold', color: '#ffffff',
     });
-    row.status = this.scene.add.text(-212, 8, '', {
-      fontFamily: FONT, fontSize: '16px', color: '#b9e6df',
+    row.status = this.scene.add.text(-125, 2, '', {
+      fontFamily: FONT, fontSize: '18px', color: '#b9e6df',
     });
     row.add(row.name);
     row.add(row.status);
-    row.fire = uiButton(this.scene, 168, 0, 'Уволить', () => {
+    row.fire = uiButton(this.scene, 92, 0, 'Уволить', () => {
       const hired = this.hired[index];
       if (hired) {
         this.hooks.onFire(hired.id);
       }
-    }, { width: 96, height: 44, fontSize: 16, variant: 'red' });
+    }, { width: 82, height: 44, fontSize: 16, variant: 'red' });
     row.add(row.fire);
     row.setVisible(false);
     this.rows.push(row);
@@ -158,8 +160,8 @@ export default class StaffPanel {
       if (!hired) {
         return;
       }
-      row.name.setText(`${hired.name} — ${hired.title}`);
-      row.status.setText(hired.postTitle ? `${hired.status} • ${hired.postTitle}` : hired.status);
+      row.name.setText(clip(hired.name, 10));
+      row.status.setText(clip(hired.title, 11));
     });
   }
 }

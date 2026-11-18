@@ -55,12 +55,12 @@ export default class BuildPanel {
       img.setScale(Math.min(92 / img.width, 52 / img.height));
       card.img = img;
       const title = this.scene.add.text(0, -2, def.title, {
-        fontFamily: FONT, fontSize: '16px', fontStyle: 'bold', color: '#ffffff',
+        fontFamily: FONT, fontSize: '18px', fontStyle: 'bold', color: '#ffffff',
         align: 'center', wordWrap: { width: CARD_W - 8 },
       }).setOrigin(0.5, 0);
       // Одна подпись снизу: цена или уровень разблокировки. Так ничего не наезжает.
       const price = this.scene.add.text(0, CARD_H / 2 - 14, `${def.price}`, {
-        fontFamily: FONT, fontSize: '16px', fontStyle: 'bold', color: '#ffe082',
+        fontFamily: FONT, fontSize: '18px', fontStyle: 'bold', color: '#ffe082',
       }).setOrigin(0.5);
       card.price = price;
       const zone = this.scene.add.zone(0, 0, CARD_W, CARD_H).setInteractive({ useHandCursor: true });

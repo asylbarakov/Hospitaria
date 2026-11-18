@@ -32,24 +32,21 @@ export default class QuestPanel {
 
     this.root.add(plate(scene, 170, 100, 190, 56, { tint: 0x123240 }));
     this.root.add(scene.add.text(96, 100, 'Задания', {
-      fontFamily: FONT, fontSize: '32px', fontStyle: 'bold', color: '#ffffff',
+      fontFamily: FONT, fontSize: '34px', fontStyle: 'bold', color: '#ffffff',
     }).setOrigin(0, 0.5));
-    this.root.add(scene.add.text(76, 214, 'Ежедневные, недельные и сюжетные задания', {
-      fontFamily: FONT, fontSize: '16px', color: '#4d7b8a',
-    }));
 
     this.coinIcon = scene.add.image(860, 100, isoKey('icons_icon_coin')).setScale(0.16);
     this.coinText = scene.add.text(878, 100, '0', {
-      fontFamily: FONT, fontSize: '22px', fontStyle: 'bold', color: '#fff3b0',
+      fontFamily: FONT, fontSize: '26px', fontStyle: 'bold', color: '#fff3b0',
     }).setOrigin(0, 0.5);
     this.crystalIcon = scene.add.image(960, 100, isoKey('icons_icon_crystal')).setScale(0.16);
     this.crystalText = scene.add.text(978, 100, '0', {
-      fontFamily: FONT, fontSize: '22px', fontStyle: 'bold', color: '#dff6ff',
+      fontFamily: FONT, fontSize: '26px', fontStyle: 'bold', color: '#dff6ff',
     }).setOrigin(0, 0.5);
     this.root.add([this.coinIcon, this.coinText, this.crystalIcon, this.crystalText]);
 
-    const close = uiButton(scene, 1160, 176, 'Закрыть', () => this.hide(), {
-      width: 130, height: 56, fontSize: 18, variant: 'gray',
+    const close = uiButton(scene, 1130, 176, 'Закрыть', () => this.hide(), {
+      width: 150, height: 60, fontSize: 22, variant: 'gray',
     });
     this.root.add(close);
 
@@ -58,8 +55,8 @@ export default class QuestPanel {
     this.content = scene.add.container(0, 0);
     this.root.add(this.content);
 
-    this.footer = scene.add.text(72, 655, '', {
-      fontFamily: FONT, fontSize: '16px', color: '#1b4b5a',
+    this.footer = scene.add.text(76, 664, '', {
+      fontFamily: FONT, fontSize: '20px', fontStyle: 'bold', color: '#1b4b5a',
     }).setOrigin(0, 0.5);
     this.root.add(this.footer);
   }
@@ -135,7 +132,7 @@ export default class QuestPanel {
     quests.forEach((quest, index) => {
       const col = compact ? index % 2 : 0;
       const row = compact ? Math.floor(index / 2) : index;
-      const x = compact ? 350 + col * 590 : 640;
+      const x = compact ? 360 + col * 560 : 640;
       this.content.add(this.makeCard(quest, x, startY + row * step, compact));
     });
     this.updateFooter(category, quests);
@@ -151,8 +148,8 @@ export default class QuestPanel {
     tabs.forEach((tab, index) => {
       const category = this.state[tab.id];
       const active = tab.id === this.tab;
-      const button = uiButton(this.scene, 350 + index * 190, 176, tab.label, () => this.setTab(tab.id), {
-        width: 174, height: 56, fontSize: 17,
+      const button = uiButton(this.scene, 340 + index * 220, 176, tab.label, () => this.setTab(tab.id), {
+        width: 208, height: 60, fontSize: 22,
         color: active ? category.color : 0x9fb8c3,
         hoverColor: active ? category.color : 0xb9cbd3,
         active,
@@ -162,7 +159,7 @@ export default class QuestPanel {
   }
 
   makeCard(quest, x, y, compact) {
-    const width = compact ? 560 : CARD_W;
+    const width = compact ? 540 : CARD_W;
     const height = compact ? 74 : 122;
     const card = this.scene.add.container(x, y);
     card.add(plate(this.scene, 0, 0, width, height, { tint: 0x14303f }));
@@ -195,16 +192,16 @@ export default class QuestPanel {
       // Компактная карточка сюжета: прогресс в заголовке, награда второй строкой.
       const icon = this.scene.add.image(left + 24, 0, isoKey(`icons_${category.icon}`)).setScale(0.16);
       card.add(icon);
-      card.add(this.scene.add.text(left + 52, -30, `${quest.title}  ${quest.progress}/${quest.target}`, {
-        fontFamily: FONT, fontSize: '17px', fontStyle: 'bold', color: '#ffffff',
+      card.add(this.scene.add.text(left + 52, -32, `${quest.title}  ${quest.progress}/${quest.target}`, {
+        fontFamily: FONT, fontSize: '20px', fontStyle: 'bold', color: '#ffffff',
         wordWrap: { width: 320 },
       }));
       card.add(this.scene.add.text(left + 52, 2, rewards, {
-        fontFamily: FONT, fontSize: '16px', fontStyle: 'bold', color: '#ffe082',
+        fontFamily: FONT, fontSize: '19px', fontStyle: 'bold', color: '#ffe082',
         wordWrap: { width: 320 },
       }));
-      const claim = uiButton(this.scene, width / 2 - 76, 0, label, () => this.claim(quest.id), {
-        width: 140, height: 48, fontSize: 16, color, hoverColor: 0x55b963, disabled,
+      const claim = uiButton(this.scene, width / 2 - 84, 0, label, () => this.claim(quest.id), {
+        width: 150, height: 50, fontSize: 20, color, hoverColor: 0x55b963, disabled,
       });
       card.add(claim);
       return card;
@@ -214,24 +211,24 @@ export default class QuestPanel {
     card.add(icon);
     const top = -height / 2;
     const textX = left + 74;
-    card.add(this.scene.add.text(textX, top + 10, quest.title, {
-      fontFamily: FONT, fontSize: '20px', fontStyle: 'bold', color: '#ffffff',
+    card.add(this.scene.add.text(textX, top + 8, quest.title, {
+      fontFamily: FONT, fontSize: '26px', fontStyle: 'bold', color: '#ffffff',
     }));
-    card.add(this.scene.add.text(textX, top + 38, quest.description, {
-      fontFamily: FONT, fontSize: '16px', color: '#b9e6df', wordWrap: { width: 430 },
+    card.add(this.scene.add.text(textX, top + 44, quest.description, {
+      fontFamily: FONT, fontSize: '21px', color: '#b9e6df', wordWrap: { width: 560 },
     }));
-    const bar = progressBar(this.scene, textX, top + 78, 400, 16);
+    const bar = progressBar(this.scene, textX, top + 90, 400, 18);
     bar.setProgress(ratio);
     card.add(bar.root);
-    card.add(this.scene.add.text(textX + 410, top + 86, `${quest.progress} / ${quest.target}`, {
-      fontFamily: FONT, fontSize: '16px', fontStyle: 'bold',
+    card.add(this.scene.add.text(textX + 412, top + 99, `${quest.progress} / ${quest.target}`, {
+      fontFamily: FONT, fontSize: '22px', fontStyle: 'bold',
       color: quest.complete ? '#9dffb0' : '#dff3ff',
     }).setOrigin(0, 0.5));
-    card.add(this.scene.add.text(330, -10, rewards, {
-      fontFamily: FONT, fontSize: '16px', fontStyle: 'bold', color: '#ffe082',
+    card.add(this.scene.add.text(545, -36, rewards, {
+      fontFamily: FONT, fontSize: '21px', fontStyle: 'bold', color: '#ffe082',
     }).setOrigin(1, 0.5));
-    const claim = uiButton(this.scene, 430, 0, label, () => this.claim(quest.id), {
-      width: 170, height: 56, fontSize: 16, color, hoverColor: 0x55b963, disabled,
+    const claim = uiButton(this.scene, 450, 14, label, () => this.claim(quest.id), {
+      width: 190, height: 60, fontSize: 22, color, hoverColor: 0x55b963, disabled,
     });
     card.add(claim);
     return card;

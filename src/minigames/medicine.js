@@ -98,7 +98,7 @@ export function createMedicine(scene, root, ctx) {
     const label = scene.add
       .text(0, 0, option.medicine, {
         fontFamily: MG_FONT,
-        fontSize: '18px',
+        fontSize: '24px',
         fontStyle: 'bold',
         color: '#24444f',
         align: 'center',

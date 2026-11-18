@@ -115,7 +115,7 @@ export default class IsoCreatorScene extends Phaser.Scene {
       .setOrigin(0, 0.5)
       .setVisible(false);
     this.hintText = this.add
-      .text(W / 2, 204, 'Нажмите на поле, чтобы ввести имя, или выберите случайное', { fontFamily: FONT, fontSize: '18px', color: '#8aa6b0' })
+      .text(W / 2, 204, 'Нажмите на поле, чтобы ввести имя, или выберите случайное', { fontFamily: FONT, fontSize: '22px', color: '#8aa6b0' })
       .setOrigin(0.5);
     // Телефон без клавиатуры: тап по полю открывает системное окно ввода.
     this.add.zone(640, 155, 460, 62).setInteractive({ useHandCursor: true })
@@ -154,7 +154,7 @@ export default class IsoCreatorScene extends Phaser.Scene {
     });
     this.add
       .text(235, 440, 'Роль задаёт иконку над головой', {
-        fontFamily: FONT, fontSize: '16px', color: '#4d7b8a', align: 'center', wordWrap: { width: 220 },
+        fontFamily: FONT, fontSize: '20px', color: '#4d7b8a', align: 'center', wordWrap: { width: 220 },
       })
       .setOrigin(0.5);
   }
@@ -173,7 +173,7 @@ export default class IsoCreatorScene extends Phaser.Scene {
       img.setScale(fit);
       const title = this.add
         .text(0, 46, skin.title, {
-          fontFamily: FONT, fontSize: '16px', fontStyle: 'bold', color: '#24444f', align: 'center', wordWrap: { width: 140 },
+          fontFamily: FONT, fontSize: '20px', fontStyle: 'bold', color: '#24444f', align: 'center', wordWrap: { width: 140 },
         })
         .setOrigin(0.5, 0);
       const zone = this.add.zone(0, 0, 150, 190).setInteractive({ useHandCursor: true });
@@ -212,7 +212,7 @@ export default class IsoCreatorScene extends Phaser.Scene {
       this.accentDots.push({ id: accent.id, dot });
     });
     this.add
-      .text(980, 568, 'Цвет плашки и имени', { fontFamily: FONT, fontSize: '16px', color: '#4d7b8a' })
+      .text(980, 568, 'Цвет плашки и имени', { fontFamily: FONT, fontSize: '20px', color: '#4d7b8a' })
       .setOrigin(0.5);
   }
 

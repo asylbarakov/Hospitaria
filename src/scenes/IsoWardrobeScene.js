@@ -77,14 +77,14 @@ export default class IsoWardrobeScene extends Phaser.Scene {
       .setDepth(10);
     this.hintText = this.add
       .text(640, 620, 'Бесплатные облики и акценты доступны сразу. Платные: нажмите дважды', {
-        fontFamily: FONT, fontSize: '17px', color: '#4d7b8a', align: 'center', wordWrap: { width: 940 },
+        fontFamily: FONT, fontSize: '21px', color: '#4d7b8a', align: 'center', wordWrap: { width: 940 },
       })
       .setOrigin(0.5);
   }
 
   drawAccents() {
     this.add
-      .text(235, 196, 'Акцент роли', { fontFamily: FONT, fontSize: '19px', fontStyle: 'bold', color: '#2f5d6b' })
+      .text(235, 196, 'Акцент роли', { fontFamily: FONT, fontSize: '23px', fontStyle: 'bold', color: '#2f5d6b' })
       .setOrigin(0, 0.5);
     ACCENTS.forEach((accent, index) => {
       const dot = this.add.circle(390 + index * 58, 196, 18, accent.color);
@@ -92,7 +92,7 @@ export default class IsoWardrobeScene extends Phaser.Scene {
       dot.on('pointerup', () => this.onAccent(accent));
       const price = this.add
         .text(390 + index * 58, 226, accentCost(accent) ? `${accentCost(accent)}✦` : '', {
-          fontFamily: FONT, fontSize: '16px', fontStyle: 'bold', color: '#7a8f97',
+          fontFamily: FONT, fontSize: '20px', fontStyle: 'bold', color: '#7a8f97',
         })
         .setOrigin(0.5);
       this.accentDots.push({ id: accent.id, dot, price });
@@ -109,11 +109,11 @@ export default class IsoWardrobeScene extends Phaser.Scene {
       img.setScale(Math.min(84 / img.width, 96 / img.height));
       const title = this.add
         .text(0, 14, skin.title, {
-          fontFamily: FONT, fontSize: '17px', fontStyle: 'bold', color: '#24444f', align: 'center', wordWrap: { width: 220 },
+          fontFamily: FONT, fontSize: '20px', fontStyle: 'bold', color: '#24444f', align: 'center', wordWrap: { width: 220 },
         })
         .setOrigin(0.5, 0);
       const status = this.add
-        .text(0, 52, '', { fontFamily: FONT, fontSize: '16px', fontStyle: 'bold', color: '#7a8f97' })
+        .text(0, 52, '', { fontFamily: FONT, fontSize: '20px', fontStyle: 'bold', color: '#7a8f97' })
         .setOrigin(0.5);
       const zone = this.add.zone(0, 0, CARD_W, CARD_H).setInteractive({ useHandCursor: true });
       zone.on('pointerup', () => this.onCard(skin));

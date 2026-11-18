@@ -60,7 +60,7 @@ export default class MainMenuScene extends Phaser.Scene {
       width: 170, height: 52, fontSize: 20, variant: 'gray', depth: 20,
     });
     text(this, W / 2, 20, 'Игра для развлечения, не медицинский совет', {
-      size: 18, color: '#cfe6ef', origin: [0.5, 0.5],
+      size: 22, color: '#cfe6ef', origin: [0.5, 0.5],
     });
     this.cameras.main.fadeIn(300, 16, 34, 46);
   }

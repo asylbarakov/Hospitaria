@@ -56,7 +56,7 @@ export function createCompress(scene, root, ctx) {
   const hint = scene.add
     .text(640, 640, 'Зажмите кнопку мыши и ведите компрессом по точкам', {
       fontFamily: MG_FONT,
-      fontSize: '18px',
+      fontSize: '24px',
       color: '#5b7f8c',
     })
     .setOrigin(0.5);

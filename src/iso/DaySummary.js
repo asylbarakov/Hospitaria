@@ -37,12 +37,12 @@ export default class DaySummary {
     this.penalties = this.makeLine(372, '#b5423c');
     this.net = this.makeLine(428, '#1b4b5a', 30);
     this.debt = uiText(scene, 640, 472, '', {
-      size: 17, bold: true, color: '#b5423c', origin: [0.5, 0.5],
+      size: 22, bold: true, color: '#b5423c', origin: [0.5, 0.5],
     });
     this.root.add(this.debt);
 
     this.footer = uiText(scene, 640, 512, '', {
-      size: 16, color: '#4d7b8a', origin: [0.5, 0.5], align: 'center',
+      size: 21, color: '#4d7b8a', origin: [0.5, 0.5], align: 'center',
     });
     this.root.add(this.footer);
 

@@ -9,9 +9,9 @@ import { isoKey } from './isoAssets.js';
 import { button as uiButton, plate, windowFrame } from '../ui/IsoUi.js';
 
 const FONT = 'Arial, "Segoe UI", sans-serif';
-const CARD_W = 250;
-const CARD_H = 190;
-const PER_PAGE = 8;
+const CARD_W = 350;
+const CARD_H = 200;
+const PER_PAGE = 6; // 3 колонки x 2 ряда: крупный текст читается на телефоне
 const TABS = [
   { id: 'furniture', title: 'Мебель', variant: 'blue' },
   { id: 'staff', title: 'Персонал', variant: 'green' },
@@ -53,31 +53,28 @@ export default class ShopPanel {
     // Заголовок — тёмная табличка поверх зелёной шапки, подпись на белом теле.
     this.root.add(plate(scene, 200, 100, 230, 56, { tint: 0x123240 }));
     this.root.add(scene.add.text(112, 100, 'Магазин', {
-      fontFamily: FONT, fontSize: '32px', fontStyle: 'bold', color: '#ffffff',
+      fontFamily: FONT, fontSize: '34px', fontStyle: 'bold', color: '#ffffff',
     }).setOrigin(0, 0.5));
-    this.root.add(scene.add.text(76, 214, 'Мебель, персонал и украшения. Новые позиции открываются с уровнем.', {
-      fontFamily: FONT, fontSize: '16px', color: '#4d7b8a',
-    }));
 
     this.tabsRoot = scene.add.container(0, 0);
     this.content = scene.add.container(0, 0);
     this.root.add([this.tabsRoot, this.content]);
 
-    this.footer = scene.add.text(72, 652, '', {
-      fontFamily: FONT, fontSize: '16px', color: '#1b4b5a',
+    this.footer = scene.add.text(76, 662, '', {
+      fontFamily: FONT, fontSize: '20px', fontStyle: 'bold', color: '#1b4b5a',
     }).setOrigin(0, 0.5);
     this.root.add(this.footer);
 
-    this.prev = uiButton(scene, 1100, 652, '◀', () => this.turnPage(-1), {
-      width: 64, height: 56, fontSize: 20, variant: 'gray',
+    this.prev = uiButton(scene, 1060, 660, '◀', () => this.turnPage(-1), {
+      width: 72, height: 56, fontSize: 24, variant: 'gray',
     });
-    this.next = uiButton(scene, 1180, 652, '▶', () => this.turnPage(1), {
-      width: 64, height: 56, fontSize: 20, variant: 'gray',
+    this.next = uiButton(scene, 1150, 660, '▶', () => this.turnPage(1), {
+      width: 72, height: 56, fontSize: 24, variant: 'gray',
     });
     this.root.add([this.prev, this.next]);
 
-    const close = uiButton(scene, 1160, 176, 'Закрыть', () => this.hide(), {
-      width: 130, height: 56, fontSize: 18, variant: 'gray',
+    const close = uiButton(scene, 1130, 176, 'Закрыть', () => this.hide(), {
+      width: 150, height: 60, fontSize: 22, variant: 'gray',
     });
     this.root.add(close);
   }
@@ -184,8 +181,8 @@ export default class ShopPanel {
     this.tabsRoot.removeAll(true);
     TABS.forEach((tab, index) => {
       const active = tab.id === this.tab;
-      const button = uiButton(this.scene, 380 + index * 196, 176, tab.title, () => this.setTab(tab.id), {
-        width: 186, height: 56, fontSize: 17,
+      const button = uiButton(this.scene, 372 + index * 190, 176, tab.title, () => this.setTab(tab.id), {
+        width: 182, height: 60, fontSize: 22,
         variant: active ? tab.variant : 'gray',
         active,
       });
@@ -198,47 +195,46 @@ export default class ShopPanel {
     const unlock = kind === 'staff' ? staffUnlockLevel(item) : (kind === 'room' ? item.minLevel : itemUnlockLevel(item));
     const open = kind === 'room' && this.roomsState.includes(item.roomId);
     const locked = kind === 'room' ? (!open && this.level < unlock) : this.level < unlock;
-    const col = index % 4;
-    const row = Math.floor(index / 4);
-    const card = this.scene.add.container(210 + col * 260, 330 + row * 200);
+    const col = index % 3;
+    const row = Math.floor(index / 3);
+    const card = this.scene.add.container(274 + col * 366, 340 + row * 212);
     card.setAlpha(locked ? 0.85 : 1);
 
     card.add(plate(this.scene, 0, 0, CARD_W, CARD_H, { tint: locked ? 0x33474f : 0x14303f }));
 
     const key = kind === 'staff' ? item.sprite : (kind === 'room' ? 'sign_blank' : item.type);
-    const img = this.scene.add.image(-84, -14, isoKey(key));
-    img.setScale(Math.min(60 / img.width, 74 / img.height));
+    const img = this.scene.add.image(-122, -22, isoKey(key));
+    img.setScale(Math.min(82 / img.width, 92 / img.height));
     card.add(img);
 
-    card.add(this.scene.add.text(-40, -76, item.title, {
-      fontFamily: FONT, fontSize: '16px', fontStyle: 'bold', color: '#ffffff',
+    card.add(this.scene.add.text(-64, -92, item.title, {
+      fontFamily: FONT, fontSize: '24px', fontStyle: 'bold', color: '#ffffff',
       lineSpacing: 2,
-      wordWrap: { width: 152 },
+      wordWrap: { width: 235 },
     }));
     const priceLabel = kind === 'staff'
       ? `Найм ${item.price}`
       : (kind === 'room' ? `${item.coins} монет` : `Цена ${item.price}`);
-    card.add(this.scene.add.text(-40, -32, priceLabel, {
-      fontFamily: FONT, fontSize: '16px', fontStyle: 'bold', color: '#ffe082',
+    card.add(this.scene.add.text(-64, -34, priceLabel, {
+      fontFamily: FONT, fontSize: '22px', fontStyle: 'bold', color: '#ffe082',
     }));
     const second = kind === 'staff'
       ? `Зарплата ${item.salary}/день`
       : (kind === 'room' ? `или ${item.crystals} кристаллов` : (item.group || ''));
-    card.add(this.scene.add.text(-40, -10, second, {
-      fontFamily: FONT, fontSize: '16px', color: '#b9e6df',
+    card.add(this.scene.add.text(-64, -4, second, {
+      fontFamily: FONT, fontSize: '20px', color: '#b9e6df',
     }));
     let hint = '';
     if (kind === 'staff') {
-      hint = item.hint;
+      hint = item.hint.length > 34 ? `${item.hint.slice(0, 33)}…` : item.hint;
     } else if (kind === 'room') {
-      hint = open ? 'Уже открыт и принимает пациентов' : `Нужен уровень ${item.minLevel}. Откроет вход пациентам`;
+      hint = open ? 'Уже открыт' : `Нужен уровень ${item.minLevel}`;
     } else if (locked) {
       hint = `Откроется на уровне ${unlock}`;
     }
-    card.add(this.scene.add.text(-CARD_W / 2 + 10, 12, hint, {
-      fontFamily: FONT, fontSize: '16px', color: '#dff3ff',
-      lineSpacing: 2,
-      wordWrap: { width: CARD_W - 20 },
+    card.add(this.scene.add.text(-CARD_W / 2 + 14, 22, hint, {
+      fontFamily: FONT, fontSize: '20px', color: '#dff3ff',
+      wordWrap: { width: CARD_W - 28 },
     }));
 
     let action = kind === 'staff' ? 'Нанять' : 'Поставить';
@@ -248,22 +244,22 @@ export default class ShopPanel {
     const label = locked && kind !== 'room' ? `С ур. ${unlock}` : action;
     const baseColor = kind === 'staff' ? 0x3f9b4a : (kind === 'room' ? 0xc9622f : 0x2f80c9);
     const hover = kind === 'staff' ? 0x55b963 : (kind === 'room' ? 0xe07a45 : 0x4a9be0);
-    const button = uiButton(this.scene, 0, CARD_H / 2 - 20, label, () => {
+    const button = uiButton(this.scene, 0, CARD_H / 2 - 26, label, () => {
       this.choose(item, kind, locked, unlock);
     }, {
-      width: 170, height: 36, fontSize: 16,
+      width: 220, height: 48, fontSize: 22,
       color: open ? 0x6b7f86 : baseColor,
       hoverColor: open ? 0x6b7f86 : hover,
       disabled: locked && kind !== 'room',
     });
     card.add(button);
 
-    if (locked || open) {
+    if (kind === 'room' && (locked || open)) {
       const badge = open ? 'Открыт' : `Ур. ${unlock}`;
       const badgeX = kind === 'room' ? -CARD_W / 2 + 10 : CARD_W / 2 - 10;
       const badgeOrigin = kind === 'room' ? 0 : 1;
       card.add(this.scene.add.text(badgeX, -CARD_H / 2 + 6, badge, {
-        fontFamily: FONT, fontSize: '16px', fontStyle: 'bold',
+        fontFamily: FONT, fontSize: '20px', fontStyle: 'bold',
         color: open ? '#b9f6ca' : '#ffcc80',
       }).setOrigin(badgeOrigin, 0));
     }

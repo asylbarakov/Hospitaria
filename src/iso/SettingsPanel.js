@@ -6,8 +6,8 @@ import { withVolume } from '../systems/Settings.js';
 
 const W = 760;
 const H = 620;
-const LEFT = 320;
-const RIGHT = 820;
+const LEFT = 292;
+const RIGHT = 830;
 
 export default class SettingsPanel {
   /**
@@ -30,51 +30,51 @@ export default class SettingsPanel {
     this.root.add(windowFrame(scene, 640, 360, W, H));
     this.root.add(panel(scene, 640 - W / 2 + 24, 100, W - 48, 68));
     this.root.add(text(scene, 640, 128, 'Настройки', {
-      size: 30, bold: true, origin: [0.5, 0.5],
+      size: 36, bold: true, origin: [0.5, 0.5],
     }));
 
     this.volumeText = text(scene, 750, 250, '70%', {
-      size: 22, bold: true, origin: [0.5, 0.5],
+      size: 28, bold: true, origin: [0.5, 0.5],
     });
     this.root.add([
-      text(scene, LEFT, 250, 'Громкость звуков', { size: 20, origin: [0, 0.5] }),
+      text(scene, LEFT, 250, 'Громкость звуков', { size: 26, origin: [0, 0.5] }),
       this.volumeText,
     ]);
     this.root.add(button(scene, 660, 250, '−', () => this.changeVolume(-0.1), {
-      width: 64, height: 56, fontSize: 26, variant: 'blue',
+      width: 72, height: 62, fontSize: 32, variant: 'blue',
     }));
     this.root.add(button(scene, 850, 250, '+', () => this.changeVolume(0.1), {
-      width: 64, height: 56, fontSize: 26, variant: 'blue',
+      width: 72, height: 62, fontSize: 32, variant: 'blue',
     }));
 
-    this.root.add(text(scene, LEFT, 325, 'Обучение новичка', { size: 20, origin: [0, 0.5] }));
+    this.root.add(text(scene, LEFT, 325, 'Обучение новичка', { size: 26, origin: [0, 0.5] }));
     this.root.add(button(scene, RIGHT, 325, 'Пройти заново', () => {
       this.hooks.onRestartTutorial();
       this.hide();
-    }, { width: 250, height: 56, fontSize: 18, variant: 'purple' }));
+    }, { width: 270, height: 62, fontSize: 24, variant: 'purple' }));
 
-    this.root.add(text(scene, LEFT, 400, 'Сетка пола', { size: 20, origin: [0, 0.5] }));
+    this.root.add(text(scene, LEFT, 400, 'Сетка пола', { size: 26, origin: [0, 0.5] }));
     this.gridButton = button(scene, RIGHT, 400, 'Сетка', () => this.toggle('grid'), {
-      width: 250, height: 56, fontSize: 18, variant: 'green',
+      width: 270, height: 62, fontSize: 24, variant: 'green',
     });
     this.root.add(this.gridButton);
 
-    this.root.add(text(scene, LEFT, 475, 'Графика', { size: 20, origin: [0, 0.5] }));
+    this.root.add(text(scene, LEFT, 475, 'Графика', { size: 26, origin: [0, 0.5] }));
     this.graphicsButton = button(scene, RIGHT, 475, 'Графика', () => this.toggle('simpleGraphics'), {
-      width: 250, height: 56, fontSize: 18, variant: 'blue',
+      width: 270, height: 62, fontSize: 24, variant: 'blue',
     });
     this.root.add(this.graphicsButton);
 
     this.resetButton = button(scene, RIGHT, 550, 'Сбросить прогресс', () => this.confirmReset(), {
-      width: 250, height: 56, fontSize: 18, variant: 'red',
+      width: 270, height: 62, fontSize: 24, variant: 'red',
     });
     this.root.add([
-      text(scene, LEFT, 550, 'Прогресс больницы', { size: 20, origin: [0, 0.5] }),
+      text(scene, LEFT, 550, 'Прогресс больницы', { size: 26, origin: [0, 0.5] }),
       this.resetButton,
     ]);
 
     this.root.add(button(scene, 640, 625, 'Закрыть', () => this.hide(), {
-      width: 220, height: 56, fontSize: 20, variant: 'gray',
+      width: 260, height: 62, fontSize: 26, variant: 'gray',
     }));
   }
 

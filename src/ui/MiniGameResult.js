@@ -60,14 +60,14 @@ export function showMiniGameResult(scene, result, onContinue) {
     size: 24, bold: true, color: '#2f5d6b', origin: [0.5, 0.5],
   }));
   root.add(uiText(scene, 640, 404, reputationLine, {
-    size: 19, color: result.reputation >= 0 ? '#2e7d32' : '#c62828', origin: [0.5, 0.5],
+    size: 24, color: result.reputation >= 0 ? '#2e7d32' : '#c62828', origin: [0.5, 0.5],
   }));
   root.add(uiText(
     scene,
     640,
     440,
     result.stars > 0 ? 'Пациент доволен и уходит.' : 'Пациент уходит расстроенным.',
-    { size: 18, color: '#5b7f8c', origin: [0.5, 0.5] },
+    { size: 22, color: '#5b7f8c', origin: [0.5, 0.5] },
   ));
 
   const nextButton = uiButton(scene, 640, 518, 'Дальше', onContinue, {
