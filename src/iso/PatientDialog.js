@@ -37,13 +37,13 @@ export default class PatientDialog {
     const disease = agent.disease;
     const others = shuffled(DISEASES.filter((item) => item.id !== disease.id)).slice(0, 2);
     const options = shuffled([disease, ...others]);
+    // Диалог без заголовка и подсказок: пациент сам идёт в нужный кабинет,
+    // а варианты внизу — это и есть выбор диагноза.
     const text = [
       '«Здравствуйте! Мне нездоровится. Помогите, пожалуйста.»',
       '',
       'Жалобы:',
       disease.symptoms.map((item) => `• ${item}`).join('\n'),
-      '',
-      `Кабинет: «${this.world.roomName(agent.roomId)}»`,
     ].join('\n');
 
     this.scene.modalOpen = true;
@@ -52,10 +52,10 @@ export default class PatientDialog {
     // и модалка 1280x720 уезжает за экран.
     const uiScene = this.scene.hud && this.scene.hud.add ? this.scene.hud : this.scene;
     this.root = openDialog(uiScene, {
-      title: `Пациент ${agent.name}`,
-      subtitle: 'Выберите диагноз',
       text,
       accent: disease.color,
+      // Окно ниже обычного: текста немного, а кнопки должны стоять под ним.
+      height: 500,
       buttons: options.map((item) => ({
         label: item.name,
         color: 0x3f9b4a,

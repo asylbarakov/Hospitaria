@@ -25,8 +25,11 @@ export function windowFrame(scene, x, y, width, height, options = {}) {
   }
   // Окно ниже 242 px или уже 200 px уменьшаем равномерно, чтобы углы не наезжали друг на друга.
   const scale = Math.min(1, height / 242, width / 200);
+  // ui_window: зелёная шапка занимает ровно 150 px исходника, ниже — белое тело.
+  // Держим верхнюю кромку фиксированной (150), иначе середина шапки растягивается
+  // вместе с окном и наезжает на текст. Нижняя белая кромка — 42 px.
   const frame = scene.add.nineslice(
-    x, y, uiKey('ui_window'), undefined, width / scale, height / scale, 70, 70, 100, 42,
+    x, y, uiKey('ui_window'), undefined, width / scale, height / scale, 70, 70, 150, 42,
   ).setScale(scale).setDepth(depth);
   if (Number.isFinite(tint)) {
     frame.setTint(tint);

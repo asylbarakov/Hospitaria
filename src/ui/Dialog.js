@@ -5,12 +5,16 @@ const W = 1280;
 const H = 720;
 const PANEL_W = 840;
 const PANEL_H = 540;
-const PANEL_X = (W - PANEL_W) / 2;
-const PANEL_Y = (H - PANEL_H) / 2;
+// Шапка ui_window (зелёная полоса с крестом) занимает верхние 150 px окна.
+const HEADER_H = 150;
+// Отступ текста от шапки; подзаголовок занимает строку перед текстом.
+const CONTENT_TOP = HEADER_H + 26;
+const SUBTITLE_STEP = 44;
 
 /**
  * Универсальное модальное окно.
- * options: { title, subtitle, text, accent, buttons, onClose }
+ * options: { title, subtitle, text, accent, buttons, onClose, width, height }
+ * Заголовок и подзаголовок необязательны: без них текст начинается сразу под шапкой.
  * Возвращает { root, close }.
  */
 export function openDialog(scene, options = {}) {
@@ -21,6 +25,8 @@ export function openDialog(scene, options = {}) {
     accent = 0x3f9b4a,
     buttons = [{ label: 'Понятно' }],
     onClose = null,
+    width = PANEL_W,
+    height = PANEL_H,
   } = options;
 
   const root = scene.add.container(0, 0).setDepth(200);
@@ -42,29 +48,37 @@ export function openDialog(scene, options = {}) {
     .setInteractive();
   backdrop.on('pointerup', close);
 
-  const panel = windowFrame(scene, W / 2, PANEL_Y + PANEL_H / 2, PANEL_W, PANEL_H);
+  const panelX = (W - width) / 2;
+  const panelY = (H - height) / 2;
+  const panel = windowFrame(scene, W / 2, panelY + height / 2, width, height);
+
+  const children = [backdrop, panel];
 
   // Заголовок — тёмная табличка в шапке слева: по центру её перекрывает крест.
-  const titleText = scene.add
-    .text(PANEL_X + 48, PANEL_Y + 40, title, {
-      fontFamily: HUD_FONT,
-      fontSize: '32px',
-      fontStyle: 'bold',
-      color: '#ffffff',
-    })
-    .setOrigin(0, 0.5);
-  const titleW = Math.min(PANEL_W - 96, titleText.width + 44);
-  const titlePlate = plate(scene, PANEL_X + 24 + titleW / 2, PANEL_Y + 40, titleW, 62, {
-    tint: 0x123240,
-  });
+  // Без заголовка шапка остаётся декоративной (крест и блокнот).
+  if (title) {
+    const titleText = scene.add
+      .text(panelX + 48, panelY + 40, title, {
+        fontFamily: HUD_FONT,
+        fontSize: '32px',
+        fontStyle: 'bold',
+        color: '#ffffff',
+      })
+      .setOrigin(0, 0.5);
+    const titleW = Math.min(width - 96, titleText.width + 44);
+    const titlePlate = plate(scene, panelX + 24 + titleW / 2, panelY + 40, titleW, 62, {
+      tint: 0x123240,
+    });
+    children.push(titlePlate, titleText);
+  }
 
-  const children = [backdrop, panel, titlePlate, titleText];
+  // Подзаголовок и текст — на белом теле окна, ниже шапки.
+  let contentTop = panelY + CONTENT_TOP;
 
-  // Подзаголовок и текст — уже на белом теле окна, ниже шапки.
   if (subtitle) {
     children.push(
       scene.add
-        .text(PANEL_X + 42, PANEL_Y + 142, subtitle, {
+        .text(panelX + 42, contentTop, subtitle, {
           fontFamily: HUD_FONT,
           fontSize: '24px',
           fontStyle: 'bold',
@@ -72,16 +86,17 @@ export function openDialog(scene, options = {}) {
         })
         .setOrigin(0, 0),
     );
+    contentTop += SUBTITLE_STEP;
   }
 
   children.push(
     scene.add
-      .text(PANEL_X + 42, PANEL_Y + 182, text, {
+      .text(panelX + 42, contentTop, text, {
         fontFamily: HUD_FONT,
         fontSize: '25px',
         color: '#24444f',
         lineSpacing: 6,
-        wordWrap: { width: PANEL_W - 84 },
+        wordWrap: { width: width - 84 },
       })
       .setOrigin(0, 0),
   );
@@ -89,13 +104,13 @@ export function openDialog(scene, options = {}) {
   const list = buttons.slice(0, 3);
   const gap = 26;
   // Кнопки не должны вылезать за окно: при трёх вариантах ширина уменьшается.
-  const available = PANEL_W - 72;
+  const available = width - 72;
   const buttonWidth = list.length > 1
     ? Math.min(260, Math.floor((available - gap * (list.length - 1)) / list.length))
     : 260;
   const totalWidth = list.length * buttonWidth + (list.length - 1) * gap;
   const startX = W / 2 - totalWidth / 2 + buttonWidth / 2;
-  const buttonY = PANEL_Y + PANEL_H - 62;
+  const buttonY = panelY + height - 62;
 
   list.forEach((item, index) => {
     const button = uiButton(
