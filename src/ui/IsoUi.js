@@ -125,6 +125,12 @@ export function button(scene, x, y, label, onClick, options = {}) {
       shadow: { offsetX: 0, offsetY: 2, color: 'rgba(6, 40, 34, 0.45)', blur: 3, fill: true },
     })
     .setOrigin(0.5);
+  // Длинная подпись (например, «Обезвоживание») не должна вылезать за рамку:
+  // аккуратно уменьшаем её, если не влезает по ширине.
+  const maxLabelWidth = width - 26;
+  if (caption.width > maxLabelWidth) {
+    caption.setScale(maxLabelWidth / caption.width);
+  }
   container.add([bg, caption]);
   container.label = caption;
   container.uiVariant = variant;
